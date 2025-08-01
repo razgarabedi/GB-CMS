@@ -1,18 +1,13 @@
-const { Router } = require('express');
-const {
-  createContent,
-  getAllContent,
-  getContentById,
-  updateContent,
-  deleteContent,
-} = require('../controllers/contentController');
+import { Router } from 'express';
+import { getAllContent, createContent } from '../controllers/contentController';
+
+import { authenticateToken } from '../middleware/authMiddleware';
 
 const router = Router();
 
-router.post('/', createContent);
-router.get('/', getAllContent);
-router.get('/:id', getContentById);
-router.put('/:id', updateContent);
-router.delete('/:id', deleteContent);
+router.use(authenticateToken);
 
-module.exports = router; 
+router.get('/content', getAllContent);
+router.post('/content', createContent);
+
+export default router;

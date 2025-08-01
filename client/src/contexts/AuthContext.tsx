@@ -1,57 +1,40 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect } from 'react';
 
 interface AuthContextType {
-  isAuthenticated: boolean;
+  token: string | null;
   login: (token: string) => void;
   logout: () => void;
-  token: string | null;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  token: null,
+  login: () => {},
+  logout: () => {},
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for existing token on app load
-    const storedToken = localStorage.getItem('authToken');
+    const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
-      setIsAuthenticated(true);
     }
   }, []);
 
-  const login = (newToken: string) => {
-    localStorage.setItem('authToken', newToken);
-    setToken(newToken);
-    setIsAuthenticated(true);
+  const login = (token: string) => {
+    setToken(token);
+    localStorage.setItem('token', token);
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
     setToken(null);
-    setIsAuthenticated(false);
+    localStorage.removeItem('token');
   };
 
-  const value = {
-    isAuthenticated,
-    login,
-    logout,
-    token,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+  return (
+    <AuthContext.Provider value={{ token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
