@@ -1,0 +1,17 @@
+{
+  "name": "gb-cms",
+  "version": "1.0.0",
+  "description": "A PERN stack content management system.",
+  "main": "index.js",
+  "scripts": {
+    "install": "cd server && npm install && cd ../client && npm install",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "cd client && npm run build && cd ../server && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
