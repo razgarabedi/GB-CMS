@@ -1,11 +1,11 @@
-import { Router } from 'express';
-import {
+const { Router } = require('express');
+const {
   createContent,
   getAllContent,
   getContentById,
   updateContent,
   deleteContent,
-} from '../controllers/contentController';
+} = require('../controllers/contentController');
 
 const router = Router();
 
@@ -15,4 +15,4 @@ router.get('/:id', getContentById);
 router.put('/:id', updateContent);
 router.delete('/:id', deleteContent);
 
-export default router; 
+module.exports = router; 

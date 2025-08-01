@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "gb_user",
+    "password": "a3eilm2s2y",
+    "database": "gbcms",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "gb_user",
+    "password": "a3eilm2s2y",
+    "database": "gbcms",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "gb_user",
+    "password": "a3eilm2s2y",
+    "database": "gbcms",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+} 

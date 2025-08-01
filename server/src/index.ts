@@ -1,12 +1,12 @@
-import express, { Express, Request, Response } from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import sequelize from '../models';
-import contentRoutes from './routes/contentRoutes';
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const sequelize = require('../models');
+const contentRoutes = require('./routes/contentRoutes');
 
 dotenv.config();
 
-const app: Express = express();
+const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
@@ -14,7 +14,7 @@ app.use(express.json());
 
 app.use('/api/content', contentRoutes);
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", (req: any, res: any) => {
   res.send("Express + TypeScript Server");
 });
 

@@ -75,20 +75,48 @@ This will automatically install dependencies for both the client and server.
 
 ### 3. Database Setup
 
+#### Option A: Using Sequelize Migrations (Recommended)
+
 1. **Create a PostgreSQL database**:
    ```sql
    CREATE DATABASE gb_cms;
    ```
 
-2. **Create a `.env` file** in the `server` directory:
-   ```env
-   DB_USERNAME=your_username
-   DB_PASSWORD=your_password
-   DB_NAME=gb_cms
-   DB_HOST=localhost
-   DB_DIALECT=postgres
-   PORT=3000
+2. **Update database credentials** in `server/config/config.json`:
+   ```json
+   {
+     "development": {
+       "username": "your_username",
+       "password": "your_password",
+       "database": "gb_cms",
+       "host": "127.0.0.1",
+       "dialect": "postgres"
+     }
+   }
    ```
+
+3. **Run migrations**:
+   ```bash
+   cd server
+   npx sequelize-cli db:migrate
+   ```
+
+#### Option B: Manual Database Setup (Alternative)
+
+If migrations fail, you can set up the database manually:
+
+1. **Create a PostgreSQL database**:
+   ```sql
+   CREATE DATABASE gb_cms;
+   ```
+
+2. **Run the setup script**:
+   ```bash
+   cd server
+   psql -U your_username -d gb_cms -f setup-db.sql
+   ```
+
+   This will create the `Contents` table and insert sample data.
 
 ### 4. Run the Application
 
@@ -221,28 +249,35 @@ npx sequelize-cli db:seed:all
 
 1. **Database Connection Error**
    - Verify PostgreSQL is running
-   - Check `.env` file configuration
+   - Check database credentials in `config.json`
    - Ensure database exists
 
-2. **Port Already in Use**
-   - Change port in `.env` file
+2. **Migration Errors**
+   - If `npx sequelize-cli db:migrate` fails, use the manual setup option
+   - Run `psql -U your_username -d gb_cms -f setup-db.sql`
+
+3. **Port Already in Use**
+   - Change port in configuration
    - Kill existing processes on the port
 
-3. **TypeScript Errors**
+4. **TypeScript Errors**
    - Run `npm install` in both client and server directories
    - Check TypeScript configuration files
 
 ### Environment Variables
 
-Make sure your `.env` file in the server directory contains:
+Make sure your database credentials are correctly set in `server/config/config.json`:
 
-```env
-DB_USERNAME=your_postgres_username
-DB_PASSWORD=your_postgres_password
-DB_NAME=your_database_name
-DB_HOST=localhost
-DB_DIALECT=postgres
-PORT=3000
+```json
+{
+  "development": {
+    "username": "your_postgres_username",
+    "password": "your_postgres_password",
+    "database": "your_database_name",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}
 ```
 
 ## 📝 License

@@ -1,7 +1,6 @@
-import { Request, Response } from 'express';
-import Content from '../../models/content';
+const Content = require('../../models/content');
 
-export const createContent = async (req: Request, res: Response) => {
+const createContent = async (req: any, res: any) => {
   try {
     const { title, body, imageUrl } = req.body;
     const newContent = await Content.create({ title, body, imageUrl });
@@ -12,7 +11,7 @@ export const createContent = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllContent = async (req: Request, res: Response) => {
+const getAllContent = async (req: any, res: any) => {
   try {
     const content = await Content.findAll();
     res.json(content);
@@ -22,7 +21,7 @@ export const getAllContent = async (req: Request, res: Response) => {
   }
 };
 
-export const getContentById = async (req: Request, res: Response) => {
+const getContentById = async (req: any, res: any) => {
   try {
     const content = await Content.findByPk(req.params.id);
     if (content) {
@@ -36,7 +35,7 @@ export const getContentById = async (req: Request, res: Response) => {
   }
 };
 
-export const updateContent = async (req: Request, res: Response) => {
+const updateContent = async (req: any, res: any) => {
   try {
     const { title, body, imageUrl } = req.body;
     const content = await Content.findByPk(req.params.id);
@@ -52,7 +51,7 @@ export const updateContent = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteContent = async (req: Request, res: Response) => {
+const deleteContent = async (req: any, res: any) => {
   try {
     const content = await Content.findByPk(req.params.id);
     if (content) {
@@ -65,4 +64,12 @@ export const deleteContent = async (req: Request, res: Response) => {
     console.error(err);
     res.status(500).json({ error: 'Failed to delete content' });
   }
+};
+
+module.exports = {
+  createContent,
+  getAllContent,
+  getContentById,
+  updateContent,
+  deleteContent,
 }; 
