@@ -13,6 +13,7 @@ type Config = {
   webViewerUrl: string
   webViewerMode?: 'iframe' | 'snapshot'
   snapshotRefreshMs?: number
+  theme?: 'dark' | 'light'
   refreshIntervals: RefreshIntervals
   schedule: any[]
 }
@@ -102,10 +103,11 @@ export default function Player() {
   const url = config?.webViewerUrl || ''
   const mode = config?.webViewerMode || 'iframe'
   const snapshotMs = config?.snapshotRefreshMs ?? 300000
+  const theme = config?.theme || 'dark'
   return (
     <div className="kiosk">
       <div className="grid">
-        <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} /></div>
+        <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
         <div className="cell viewer">
           <div className="ratio-16x9">
             <WebViewer url={url} mode={mode} snapshotRefreshMs={snapshotMs} onSuccess={() => setLastLoadedAt(new Date().toISOString())} onError={(e) => setIframeError(e)} />
@@ -114,7 +116,11 @@ export default function Player() {
         <div className="cell slideshow">
           <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
           <div className="clock-overlay">
-            <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
+            {theme === 'light' ? (
+              <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
+            ) : (
+              <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
+            )}
           </div>
         </div>
       </div>

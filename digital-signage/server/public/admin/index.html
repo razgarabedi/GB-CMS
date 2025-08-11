@@ -68,6 +68,16 @@
         </div>
         <div class="row">
           <div>
+            <label>Theme</label>
+            <select id="theme">
+              <option value="dark">dark</option>
+              <option value="light">light</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <div class="row">
+          <div>
             <label>Web Viewer Mode</label>
             <select id="webViewerMode">
               <option value="iframe">iframe</option>
@@ -148,6 +158,7 @@
             $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
             $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
             $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
+            $('#theme').value = cfg.theme || 'dark';
             $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
             $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -169,6 +180,7 @@
           },
           webViewerMode: ($('#webViewerMode').value || 'iframe'),
           snapshotRefreshMs: Number($('#snapshotRefreshMs').value) || 300000,
+          theme: ($('#theme').value || 'dark'),
           schedule: JSON.parse($('#schedule').value || '[]'),
           slides: JSON.parse($('#slides').value || '[]'),
         };

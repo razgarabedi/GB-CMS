@@ -153,6 +153,7 @@ function defaultConfig(screenId) {
     webViewerUrl: '',
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
+    theme: 'dark', // 'dark' | 'light'
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     schedule: [],
     updatedAt: new Date().toISOString(),
