@@ -28,7 +28,7 @@ export default function AnalogClock({ timezone, size = 300, theme }: AnalogClock
 
   useEffect(() => {
     let running = true
-    function loop(t: number) {
+    function loop() {
       const d = new Date()
       setNow(d)
       setMsFraction(d.getMilliseconds() / 1000)
@@ -49,43 +49,54 @@ export default function AnalogClock({ timezone, size = 300, theme }: AnalogClock
   }
 
   const sizePx = `${size}px`
-  const center = size / 2
-  const handStyle = (width: number, color: string) => ({
+  const r = size / 2
+  const ringRadius = Math.max(20, r - 10)
+  const pivotY = r // bottom-origin approach
+
+  const handStyle = (width: number, color: string, length: number) => ({
     position: 'absolute' as const,
     width: `${width}px`,
-    height: `${center - 14}px`,
+    height: `${length}px`,
     background: color,
-    top: `${14}px`,
-    left: `${center - width / 2}px`,
-    transformOrigin: `center ${center - 14}px`,
+    top: `${pivotY - length}px`,
+    left: `${r - width / 2}px`,
+    transformOrigin: `center ${length}px`,
     borderRadius: '2px',
   })
 
-  return (
-    <div style={{ position: 'relative', width: sizePx, height: sizePx, borderRadius: '50%', background: t.background, boxShadow: '0 0 0 2px #222 inset' }}>
-      {/* ticks */}
-      {[...Array(60)].map((_, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          width: i % 5 === 0 ? '4px' : '2px',
-          height: i % 5 === 0 ? '12px' : '6px',
-          background: t.tick,
-          left: `${center - (i % 5 === 0 ? 2 : 1)}px`,
-          top: '2px',
-          transform: `rotate(${i * 6}deg) translateY(2px)`,
-          transformOrigin: 'center 148px',
-          borderRadius: '1px'
-        }}/>
-      ))}
+  const majorLen = Math.max(10, Math.round(size * 0.12))
+  const minorLen = Math.max(6, Math.round(size * 0.06))
+  const tickTop = pivotY - ringRadius
 
-      {/* hour hand */}
-      <div style={{ ...handStyle(6, t.hourHand), transform: `rotate(${hourDeg}deg)` }} />
-      {/* minute hand */}
-      <div style={{ ...handStyle(4, t.minuteHand), transform: `rotate(${minuteDeg}deg)` }} />
-      {/* second hand */}
-      <div style={{ ...handStyle(2, t.secondHand), transform: `rotate(${secondDeg}deg)` }} />
+  return (
+    <div style={{ position: 'relative', width: sizePx, height: sizePx, borderRadius: '50%', background: t.background, boxShadow: '0 0 0 2px rgba(0,0,0,0.4) inset', backdropFilter: 'blur(2px)' }}>
+      {/* ticks (properly scaled to size) */}
+      {[...Array(60)].map((_, i) => {
+        const isMajor = i % 5 === 0
+        const w = isMajor ? 4 : 2
+        const h = isMajor ? majorLen : minorLen
+        return (
+          <div key={i} style={{
+            position: 'absolute',
+            width: `${w}px`,
+            height: `${h}px`,
+            background: t.tick,
+            left: `${r - w / 2}px`,
+            top: `${tickTop}px`,
+            transform: `rotate(${i * 6}deg)`,
+            transformOrigin: `center ${ringRadius}px`,
+            borderRadius: '1px',
+          }}/>
+        )
+      })}
+
+      {/* hands */}
+      <div style={{ ...handStyle(8, t.hourHand, ringRadius * 0.55), transform: `rotate(${hourDeg}deg)` }} />
+      <div style={{ ...handStyle(5, t.minuteHand, ringRadius * 0.78), transform: `rotate(${minuteDeg}deg)` }} />
+      <div style={{ ...handStyle(2, t.secondHand, ringRadius * 0.9), transform: `rotate(${secondDeg}deg)`, background: '#e74c3c' }} />
+
       {/* center cap */}
-      <div style={{ position: 'absolute', width: '12px', height: '12px', borderRadius: '50%', background: t.center, left: `${center - 6}px`, top: `${center - 6}px` }} />
+      <div style={{ position: 'absolute', width: '12px', height: '12px', borderRadius: '50%', background: t.center, left: `${r - 6}px`, top: `${r - 6}px` }} />
     </div>
   )
 }

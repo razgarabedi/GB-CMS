@@ -68,6 +68,19 @@
         </div>
         <div class="row">
           <div>
+            <label>Web Viewer Mode</label>
+            <select id="webViewerMode">
+              <option value="iframe">iframe</option>
+              <option value="snapshot">snapshot</option>
+            </select>
+          </div>
+          <div>
+            <label>Snapshot Refresh (ms)</label>
+            <input id="snapshotRefreshMs" type="number" placeholder="300000" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
             <label>Content Refresh (ms)</label>
             <input id="contentMs" type="number" placeholder="30000" />
           </div>
@@ -81,8 +94,18 @@
           <textarea id="schedule" rows="4" placeholder='[]'></textarea>
         </div>
         <div>
+          <label>Slides (uploaded image URLs, JSON array)</label>
+          <textarea id="slides" rows="3" placeholder='[]'></textarea>
+        </div>
+        <div>
           <label>API Key (X-Api-Key)</label>
           <input id="apiKey" type="text" />
+        </div>
+        <div>
+          <label>Upload slide</label>
+          <input id="fileInput" type="file" accept="image/*" />
+          <button type="button" id="uploadBtn">Upload</button>
+          <div class="small">Uploaded files are served at /uploads/...</div>
         </div>
         <div class="actions">
           <button type="submit">Save</button>
@@ -123,7 +146,10 @@
             $('#webViewerUrl').value = cfg.webViewerUrl || '';
             $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
             $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
+            $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
+            $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
             $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
+            $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
           });
         });
@@ -141,7 +167,10 @@
             contentMs: Number($('#contentMs').value) || 30000,
             rotateMs: Number($('#rotateMs').value) || 8000,
           },
+          webViewerMode: ($('#webViewerMode').value || 'iframe'),
+          snapshotRefreshMs: Number($('#snapshotRefreshMs').value) || 300000,
           schedule: JSON.parse($('#schedule').value || '[]'),
+          slides: JSON.parse($('#slides').value || '[]'),
         };
         const apiKey = $('#apiKey').value.trim();
         const res = await fetch(`/api/config/${encodeURIComponent(screenId)}`, {
@@ -159,6 +188,22 @@
         await loadScreens();
         alert('Saved');
       });
+
+      // Upload handler
+      $('#uploadBtn').addEventListener('click', async () => {
+        const f = $('#fileInput').files?.[0]
+        if (!f) return alert('Choose a file first')
+        const apiKey = $('#apiKey').value.trim();
+        const fd = new FormData()
+        fd.append('file', f)
+        const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
+        if (!res.ok) return alert('Upload failed')
+        const { url } = await res.json()
+        const arr = JSON.parse($('#slides').value || '[]')
+        arr.push(url)
+        $('#slides').value = JSON.stringify(arr, null, 2)
+        alert('Uploaded: ' + url)
+      })
 
       $('#refreshBtn').addEventListener('click', async () => {
         const id = $('#screenId').value.trim();

@@ -7,6 +7,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 const DEFAULT_UNITS = process.env.WEATHER_UNITS || 'metric';
+const DEFAULT_LANG = process.env.WEATHER_LANG || 'en';
 const TEN_MIN = 10 * 60 * 1000;
 
 // In-memory cache fallback
@@ -31,8 +32,8 @@ try {
   db = null;
 }
 
-function cacheKey(location, units) {
-  return `${location}|${units}`.toLowerCase();
+function cacheKey(location, units, lang, scope = 'current') {
+  return `${scope}|${location}|${units}|${lang}`.toLowerCase();
 }
 
 function getFromMemory(key) {
@@ -72,7 +73,7 @@ function getApiKey() {
   return process.env.OPENWEATHER_API_KEY || '';
 }
 
-async function fetchWeather(location, units) {
+async function fetchWeather(location, units, lang = DEFAULT_LANG) {
   const OPENWEATHER_API_KEY = getApiKey();
   if (!OPENWEATHER_API_KEY) {
     const error = new Error('OPENWEATHER_API_KEY not configured');
@@ -83,6 +84,7 @@ async function fetchWeather(location, units) {
   url.searchParams.set('q', location);
   url.searchParams.set('appid', OPENWEATHER_API_KEY);
   url.searchParams.set('units', units);
+  url.searchParams.set('lang', lang);
   const response = await fetch(url);
   const data = await response.json();
   if (!response.ok) {
@@ -94,8 +96,8 @@ async function fetchWeather(location, units) {
   return data;
 }
 
-async function getWeather(location, units = DEFAULT_UNITS) {
-  const key = cacheKey(location, units);
+async function getWeather(location, units = DEFAULT_UNITS, lang = DEFAULT_LANG) {
+  const key = cacheKey(location, units, lang, 'current');
   // Memory first
   const fromMem = getFromMemory(key);
   if (fromMem) return fromMem;
@@ -106,7 +108,60 @@ async function getWeather(location, units = DEFAULT_UNITS) {
     return fromDb;
   }
   // Fetch and cache
-  const data = await fetchWeather(location, units);
+  const data = await fetchWeather(location, units, lang);
+  putInMemory(key, data);
+  putInSqlite(key, data);
+  return data;
+}
+
+async function geocode(location, limit = 1) {
+  const OPENWEATHER_API_KEY = getApiKey();
+  const url = new URL('https://api.openweathermap.org/geo/1.0/direct');
+  url.searchParams.set('q', location);
+  url.searchParams.set('limit', String(limit));
+  url.searchParams.set('appid', OPENWEATHER_API_KEY);
+  const response = await fetch(url);
+  const data = await response.json();
+  if (!response.ok || !Array.isArray(data) || data.length === 0) {
+    const error = new Error('location not found');
+    error.status = 404;
+    throw error;
+  }
+  const { lat, lon } = data[0];
+  return { lat, lon };
+}
+
+async function fetchForecastDaily(location, units = DEFAULT_UNITS, lang = DEFAULT_LANG) {
+  const OPENWEATHER_API_KEY = getApiKey();
+  const { lat, lon } = await geocode(location, 1);
+  const url = new URL('https://api.openweathermap.org/data/2.5/onecall');
+  url.searchParams.set('lat', String(lat));
+  url.searchParams.set('lon', String(lon));
+  url.searchParams.set('exclude', 'minutely,hourly,alerts,current');
+  url.searchParams.set('units', units);
+  url.searchParams.set('lang', lang);
+  url.searchParams.set('appid', OPENWEATHER_API_KEY);
+  const response = await fetch(url);
+  const data = await response.json();
+  if (!response.ok) {
+    const error = new Error(data?.message || 'OpenWeather error');
+    error.status = response.status;
+    error.payload = data;
+    throw error;
+  }
+  return data; // contains daily[]
+}
+
+async function getForecast(location, units = DEFAULT_UNITS, lang = DEFAULT_LANG) {
+  const key = cacheKey(location, units, lang, 'forecast');
+  const fromMem = getFromMemory(key);
+  if (fromMem) return fromMem;
+  const fromDb = await getFromSqlite(key);
+  if (fromDb) {
+    putInMemory(key, fromDb);
+    return fromDb;
+  }
+  const data = await fetchForecastDaily(location, units, lang);
   putInMemory(key, data);
   putInSqlite(key, data);
   return data;
@@ -117,7 +172,7 @@ function __clearCache() {
   if (db) db.run('DELETE FROM weather_cache');
 }
 
-module.exports = { getWeather, __clearCache, _internals: { cacheKey, getFromMemory, putInMemory } };
+module.exports = { getWeather, getForecast, __clearCache, _internals: { cacheKey, getFromMemory, putInMemory } };
 module.exports.default = module.exports;
 
 

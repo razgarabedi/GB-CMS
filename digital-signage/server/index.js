@@ -93,16 +93,47 @@ app.get('/api/weather', async (req, res) => {
 });
 
 // Weather proxy with caching: GET /api/weather/:location
-const { getWeather } = require('./services/weather');
+const { getWeather, getForecast } = require('./services/weather');
+const openMeteo = require('./services/openmeteo');
+const { getSnapshotForUrl } = require('./services/snapshot');
+const multer = require('multer');
 app.get('/api/weather/:location', async (req, res) => {
   try {
     const location = req.params.location;
     const units = (req.query.units || 'metric').toString();
-    const data = await getWeather(location, units);
+    const lang = (req.query.lang || 'en').toString();
+    // Prefer Open-Meteo when no OpenWeather key or when query param provider=open-meteo
+    const provider = (req.query.provider || '').toString();
+    let data;
+    if (!OPENWEATHER_API_KEY || provider === 'open-meteo') {
+      data = await openMeteo.getCurrent(location, units, lang || 'de');
+    } else {
+      data = await getWeather(location, units, lang);
+    }
     res.json(data);
   } catch (err) {
     const status = err?.status || 500;
     res.status(status).json({ error: err?.message || 'Failed to fetch weather' });
+  }
+});
+
+// 5-day forecast (using OneCall daily)
+app.get('/api/forecast/:location', async (req, res) => {
+  try {
+    const location = req.params.location;
+    const units = (req.query.units || 'metric').toString();
+    const lang = (req.query.lang || 'en').toString();
+    const provider = (req.query.provider || '').toString();
+    let data;
+    if (!OPENWEATHER_API_KEY || provider === 'open-meteo') {
+      data = await openMeteo.getDaily(location, units, lang || 'de');
+    } else {
+      data = await getForecast(location, units, lang);
+    }
+    res.json(data);
+  } catch (err) {
+    const status = err?.status || 500;
+    res.status(status).json({ error: err?.message || 'Failed to fetch forecast' });
   }
 });
 
@@ -120,6 +151,8 @@ function defaultConfig(screenId) {
     timezone: 'UTC',
     weatherLocation: 'London',
     webViewerUrl: '',
+    webViewerMode: 'iframe', // 'iframe' | 'snapshot'
+    snapshotRefreshMs: 300000, // 5 minutes
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     schedule: [],
     updatedAt: new Date().toISOString(),
@@ -155,9 +188,54 @@ app.post('/api/config/:screenId', requireApiKey, (req, res) => {
   console.log(`Config updated for screen ${screenId}`);
 });
 
+// Snapshot endpoint: GET /api/snapshot?url=...&w=1920&h=1080
+app.get('/api/snapshot', async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ error: 'url is required' });
+    const w = Number(req.query.w || 1920);
+    const h = Number(req.query.h || 1080);
+    const buffer = await getSnapshotForUrl(String(url), w, h);
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to generate snapshot' });
+  }
+});
+
 // Static admin UI
 const adminDir = path.join(__dirname, 'public', 'admin');
 app.use('/admin', express.static(adminDir));
+// serve snapshots statically
+app.use('/snapshots', express.static(path.join(__dirname, 'data', 'snapshots')));
+// serve uploads statically
+const uploadsDir = path.join(__dirname, 'data', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
+// uploads
+const storage = multer.diskStorage({
+  destination: (_, __, cb) => cb(null, uploadsDir),
+  filename: (_, file, cb) => {
+    const ext = path.extname(file.originalname || '') || '.bin';
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    cb(null, name);
+  },
+});
+const upload = multer({ storage });
+
+app.post('/api/uploads', requireApiKey, upload.single('file'), (req, res) => {
+  const file = req.file;
+  if (!file) return res.status(400).json({ error: 'no file' });
+  res.json({ url: `/uploads/${file.filename}` });
+});
+
+app.get('/api/uploads', (req, res) => {
+  const files = fs.readdirSync(uploadsDir)
+    .filter(f => !f.startsWith('.'))
+    .map(f => ({ name: f, url: `/uploads/${f}` }));
+  res.json({ files });
+});
 
 // HTTP server and WebSocket server
 const server = http.createServer(app);
@@ -173,7 +251,7 @@ function registerConnection(screenId, socket) {
 function unregisterConnection(socket) {
   for (const [screenId, set] of screenConnections) {
     if (set.has(socket)) {
-      set.delete(ws);
+      set.delete(socket);
       if (set.size === 0) screenConnections.delete(screenId);
     }
   }

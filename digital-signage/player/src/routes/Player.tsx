@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AnalogClock from '../components/AnalogClock'
 import WeatherWidget from '../components/WeatherWidget'
 import WebViewer from '../components/WebViewer'
+import Slideshow from '../components/Slideshow'
 
 type RefreshIntervals = { contentMs: number; rotateMs: number }
 type Config = {
@@ -10,23 +11,13 @@ type Config = {
   timezone: string
   weatherLocation: string
   webViewerUrl: string
+  webViewerMode?: 'iframe' | 'snapshot'
+  snapshotRefreshMs?: number
   refreshIntervals: RefreshIntervals
   schedule: any[]
 }
 
-function useWebSocket(url: string | undefined, identify: any) {
-  const wsRef = useRef<WebSocket | null>(null)
-  useEffect(() => {
-    if (!url) return
-    const ws = new WebSocket(url)
-    wsRef.current = ws
-    ws.addEventListener('open', () => {
-      if (identify) ws.send(JSON.stringify(identify))
-    })
-    return () => ws.close()
-  }, [url])
-  return wsRef
-}
+// removed legacy hook
 
 export default function Player() {
   const { screenId = '' } = useParams()
@@ -109,12 +100,23 @@ export default function Player() {
   }, [wsUrl, screenId])
 
   const url = config?.webViewerUrl || ''
+  const mode = config?.webViewerMode || 'iframe'
+  const snapshotMs = config?.snapshotRefreshMs ?? 300000
   return (
     <div className="kiosk">
       <div className="grid">
-        <div className="cell clock"><AnalogClock timezone={config?.timezone || 'UTC'} /></div>
         <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} /></div>
-        <div className="cell viewer"><WebViewer url={url} onSuccess={() => setLastLoadedAt(new Date().toISOString())} onError={(e) => setIframeError(e)} /></div>
+        <div className="cell viewer">
+          <div className="ratio-16x9">
+            <WebViewer url={url} mode={mode} snapshotRefreshMs={snapshotMs} onSuccess={() => setLastLoadedAt(new Date().toISOString())} onError={(e) => setIframeError(e)} />
+          </div>
+        </div>
+        <div className="cell slideshow">
+          <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+          <div className="clock-overlay">
+            <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
+          </div>
+        </div>
       </div>
       {iframeError && (
         <div className="fallback">
