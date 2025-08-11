@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Digital Signage Admin</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 1rem auto; max-width: 900px; padding: 0 1rem; }
+      header { display: flex; align-items: center; justify-content: space-between; }
+      h1 { margin: 0.5rem 0; }
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+      th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+      th { background: #f7f7f7; }
+      form > div { margin: 0.5rem 0; }
+      input[type="text"], input[type="number"], textarea { width: 100%; padding: 0.4rem; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+      .small { font-size: 0.9rem; color: #666; }
+      .muted { color: #888; }
+      .actions { display: flex; gap: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Digital Signage Admin</h1>
+      <nav class="muted">/admin</nav>
+    </header>
+
+    <section>
+      <h2>Screens</h2>
+      <div class="small">Configure API key in your requests via X-Api-Key header.</div>
+      <table id="screensTable">
+        <thead>
+          <tr>
+            <th>Screen ID</th>
+            <th>Timezone</th>
+            <th>Weather Location</th>
+            <th>Web Viewer URL</th>
+            <th>Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Edit Screen</h2>
+      <form id="editForm">
+        <div class="row">
+          <div>
+            <label>Screen ID</label>
+            <input id="screenId" type="text" required />
+          </div>
+          <div>
+            <label>Timezone</label>
+            <input id="timezone" type="text" placeholder="UTC" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Weather Location</label>
+            <input id="weatherLocation" type="text" placeholder="London" />
+          </div>
+          <div>
+            <label>Web Viewer URL</label>
+            <input id="webViewerUrl" type="text" placeholder="https://example.com" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Content Refresh (ms)</label>
+            <input id="contentMs" type="number" placeholder="30000" />
+          </div>
+          <div>
+            <label>Rotate Interval (ms)</label>
+            <input id="rotateMs" type="number" placeholder="8000" />
+          </div>
+        </div>
+        <div>
+          <label>Schedule (JSON array)</label>
+          <textarea id="schedule" rows="4" placeholder='[]'></textarea>
+        </div>
+        <div>
+          <label>API Key (X-Api-Key)</label>
+          <input id="apiKey" type="text" />
+        </div>
+        <div class="actions">
+          <button type="submit">Save</button>
+          <button type="button" id="refreshBtn">Force Refresh</button>
+        </div>
+      </form>
+    </section>
+
+    <script>
+      const $ = (sel) => document.querySelector(sel);
+
+      async function loadScreens() {
+        const res = await fetch('/api/screens');
+        const { screens } = await res.json();
+        const tbody = $('#screensTable tbody');
+        tbody.innerHTML = '';
+        Object.entries(screens || {}).forEach(([screenId, cfg]) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${screenId}</td>
+            <td>${cfg.timezone || ''}</td>
+            <td>${cfg.weatherLocation || ''}</td>
+            <td><a href="${cfg.webViewerUrl || ''}" target="_blank">${cfg.webViewerUrl || ''}</a></td>
+            <td>${cfg.updatedAt || ''}</td>
+            <td class="actions">
+              <button data-id="${screenId}" class="edit">Edit</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll('button.edit').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            const cfg = await (await fetch(`/api/config/${encodeURIComponent(id)}`)).json();
+            $('#screenId').value = cfg.screenId || id;
+            $('#timezone').value = cfg.timezone || '';
+            $('#weatherLocation').value = cfg.weatherLocation || '';
+            $('#webViewerUrl').value = cfg.webViewerUrl || '';
+            $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
+            $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
+            $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+          });
+        });
+      }
+
+      $('#editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const screenId = $('#screenId').value.trim();
+        const payload = {
+          screenId,
+          timezone: $('#timezone').value.trim() || 'UTC',
+          weatherLocation: $('#weatherLocation').value.trim() || 'London',
+          webViewerUrl: $('#webViewerUrl').value.trim(),
+          refreshIntervals: {
+            contentMs: Number($('#contentMs').value) || 30000,
+            rotateMs: Number($('#rotateMs').value) || 8000,
+          },
+          schedule: JSON.parse($('#schedule').value || '[]'),
+        };
+        const apiKey = $('#apiKey').value.trim();
+        const res = await fetch(`/api/config/${encodeURIComponent(screenId)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'X-Api-Key': apiKey } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          alert('Failed to save: ' + res.status);
+          return;
+        }
+        await loadScreens();
+        alert('Saved');
+      });
+
+      $('#refreshBtn').addEventListener('click', async () => {
+        const id = $('#screenId').value.trim();
+        if (!id) return alert('Set Screen ID first');
+        const apiKey = $('#apiKey').value.trim();
+        const res = await fetch(`/api/push/${encodeURIComponent(id)}/refresh`, {
+          method: 'POST',
+          headers: apiKey ? { 'X-Api-Key': apiKey } : {},
+        });
+        if (!res.ok) return alert('Failed to push refresh');
+        alert('Refresh pushed');
+      });
+
+      loadScreens();
+    </script>
+  </body>
+  </html>
+
+

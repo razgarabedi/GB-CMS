@@ -1,0 +1,22 @@
+[Unit]
+Description=Digital Signage Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/digital-signage/server
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Set your secrets in a separate drop-in or via EnvironmentFile
+# Environment=API_KEY=your_admin_key
+# Environment=OPENWEATHER_API_KEY=your_openweather_key
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
+
+

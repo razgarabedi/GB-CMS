@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3000
+      - API_KEY=${API_KEY}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+    volumes:
+      - weather_cache:/app/data
+    ports:
+      - "3000:3000"
+
+  player:
+    build:
+      context: ./player
+      dockerfile: Dockerfile
+      args:
+        - VITE_SERVER_URL=http://server:3000
+    environment:
+      - VITE_SERVER_URL=http://server:3000
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  weather_cache:
+
+
