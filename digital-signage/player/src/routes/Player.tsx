@@ -19,6 +19,7 @@ type Config = {
   autoScrollEnabled?: boolean
   autoScrollMs?: number
   autoScrollDistancePct?: number
+  autoScrollStartDelayMs?: number
 }
 
 // removed legacy hook
@@ -131,6 +132,7 @@ export default function Player() {
               autoScrollEnabled={!!config?.autoScrollEnabled}
               autoScrollMs={config?.autoScrollMs ?? 30000}
               autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
+              autoScrollStartDelayMs={config?.autoScrollStartDelayMs ?? 0}
               onSuccess={() => setLastLoadedAt(new Date().toISOString())}
               onError={(e) => setIframeError(e)}
             />

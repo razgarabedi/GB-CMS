@@ -111,6 +111,13 @@
         </div>
         <div class="row">
           <div>
+            <label>Auto Scroll Start Delay (ms)</label>
+            <input id="autoScrollStartDelayMs" type="number" placeholder="0" />
+          </div>
+          <div></div>
+        </div>
+        <div class="row">
+          <div>
             <label>Content Refresh (ms)</label>
             <input id="contentMs" type="number" placeholder="30000" />
           </div>
@@ -182,6 +189,7 @@
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
+            $('#autoScrollStartDelayMs').value = cfg.autoScrollStartDelayMs ?? 0;
             $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
             $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -207,6 +215,7 @@
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,
+          autoScrollStartDelayMs: Number($('#autoScrollStartDelayMs').value) || 0,
           schedule: JSON.parse($('#schedule').value || '[]'),
           slides: JSON.parse($('#slides').value || '[]'),
         };

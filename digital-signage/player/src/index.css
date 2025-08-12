@@ -38,17 +38,43 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 
 .web-viewer { border: 0; width: 100%; height: 100%; background: #000; }
 .web-viewer.empty { display: flex; align-items: center; justify-content: center; color: #999; }
+.snapshot-img { width: 100%; height: auto; min-height: 100%; display: block; background: #000; }
 
 /* Auto-scroll container simulating page scroll via panning */
 .auto-scroll { overflow: hidden; }
 .auto-scroll .pan-inner {
   position: absolute;
   inset: 0;
-  animation: panY var(--pan-duration, 30000ms) linear infinite alternate;
+  transform-origin: top center;
+  /* Keep zoom applied at all times to avoid jump when animation starts */
+  transform: scale(var(--pan-zoom, 1.06)) translateY(0);
+}
+.auto-scroll.run .pan-inner {
+  animation: panY var(--pan-duration, 30000ms) ease-in-out 1 forwards;
+  animation-delay: var(--pan-delay, 0ms);
 }
 @keyframes panY {
-  from { transform: translateY(0); }
-  to { transform: translateY(calc(var(--pan-distance, 25%) * -1)); }
+  0% { transform: scale(var(--pan-zoom, 1.06)) translateY(0); }
+  100% { transform: scale(var(--pan-zoom, 1.06)) translateY(calc(var(--pan-distance-px, 0px) * -1)); }
+}
+
+/* Fade loop overlay for restart-at-top behavior */
+.auto-scroll::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: 0;
+}
+.auto-scroll.run::after {
+  animation: panFade var(--pan-duration, 30000ms) linear 1 forwards;
+  animation-delay: var(--pan-delay, 0ms);
+}
+@keyframes panFade {
+  0% { opacity: 0 }
+  92% { opacity: 0 }
+  100% { opacity: 1 }
 }
 
 .fallback { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); padding: 12px; text-align: center; }

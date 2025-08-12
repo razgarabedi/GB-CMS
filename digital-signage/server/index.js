@@ -158,6 +158,7 @@ function defaultConfig(screenId) {
     autoScrollEnabled: false,
     autoScrollMs: 30000,
     autoScrollDistancePct: 25,
+    autoScrollStartDelayMs: 0,
     schedule: [],
     updatedAt: new Date().toISOString(),
   };

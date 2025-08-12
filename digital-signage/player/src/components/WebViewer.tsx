@@ -9,19 +9,24 @@ export type WebViewerProps = {
   autoScrollEnabled?: boolean
   autoScrollMs?: number
   autoScrollDistancePct?: number
+  autoScrollStartDelayMs?: number
 }
 
 /**
  * WebViewer renders an iframe with kiosk-friendly sandbox attributes.
  * It shows a small overlay status indicator and a fallback UI if the content fails to load or is blocked.
  */
-export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 300000, onSuccess, onError, autoScrollEnabled = false, autoScrollMs = 30000, autoScrollDistancePct = 25 }: WebViewerProps) {
+export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 300000, onSuccess, onError, autoScrollEnabled = false, autoScrollMs = 30000, autoScrollDistancePct = 25, autoScrollStartDelayMs = 0 }: WebViewerProps) {
   const [error, setError] = useState<string | null>(null)
   const [loadedAt, setLoadedAt] = useState<string | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const [snapshotSrc, setSnapshotSrc] = useState<string | null>(null)
   const [snapshotLoading, setSnapshotLoading] = useState(false)
   const [snapshotError, setSnapshotError] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const imgRef = useRef<HTMLImageElement | null>(null)
+  const [panDistancePx, setPanDistancePx] = useState<number>(0)
+  const panZoom = 1.06
 
   useEffect(() => { setError(null); setLoadedAt(null) }, [url])
 
@@ -31,11 +36,15 @@ export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 30
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div
         className={autoScrollEnabled ? 'auto-scroll' : undefined}
+        ref={containerRef}
         style={autoScrollEnabled ? ({
           position: 'absolute', inset: 0,
           // @ts-ignore CSS variables for animation
           '--pan-duration': `${Math.max(5000, autoScrollMs)}ms`,
-          '--pan-distance': `${Math.max(0, Math.min(80, autoScrollDistancePct))}%`,
+          '--pan-distance': `${Math.max(0, Math.min(100, autoScrollDistancePct))}%`,
+          '--pan-distance-px': `${panDistancePx}px`,
+          '--pan-delay': `${Math.max(0, autoScrollStartDelayMs)}ms`,
+          '--pan-zoom': String(panZoom),
         } as any) : { position: 'absolute', inset: 0 }}
       >
         <div className={autoScrollEnabled ? 'pan-inner' : undefined} style={{ position: 'absolute', inset: 0 }}>
@@ -55,13 +64,17 @@ export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 30
             <img
               src={snapshotSrc || buildSnapshotUrl(url)}
               alt="snapshot"
-              className="web-viewer"
-              onLoad={() => { setSnapshotLoading(false); setSnapshotError(null); setLoadedAt(new Date().toISOString()) }}
+              className="web-viewer snapshot-img"
+              ref={imgRef}
+              onLoad={() => { setSnapshotLoading(false); setSnapshotError(null); setLoadedAt(new Date().toISOString()); updatePanDistance() }}
               onError={() => { setSnapshotLoading(false); setSnapshotError('snapshot failed') }}
             />
           )}
         </div>
       </div>
+      {autoScrollEnabled && (
+        <CycleController durationMs={Math.max(5000, autoScrollMs)} delayMs={Math.max(0, autoScrollStartDelayMs)} containerRef={containerRef as React.RefObject<HTMLDivElement>} />
+      )}
       <div style={{ position: 'absolute', right: 6, top: 6, padding: '2px 6px', borderRadius: 4, background: error ? '#a00' : '#0a0', color: '#fff', fontSize: 12 }}>
         {error ? 'error' : 'live'}
       </div>
@@ -132,11 +145,74 @@ export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 30
     const base = computeApiBase()
     const u = new URL(`/api/snapshot`, base)
     u.searchParams.set('url', target)
-    u.searchParams.set('w', String(window.innerWidth || 1920))
-    u.searchParams.set('h', String(window.innerHeight || 1080))
+    // Always request a 16:9 image for consistent fitting; client scales with object-fit: contain
+    const width = Math.max(1280, Math.floor((window.innerWidth || 1920) / 16) * 16)
+    const height = Math.floor(width * 9 / 16)
+    u.searchParams.set('w', String(width))
+    u.searchParams.set('h', String(height))
     u.searchParams.set('fullPage', 'true')
     return u.toString()
   }
+
+  function updatePanDistance() {
+    try {
+      const container = containerRef.current
+      const img = imgRef.current
+      if (!container || !img) return
+      const containerWidth = container.clientWidth || 0
+      const containerHeight = container.clientHeight || 0
+      if (!containerWidth || !containerHeight) return
+      const naturalWidth = (img.naturalWidth || img.width || containerWidth)
+      const naturalHeight = (img.naturalHeight || img.height || containerHeight)
+      // Image rendered to fit container width by CSS (width:100%, height:auto)
+      const renderedBaseHeight = (naturalHeight / naturalWidth) * containerWidth
+      const renderedScaledHeight = renderedBaseHeight * panZoom
+      const overflow = Math.max(0, renderedScaledHeight - containerHeight)
+      const fraction = Math.max(0, Math.min(1, autoScrollDistancePct / 100))
+      setPanDistancePx(Math.round(overflow * fraction))
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (!autoScrollEnabled) return
+    updatePanDistance()
+    const onResize = () => updatePanDistance()
+    window.addEventListener('resize', onResize)
+    let ro: ResizeObserver | null = null
+    if (containerRef.current) {
+      ro = new ResizeObserver(() => updatePanDistance())
+      ro.observe(containerRef.current)
+    }
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (ro) ro.disconnect()
+    }
+  }, [autoScrollEnabled, autoScrollDistancePct, url, mode])
+}
+
+function CycleController({ durationMs, delayMs, containerRef }: { durationMs: number; delayMs: number; containerRef: React.RefObject<HTMLDivElement> }) {
+  useEffect(() => {
+    const root = containerRef.current
+    if (!root) return
+    let stop = false
+    function startCycle() {
+      if (stop) return
+      root.classList.add('run')
+      const total = durationMs + delayMs
+      setTimeout(() => {
+        if (stop) return
+        root.classList.remove('run')
+        // Force reflow to restart animations cleanly
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        root.offsetHeight
+        setTimeout(startCycle, 0)
+      }, total)
+    }
+    // initial start after microtask to ensure styles applied
+    const id = setTimeout(startCycle, 0)
+    return () => { stop = true; clearTimeout(id); root.classList.remove('run') }
+  }, [durationMs, delayMs, containerRef])
+  return null
 }
 
 
