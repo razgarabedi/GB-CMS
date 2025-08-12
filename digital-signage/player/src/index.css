@@ -1,4 +1,9 @@
-:root { color-scheme: dark; }
+:root {
+  color-scheme: dark;
+  --grid-line: rgba(255,255,255,0.09);
+  --panel-bg: #000;
+  --corner-radius: 10px;
+}
 html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
 body { background: #000; color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
@@ -7,19 +12,20 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
   display: grid;
   grid-template-columns: 400px 1fr; /* left sidebar for weather */
   grid-template-rows: 1fr 28vh;   /* bottom slideshow height */
-  gap: 0;
+  gap: 2px; /* thin separator lines between modules */
   height: 100%;
   width: 100%;
   padding: 0;
   box-sizing: border-box;
+  background: var(--grid-line);
   grid-template-areas:
     "sidebar main"
     "slideshow slideshow";
 }
-.cell { background: transparent; border-radius: 0; overflow: hidden; position: relative; }
+.cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
 .weather { grid-area: sidebar; display: flex; align-items: center; justify-content: center; }
-.viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: #000; }
-.slideshow { grid-area: slideshow; background: #000; }
+.viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: var(--panel-bg); }
+.slideshow { grid-area: slideshow; background: var(--panel-bg); }
 .clock-overlay { position: absolute; left: 12px; bottom: 12px; opacity: 0.95; z-index: 2; pointer-events: none; }
 
 /* 16:9 container for website (fits within box) */
@@ -70,3 +76,43 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
   50%  { transform: scale(1.1) translate3d(0, -1%, 0) }
   100% { transform: scale(1.06) translate3d(0, 0, 0) }
 }
+
+/* Weather widget animations */
+.weather-card { 
+  will-change: transform, opacity; 
+  backface-visibility: hidden; 
+}
+.weather-card .ww-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+.weather-card .ww-bg.previous { animation: fadeOut 900ms ease forwards; }
+.weather-card .ww-bg.current { animation: fadeIn 900ms ease forwards; }
+.weather-card .ww-location,
+.weather-card .ww-main,
+.weather-card .ww-forecast {
+  position: relative;
+  z-index: 1;
+}
+.weather-anim-fade { animation: wwFadeIn 700ms ease-out both; }
+.weather-anim-slide { animation: wwSlideIn 650ms cubic-bezier(.22,.61,.36,1) both; }
+.weather-anim-zoom { animation: wwZoomIn 700ms ease-out both; }
+.weather-anim-rise { animation: wwRiseIn 700ms ease-out both; }
+.weather-anim-tilt { animation: wwTiltIn 720ms cubic-bezier(.22,.61,.36,1) both; }
+
+.weather-card .ww-icon { animation: wwFloat 6s ease-in-out infinite; }
+.weather-card .ww-temp { animation: wwPulse 5s ease-in-out infinite; transform-origin: left center; }
+.weather-card .ww-desc { opacity: 0.92 }
+.weather-card .ww-forecast .day { animation: wwPop 500ms ease-out both; animation-delay: calc(120ms * var(--i)); }
+
+@keyframes wwFadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes wwSlideIn { from { opacity: 0; transform: translate3d(-12px, 0, 0) } to { opacity: 1; transform: none } }
+@keyframes wwZoomIn { from { opacity: 0; transform: scale(.98) } to { opacity: 1; transform: scale(1) } }
+@keyframes wwRiseIn { from { opacity: 0; transform: translate3d(0, 8px, 0) } to { opacity: 1; transform: none } }
+@keyframes wwTiltIn { from { opacity: 0; transform: perspective(600px) rotateX(6deg) translateY(8px) } to { opacity: 1; transform: none } }
+@keyframes wwFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+@keyframes wwPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.02) } }
+@keyframes wwPop { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: scale(1) } }
