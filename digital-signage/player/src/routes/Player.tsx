@@ -227,8 +227,11 @@ export default function Player() {
           </div>
           <div className="cell slideshow">
             <div className="bottom-widgets" style={{
-              background: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage}) center/cover no-repeat` : undefined),
-              backgroundColor: (!config?.bottomWidgetsBgImage ? (config?.bottomWidgetsBgColor || undefined) : undefined),
+              backgroundImage: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage})` : undefined),
+              backgroundPosition: (config?.bottomWidgetsBgImage ? 'right center' : undefined),
+              backgroundRepeat: (config?.bottomWidgetsBgImage ? 'no-repeat' : undefined),
+              backgroundSize: (config?.bottomWidgetsBgImage ? 'contain' : undefined),
+              backgroundColor: (config?.bottomWidgetsBgColor || undefined),
             }}>
               <div className="bottom-clock">{renderClock(140)}</div>
               <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
