@@ -26,8 +26,24 @@ export default function Player() {
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null)
   const [iframeError, setIframeError] = useState<string | null>(null)
 
+  function computeApiBase(): string {
+    const env = import.meta.env.VITE_SERVER_URL as string | undefined
+    if (env && /^https?:\/\//.test(env)) return env
+    const loc = window.location
+    const host = loc.hostname
+    // Heuristics for common dev setups
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${loc.protocol}//${host}:3000`
+    }
+    if (loc.port === '5173' || loc.port === '8080') {
+      return `${loc.protocol}//${host}:3000`
+    }
+    // Fallback to same origin (works only if reverse-proxied)
+    return loc.origin
+  }
+
   async function loadConfig() {
-    const base = import.meta.env.VITE_SERVER_URL || ''
+    const base = computeApiBase()
     const res = await fetch(`${base}/api/config/${encodeURIComponent(screenId)}`)
     const cfg = (await res.json()) as Config
     setConfig(cfg)
@@ -46,18 +62,13 @@ export default function Player() {
     return () => clearInterval(interval)
   }, [config?.refreshIntervals?.contentMs])
 
-  // websocket for live pushes
+  // websocket for live pushes (match HTTP base detection)
   const wsUrl = useMemo(() => {
-    const loc = window.location
-    const base = import.meta.env.VITE_SERVER_URL
-    if (base) {
-      const u = new URL(base)
-      u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
-      u.pathname = '/ws'
-      return u.toString()
-    }
-    const proto = loc.protocol === 'https:' ? 'wss:' : 'ws:'
-    return `${proto}//${loc.host}/ws`
+    const httpBase = computeApiBase()
+    const u = new URL(httpBase)
+    u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'
+    u.pathname = '/ws'
+    return u.toString()
   }, [])
 
   // WebSocket with retry/backoff
