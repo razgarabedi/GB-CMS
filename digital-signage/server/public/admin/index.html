@@ -74,7 +74,13 @@
               <option value="light">light</option>
             </select>
           </div>
-          <div></div>
+          <div>
+            <label>Layout</label>
+            <select id="layout">
+              <option value="default">default</option>
+              <option value="vertical-3">vertical-3</option>
+            </select>
+          </div>
         </div>
         <div class="row">
           <div>
@@ -186,6 +192,7 @@
             $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
             $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
             $('#theme').value = cfg.theme || 'dark';
+            $('#layout').value = cfg.layout || 'default';
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
@@ -212,6 +219,7 @@
           webViewerMode: ($('#webViewerMode').value || 'iframe'),
           snapshotRefreshMs: Number($('#snapshotRefreshMs').value) || 300000,
           theme: ($('#theme').value || 'dark'),
+          layout: ($('#layout').value || 'default'),
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,

@@ -154,6 +154,7 @@ function defaultConfig(screenId) {
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
     theme: 'dark', // 'dark' | 'light'
+    layout: 'default', // 'default' | 'vertical-3'
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     autoScrollEnabled: false,
     autoScrollMs: 30000,
@@ -193,7 +194,7 @@ app.post('/api/config/:screenId', requireApiKey, (req, res) => {
   console.log(`Config updated for screen ${screenId}`);
 });
 
-// Snapshot endpoint: GET /api/snapshot?url=...&w=1920&h=1080
+// Snapshot endpoint: GET /api/snapshot?url=...&w=1920&h=1080&fullPage=true&ttlMs=300000&hideConsent=true
 app.get('/api/snapshot', async (req, res) => {
   try {
     const url = req.query.url;
@@ -202,7 +203,8 @@ app.get('/api/snapshot', async (req, res) => {
     const h = Number(req.query.h || 1080);
     const fullPage = String(req.query.fullPage || 'true') === 'true';
     const ttlMs = Number(req.query.ttlMs || 5 * 60 * 1000);
-    const buffer = await getSnapshotForUrl(String(url), w, h, { fullPage, ttlMs });
+    const hideConsent = String(req.query.hideConsent || 'true') === 'true';
+    const buffer = await getSnapshotForUrl(String(url), w, h, { fullPage, ttlMs, hideConsent });
     res.setHeader('Content-Type', 'image/jpeg');
     res.send(buffer);
   } catch (err) {

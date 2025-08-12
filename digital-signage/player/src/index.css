@@ -80,6 +80,25 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 .fallback { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); padding: 12px; text-align: center; }
 .fallback .small { font-size: 12px; color: #aaa; }
 
+/* Vertical 3-column layout */
+.grid-vertical-3 {
+  display: grid;
+  grid-template-columns: 22% 48% 30%;
+  grid-template-rows: 100%;
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  background: var(--grid-line);
+}
+.grid-vertical-3 .cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
+.grid-vertical-3 .v-weather { display: flex; flex-direction: column; }
+.grid-vertical-3 .v-weather .v-weather-inner { display: grid; grid-template-rows: 1fr auto; height: 100%; }
+.grid-vertical-3 .v-weather .v-clock { display: flex; align-items: center; justify-content: center; padding: 8px; }
+.grid-vertical-3 .v-slideshow { }
+.grid-vertical-3 .v-viewer { }
+
 /* Slideshow animation */
 .slideshow-stack {
   position: absolute;

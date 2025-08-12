@@ -151,6 +151,7 @@ export default function WebViewer({ url, mode = 'iframe', snapshotRefreshMs = 30
     u.searchParams.set('w', String(width))
     u.searchParams.set('h', String(height))
     u.searchParams.set('fullPage', 'true')
+    u.searchParams.set('hideConsent', 'true')
     return u.toString()
   }
 

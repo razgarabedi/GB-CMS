@@ -14,6 +14,7 @@ type Config = {
   webViewerMode?: 'iframe' | 'snapshot'
   snapshotRefreshMs?: number
   theme?: 'dark' | 'light'
+  layout?: 'default' | 'vertical-3'
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -119,12 +120,58 @@ export default function Player() {
   const mode = config?.webViewerMode || 'iframe'
   const snapshotMs = config?.snapshotRefreshMs ?? 300000
   const theme = config?.theme || 'dark'
+  const layout = config?.layout || 'default'
   return (
     <div className="kiosk">
-      <div className="grid">
-        <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
-        <div className="cell viewer">
-          <div className="ratio-16x9">
+      {layout === 'default' && (
+        <div className="grid">
+          <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell viewer">
+            <div className="ratio-16x9">
+              <WebViewer
+                url={url}
+                mode={mode}
+                snapshotRefreshMs={snapshotMs}
+                autoScrollEnabled={!!config?.autoScrollEnabled}
+                autoScrollMs={config?.autoScrollMs ?? 30000}
+                autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
+                autoScrollStartDelayMs={config?.autoScrollStartDelayMs ?? 0}
+                onSuccess={() => setLastLoadedAt(new Date().toISOString())}
+                onError={(e) => setIframeError(e)}
+              />
+            </div>
+          </div>
+          <div className="cell slideshow">
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+            <div className="clock-overlay">
+              {theme === 'light' ? (
+                <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
+              ) : (
+                <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layout === 'vertical-3' && (
+        <div className="grid-vertical-3">
+          <div className="cell v-weather">
+            <div className="v-weather-inner">
+              <WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} />
+              <div className="v-clock">
+                {theme === 'light' ? (
+                  <AnalogClock timezone={config?.timezone || 'UTC'} size={140} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
+                ) : (
+                  <AnalogClock timezone={config?.timezone || 'UTC'} size={140} theme={{ background: 'rgba(0,0,0,0.35)' }} />
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="cell v-slideshow">
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+          </div>
+          <div className="cell v-viewer">
             <WebViewer
               url={url}
               mode={mode}
@@ -138,17 +185,8 @@ export default function Player() {
             />
           </div>
         </div>
-        <div className="cell slideshow">
-          <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
-          <div className="clock-overlay">
-            {theme === 'light' ? (
-              <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
-            ) : (
-              <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
-            )}
-          </div>
-        </div>
-      </div>
+      )}
+
       {iframeError && (
         <div className="fallback">
           <div>Failed to load embedded page.</div>

@@ -3,18 +3,51 @@
  * Uses Intl.DateTimeFormat to correctly account for DST and offsets.
  */
 export function getTimeParts(date: Date, timeZone: string): { hour: number; minute: number; second: number } {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const parts = fmt.formatToParts(date);
-  const h = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
-  const m = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
-  const s = Number(parts.find((p) => p.type === 'second')?.value ?? 0);
-  return { hour: h, minute: m, second: s };
+  const tz = sanitizeTimeZone(timeZone)
+  try {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    const parts = fmt.formatToParts(date)
+    const h = Number(parts.find((p) => p.type === 'hour')?.value ?? 0)
+    const m = Number(parts.find((p) => p.type === 'minute')?.value ?? 0)
+    const s = Number(parts.find((p) => p.type === 'second')?.value ?? 0)
+    return { hour: h, minute: m, second: s }
+  } catch {
+    // Fallback to UTC on invalid time zone
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    const parts = fmt.formatToParts(date)
+    const h = Number(parts.find((p) => p.type === 'hour')?.value ?? 0)
+    const m = Number(parts.find((p) => p.type === 'minute')?.value ?? 0)
+    const s = Number(parts.find((p) => p.type === 'second')?.value ?? 0)
+    return { hour: h, minute: m, second: s }
+  }
+}
+
+/**
+ * Removes invisible characters and normalizes basic formatting in a timezone string.
+ * Accepts common IANA tz names like 'Europe/Berlin'.
+ */
+export function sanitizeTimeZone(input: string): string {
+  if (!input) return 'UTC'
+  // Remove zero-width and BOM chars
+  let s = input.replace(/[\u200B-\u200D\uFEFF]/g, '')
+  s = s.trim()
+  // Replace any non-standard slash variants with '/'
+  s = s.replace(/[\\﹨⁄∕]/g, '/')
+  // Collapse internal spaces (rare in IANA tz, but keep if present)
+  s = s.replace(/\s+/g, ' ')
+  return s
 }
 
 /**
