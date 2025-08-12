@@ -5,18 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Digital Signage Admin</title>
     <style>
-      body { font-family: system-ui, sans-serif; margin: 1rem auto; max-width: 900px; padding: 0 1rem; }
+      body { font-family: system-ui, sans-serif; margin: 1rem auto; max-width: 1000px; padding: 0 1rem; background: #0f172a; color: #e2e8f0; }
       header { display: flex; align-items: center; justify-content: space-between; }
       h1 { margin: 0.5rem 0; }
+      h2 { margin: 1rem 0 0.5rem; }
       table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-      th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
-      th { background: #f7f7f7; }
+      th, td { border: 1px solid #1e293b; padding: 0.5rem; text-align: left; }
+      th { background: #0b1220; color: #93a3b8; }
       form > div { margin: 0.5rem 0; }
-      input[type="text"], input[type="number"], textarea { width: 100%; padding: 0.4rem; }
+      input[type="text"], input[type="number"], textarea, select, input[type="color"] { width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #1e293b; background: #0b1220; color: #e2e8f0; }
       .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-      .small { font-size: 0.9rem; color: #666; }
-      .muted { color: #888; }
+      .small { font-size: 0.9rem; color: #93a3b8; }
+      .muted { color: #93a3b8; }
       .actions { display: flex; gap: 0.5rem; }
+      .hidden { display: none !important; }
+      button { background: #4f8cff; color: #fff; border: 0; padding: 10px 14px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+      button:hover { filter: brightness(1.07); }
+      button.secondary { background: #334155; }
+      .card { background: linear-gradient(180deg, #0b1220, #0a0f1a); border: 1px solid #1e293b; border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,0.25); padding: 14px; }
+      .preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .preview .clock { display: flex; align-items: center; justify-content: center; height: 160px; border-radius: 10px; background: #0a0f1a; border: 1px solid #1e293b; }
+      .preview .welcome { display: flex; align-items: center; justify-content: center; height: 64px; border-radius: 10px; background: #0a0f1a; border: 1px solid #1e293b; font-weight: 700; letter-spacing: .5px; white-space: pre-wrap; padding: 0 10px; }
     </style>
   </head>
   <body>
@@ -25,7 +34,7 @@
       <nav class="muted">/admin</nav>
     </header>
 
-    <section>
+    <section class="card">
       <h2>Screens</h2>
       <div class="small">Configure API key in your requests via X-Api-Key header.</div>
       <table id="screensTable">
@@ -43,7 +52,15 @@
       </table>
     </section>
 
-    <section>
+    <section class="card">
+      <h2>Preview</h2>
+      <div class="preview">
+        <div class="clock" id="clockPreview"></div>
+        <div class="welcome" id="welcomePreview">Herzlich Willkommen</div>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>Edit Screen</h2>
       <form id="editForm">
         <div class="row">
@@ -78,7 +95,51 @@
             <label>Layout</label>
             <select id="layout">
               <option value="default">default</option>
+              <option value="slideshow">slideshow</option>
               <option value="vertical-3">vertical-3</option>
+            </select>
+          </div>
+        </div>
+        <div class="row slideshow-only">
+          <div>
+            <label>Welcome Text</label>
+            <input id="welcomeText" type="text" placeholder="Herzlich Willkommen" />
+          </div>
+          <div>
+            <label>Welcome Text Color</label>
+            <input id="welcomeTextColor" type="color" />
+            <div class="small">
+              <button type="button" id="applyWelcomeColorBtn">Apply color to selected text</button>
+            </div>
+          </div>
+        </div>
+        <div class="row slideshow-only">
+          <div>
+            <label>Bottom Widgets Background Color (slideshow)</label>
+            <input id="bottomWidgetsBgColor" type="color" />
+          </div>
+          <div>
+            <label>Bottom Widgets Background Image URL (slideshow)</label>
+            <input id="bottomWidgetsBgImage" type="text" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Clock Type</label>
+            <select id="clockType">
+              <option value="analog">analog</option>
+              <option value="digital">digital</option>
+            </select>
+          </div>
+          <div>
+            <label>Clock Style</label>
+            <select id="clockStyle">
+              <option value="classic">classic</option>
+              <option value="mono">mono</option>
+              <option value="glass">glass</option>
+              <option value="minimal">minimal</option>
+              <option value="neon">neon</option>
+              <option value="flip">flip</option>
             </select>
           </div>
         </div>
@@ -145,14 +206,14 @@
           <input id="apiKey" type="text" />
         </div>
         <div>
-          <label>Upload slide</label>
-          <input id="fileInput" type="file" accept="image/*" />
+          <label>Upload slides</label>
+          <input id="fileInput" type="file" accept="image/*" multiple />
           <button type="button" id="uploadBtn">Upload</button>
-          <div class="small">Uploaded files are served at /uploads/...</div>
+          <div class="small">Tip: Select multiple images to add them all at once. Uploaded files are served at /uploads/...</div>
         </div>
         <div class="actions">
           <button type="submit">Save</button>
-          <button type="button" id="refreshBtn">Force Refresh</button>
+          <button type="button" id="refreshBtn" class="secondary">Force Refresh</button>
         </div>
       </form>
     </section>
@@ -193,6 +254,12 @@
             $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
             $('#theme').value = cfg.theme || 'dark';
             $('#layout').value = cfg.layout || 'default';
+            $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
+            $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
+            $('#clockType').value = cfg.clockType || 'analog';
+            $('#clockStyle').value = cfg.clockStyle || 'classic';
+            $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
+            $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
@@ -200,6 +267,8 @@
             $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
             $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            updatePreview();
+            toggleSlideshowOnly();
           });
         });
       }
@@ -220,6 +289,12 @@
           snapshotRefreshMs: Number($('#snapshotRefreshMs').value) || 300000,
           theme: ($('#theme').value || 'dark'),
           layout: ($('#layout').value || 'default'),
+          welcomeText: $('#welcomeText').value || 'Herzlich Willkommen',
+          welcomeTextColor: $('#welcomeTextColor').value || '#ffffff',
+          clockType: $('#clockType').value || 'analog',
+          clockStyle: $('#clockStyle').value || 'classic',
+          bottomWidgetsBgColor: $('#bottomWidgetsBgColor').value || '',
+          bottomWidgetsBgImage: $('#bottomWidgetsBgImage').value || '',
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,
@@ -246,18 +321,30 @@
 
       // Upload handler
       $('#uploadBtn').addEventListener('click', async () => {
-        const f = $('#fileInput').files?.[0]
-        if (!f) return alert('Choose a file first')
+        const files = Array.from($('#fileInput').files || [])
+        if (!files.length) return alert('Choose at least one image')
         const apiKey = $('#apiKey').value.trim();
-        const fd = new FormData()
-        fd.append('file', f)
-        const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
-        if (!res.ok) return alert('Upload failed')
-        const { url } = await res.json()
-        const arr = JSON.parse($('#slides').value || '[]')
-        arr.push(url)
-        $('#slides').value = JSON.stringify(arr, null, 2)
-        alert('Uploaded: ' + url)
+        const uploaded = []
+        try {
+          $('#uploadBtn').disabled = true
+          for (const f of files) {
+            const fd = new FormData()
+            fd.append('file', f)
+            const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
+            if (!res.ok) throw new Error('Upload failed: ' + res.status)
+            const { url } = await res.json()
+            uploaded.push(url)
+          }
+          const arr = JSON.parse($('#slides').value || '[]')
+          uploaded.forEach((u) => arr.push(u))
+          $('#slides').value = JSON.stringify(arr, null, 2)
+          alert('Uploaded ' + uploaded.length + ' file(s)')
+        } catch (err) {
+          alert(String(err?.message || err || 'Upload failed'))
+        } finally {
+          $('#uploadBtn').disabled = false
+          $('#fileInput').value = ''
+        }
       })
 
       $('#refreshBtn').addEventListener('click', async () => {
@@ -272,7 +359,141 @@
         alert('Refresh pushed');
       });
 
+      // Apply inline color to selected part of Welcome Text
+      $('#applyWelcomeColorBtn').addEventListener('click', () => {
+        const input = /** @type {HTMLInputElement} */ (document.getElementById('welcomeText'))
+        const color = /** @type {HTMLInputElement} */ (document.getElementById('welcomeTextColor'))
+        if (!input || !color) return
+        const val = input.value || ''
+        const start = input.selectionStart ?? 0
+        const end = input.selectionEnd ?? 0
+        if (start === end) { alert('Select the part of the text you want to color first.'); return }
+        const sel = val.slice(start, end)
+        const c = (color.value || '#ffffff').trim()
+        const before = val.slice(0, start)
+        const after = val.slice(end)
+        const tag = `{#${c.replace(/^#/, '')}}${sel}{/}`
+        const next = before + tag + after
+        input.value = next
+        // Restore focus and selection around the colored segment
+        input.focus()
+        const newStart = before.length
+        const newEnd = newStart + tag.length
+        try { input.setSelectionRange(newStart, newEnd) } catch {}
+      })
+
+      // Live preview
+      function clockPreviewAnalog(style, theme) {
+        const box = document.getElementById('clockPreview');
+        if (!box) return; box.innerHTML = '';
+        const size = 140; const r = size/2; const ring = r - 10;
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg'); svg.setAttribute('viewBox', `0 0 ${size} ${size}`); svg.style.width = '160px'; svg.style.height = '160px';
+        const isLight = theme === 'light';
+        let bg = isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.35)';
+        let tick = isLight ? '#444' : '#666';
+        let hour = isLight ? '#222' : '#fff';
+        let minute = isLight ? '#444' : '#ddd';
+        let second = isLight ? '#e33' : '#ff4d4d';
+        if (style === 'mono') { const ink = isLight ? '#222' : '#fff'; bg = isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.35)'; tick=hour=minute=second=ink; }
+        if (style === 'glass') { bg = isLight ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)'; tick = isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)'; hour = isLight ? '#333' : '#fff'; minute = isLight ? '#555' : '#ddd'; second = isLight ? '#e33' : '#ff5757'; }
+        const circle = document.createElementNS(svgNS, 'circle'); circle.setAttribute('cx', String(r)); circle.setAttribute('cy', String(r)); circle.setAttribute('r', String(r)); circle.setAttribute('fill', bg); circle.setAttribute('stroke', 'rgba(0,0,0,0.4)'); circle.setAttribute('stroke-width','2'); svg.appendChild(circle);
+        for (let i=0;i<60;i++){ const len = i%5===0?10:5; const line = document.createElementNS(svgNS,'line'); const a=i*Math.PI/30; const x1=r+Math.sin(a)*(ring-len); const y1=r-Math.cos(a)*(ring-len); const x2=r+Math.sin(a)*ring; const y2=r-Math.cos(a)*ring; line.setAttribute('x1',x1.toFixed(1)); line.setAttribute('y1',y1.toFixed(1)); line.setAttribute('x2',x2.toFixed(1)); line.setAttribute('y2',y2.toFixed(1)); line.setAttribute('stroke',tick); line.setAttribute('stroke-width', i%5===0?'3':'2'); svg.appendChild(line);}        
+        const hourHand = document.createElementNS(svgNS,'line'); const minuteHand = document.createElementNS(svgNS,'line'); const secondHand = document.createElementNS(svgNS,'line');
+        [hourHand,minuteHand,secondHand].forEach((l)=>{ l.setAttribute('x1',String(r)); l.setAttribute('y1',String(r)); l.setAttribute('stroke-linecap','round'); })
+        hourHand.setAttribute('stroke',hour); hourHand.setAttribute('stroke-width','6');
+        minuteHand.setAttribute('stroke',minute); minuteHand.setAttribute('stroke-width','4');
+        secondHand.setAttribute('stroke',second); secondHand.setAttribute('stroke-width','2');
+        svg.appendChild(hourHand); svg.appendChild(minuteHand); svg.appendChild(secondHand);
+        const tickFn = ()=>{ const d=new Date(); const h=d.getHours()%12; const m=d.getMinutes(); const s=d.getSeconds(); const sDeg=s/60*360; const mDeg=(m+s/60)/60*360; const hDeg=(h+m/60)/12*360; const set=(el,deg,len)=>{ const rad=(deg-90)*Math.PI/180; const x=r+Math.cos(rad)*(ring*len); const y=r+Math.sin(rad)*(ring*len); el.setAttribute('x2',String(x)); el.setAttribute('y2',String(y)); }; set(hourHand,hDeg,0.55); set(minuteHand,mDeg,0.78); set(secondHand,sDeg,0.9); };
+        tickFn(); setInterval(tickFn, 500);
+        box.appendChild(svg);
+      }
+
+      function clockPreviewDigital(style) {
+        const box = document.getElementById('clockPreview'); if (!box) return; box.innerHTML='';
+        const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.justifyContent='center'; wrap.style.height='100%';
+        const timeStr = ()=> new Intl.DateTimeFormat('de-DE',{ hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(new Date());
+        if (style==='neon') { const el = document.createElement('div'); el.style.fontFamily='monospace'; el.style.fontWeight='700'; el.style.fontSize='48px'; el.style.color='#00e5ff'; el.style.textShadow='0 0 8px #00e5ff80, 0 0 16px #00e5ff80'; el.textContent=timeStr(); wrap.appendChild(el); setInterval(()=> el.textContent=timeStr(), 500); }
+        else if (style==='flip') { const root=document.createElement('div'); root.style.display='flex'; root.style.alignItems='center'; const mk=(t)=>{ const d=document.createElement('div'); d.style.background='#111'; d.style.color='#fff'; d.style.borderRadius='6px'; d.style.padding='6px 10px'; d.style.margin='0 4px'; d.style.fontFamily='monospace'; d.style.fontSize='40px'; d.style.boxShadow='0 2px 8px rgba(0,0,0,0.4)'; d.textContent=t; return d; }; const update=()=>{ const now=new Date(); const f=new Intl.DateTimeFormat('de-DE',{ hour:'2-digit', minute:'2-digit', second:'2-digit'}).format(now); const [h,m,s]=f.split(':'); root.innerHTML=''; root.appendChild(mk(h)); root.appendChild(document.createTextNode(':')); root.appendChild(mk(m)); root.appendChild(document.createTextNode(':')); root.appendChild(mk(s)); }; update(); setInterval(update,500); wrap.appendChild(root); }
+        else { const el=document.createElement('div'); el.style.fontFamily='ui-rounded, SF Pro Rounded, Segoe UI, Roboto, system-ui'; el.style.fontWeight='700'; el.style.fontSize='44px'; el.style.color='#fff'; el.style.letterSpacing='1px'; el.textContent=timeStr(); wrap.appendChild(el); setInterval(()=> el.textContent=timeStr(), 500) }
+        box.appendChild(wrap);
+      }
+
+      function renderColoredText(raw, defaultColor) {
+        const container = document.createElement('span');
+        const pattern = /\{#([0-9a-fA-F]{3,8}|[a-zA-Z]+)\}([\s\S]*?)\{\/\}/g;
+        let lastIndex = 0; let m;
+        while ((m = pattern.exec(raw))) {
+          const [full, color, text] = m;
+          if (m.index > lastIndex) container.appendChild(document.createTextNode(raw.slice(lastIndex, m.index)));
+          const span = document.createElement('span');
+          const c = color.startsWith('#') ? color : (/^[a-zA-Z]+$/.test(color) ? color : ('#' + color));
+          span.style.color = c; span.textContent = text; container.appendChild(span);
+          lastIndex = m.index + full.length;
+        }
+        if (lastIndex < raw.length) container.appendChild(document.createTextNode(raw.slice(lastIndex)));
+        if (!container.childNodes.length) { const s=document.createElement('span'); s.style.color=defaultColor; s.textContent=raw; container.appendChild(s) }
+        return container;
+      }
+
+      function updatePreview() {
+        const type = document.getElementById('clockType')?.value || 'analog';
+        const style = document.getElementById('clockStyle')?.value || (type==='digital' ? 'minimal' : 'classic');
+        const theme = document.getElementById('theme')?.value || 'dark';
+        const welcome = document.getElementById('welcomeText')?.value || 'Herzlich Willkommen';
+        const color = (document.getElementById('welcomeTextColor')?.value || '#ffffff');
+        const bgCol = (document.getElementById('bottomWidgetsBgColor')?.value || '');
+        const bgImg = (document.getElementById('bottomWidgetsBgImage')?.value || '');
+        if (type==='digital') clockPreviewDigital(style);
+        else clockPreviewAnalog(style, theme);
+        const wp = document.getElementById('welcomePreview');
+        if (wp) {
+          wp.innerHTML = '';
+          const colored = renderColoredText(welcome, color); wp.appendChild(colored);
+          wp.style.backgroundImage = bgImg ? `url(${bgImg})` : '';
+          wp.style.backgroundSize = 'cover'; wp.style.backgroundPosition = 'center'; wp.style.backgroundRepeat = 'no-repeat';
+          wp.style.backgroundColor = bgCol || '#0a0f1a';
+        }
+        const cp = document.getElementById('clockPreview');
+        if (cp) {
+          cp.style.backgroundImage = bgImg ? `url(${bgImg})` : '';
+          cp.style.backgroundSize = 'cover'; cp.style.backgroundPosition = 'center'; cp.style.backgroundRepeat = 'no-repeat';
+          cp.style.backgroundColor = bgCol || '#0a0f1a';
+        }
+      }
+
+      ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage'].forEach((id)=>{
+        const el = document.getElementById(id); if (el) el.addEventListener('input', updatePreview)
+      })
+      document.getElementById('layout')?.addEventListener('change', () => { toggleSlideshowOnly(); updatePreview(); })
+
+      function toggleSlideshowOnly() {
+        const isShow = (document.getElementById('layout')?.value || 'default') === 'slideshow'
+        document.querySelectorAll('.slideshow-only').forEach((el) => {
+          el.classList.toggle('hidden', !isShow)
+        })
+      }
+
+      // Initial preview + toggle
+      updatePreview();
+      toggleSlideshowOnly();
+
       loadScreens();
+      document.getElementById('bottomBgUploadBtn')?.addEventListener('click', async () => {
+        const fileInput = /** @type {HTMLInputElement} */ (document.getElementById('bottomBgFile'))
+        const f = fileInput?.files?.[0]
+        if (!f) return alert('Choose an image first')
+        const apiKey = document.getElementById('apiKey')?.value?.trim() || ''
+        const fd = new FormData(); fd.append('file', f)
+        const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
+        if (!res.ok) return alert('Upload failed')
+        const { url } = await res.json()
+        const urlInput = /** @type {HTMLInputElement} */ (document.getElementById('bottomWidgetsBgImage'))
+        urlInput.value = url
+        fileInput.value = ''
+        updatePreview()
+      })
     </script>
   </body>
   </html>

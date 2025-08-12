@@ -154,7 +154,13 @@ function defaultConfig(screenId) {
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
     theme: 'dark', // 'dark' | 'light'
-    layout: 'default', // 'default' | 'vertical-3'
+    layout: 'default', // 'default' | 'slideshow' | 'vertical-3'
+    welcomeText: 'Herzlich Willkommen',
+    welcomeTextColor: '#ffffff',
+    clockType: 'analog', // 'analog' | 'digital'
+    clockStyle: 'classic', // analog: 'classic' | 'mono' | 'glass'; digital: 'minimal' | 'neon' | 'flip'
+    bottomWidgetsBgColor: '',
+    bottomWidgetsBgImage: '',
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     autoScrollEnabled: false,
     autoScrollMs: 30000,

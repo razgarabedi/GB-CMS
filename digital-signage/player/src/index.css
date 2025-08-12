@@ -1,9 +1,6 @@
-:root {
-  color-scheme: dark;
-  --grid-line: rgba(255,255,255,0.09);
-  --panel-bg: #000;
-  --corner-radius: 10px;
-}
+:root { --corner-radius: 10px; }
+.theme-dark { --grid-line: rgba(255,255,255,0.09); --panel-bg: #000; --panel-weak: #000; color-scheme: dark; }
+.theme-light { --grid-line: rgba(0,0,0,0.08); --panel-bg: #fff; --panel-weak: #f7f7f7; color-scheme: light; }
 html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
 body { background: #000; color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
@@ -25,11 +22,11 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 .cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
 .weather { grid-area: sidebar; display: flex; align-items: center; justify-content: center; }
 .viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: var(--panel-bg); }
-.slideshow { grid-area: slideshow; background: var(--panel-bg); }
+.slideshow { grid-area: slideshow; background: var(--panel-weak); }
 .clock-overlay { position: absolute; left: 12px; bottom: 12px; opacity: 0.95; z-index: 2; pointer-events: none; }
 
 /* 16:9 container for website (fits within box) */
-.ratio-16x9 { width: 100%; height: 100%; max-width: 100%; aspect-ratio: 16 / 9; }
+.ratio-16x9 { width: 100%; height: 100%; max-width: 100%; aspect-ratio: 16 / 9; position: relative; }
 .ratio-16x9 > * { width: 100%; height: 100%; }
 
 .analog-clock { text-align: center; font-size: 8vmin; }
@@ -98,6 +95,31 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 .grid-vertical-3 .v-weather .v-clock { display: flex; align-items: center; justify-content: center; padding: 8px; }
 .grid-vertical-3 .v-slideshow { }
 .grid-vertical-3 .v-viewer { }
+
+/* Slideshow layout (like default but smaller bottom strip) */
+.grid-slideshow {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: 1fr 18vh; /* smaller bottom area */
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  background: var(--grid-line);
+  grid-template-areas:
+    "sidebar main"
+    "slideshow slideshow";
+}
+.grid-slideshow .cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
+.grid-slideshow .weather { grid-area: sidebar; display: flex; align-items: center; justify-content: center; }
+.grid-slideshow .viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: var(--panel-bg); }
+.grid-slideshow .slideshow { grid-area: slideshow; background: var(--panel-weak); }
+
+/* Welcome text overlay for slideshow layout */
+.bottom-widgets { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 16px; height: 100%; padding: 8px 16px; box-sizing: border-box; }
+.bottom-clock { display: flex; align-items: center; justify-content: flex-start; }
+.bottom-welcome { text-align: center; color: #fff; font-size: 5vmin; font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
 
 /* Slideshow animation */
 .slideshow-stack {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AnalogClock from '../components/AnalogClock'
+import DigitalClock from '../components/DigitalClock'
 import WeatherWidget from '../components/WeatherWidget'
 import WebViewer from '../components/WebViewer'
 import Slideshow from '../components/Slideshow'
@@ -14,7 +15,13 @@ type Config = {
   webViewerMode?: 'iframe' | 'snapshot'
   snapshotRefreshMs?: number
   theme?: 'dark' | 'light'
-  layout?: 'default' | 'vertical-3'
+  layout?: 'default' | 'slideshow' | 'vertical-3'
+  welcomeText?: string
+  welcomeTextColor?: string
+  clockType?: 'analog' | 'digital'
+  clockStyle?: 'classic' | 'mono' | 'glass' | 'minimal' | 'neon' | 'flip'
+  bottomWidgetsBgColor?: string
+  bottomWidgetsBgImage?: string
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -121,8 +128,69 @@ export default function Player() {
   const snapshotMs = config?.snapshotRefreshMs ?? 300000
   const theme = config?.theme || 'dark'
   const layout = config?.layout || 'default'
+  const clockType = config?.clockType || 'analog'
+  const clockStyle = (config?.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
+
+  function renderClock(size: number) {
+    if (clockType === 'digital') {
+      const digitalType = (['minimal', 'neon', 'flip'] as const).includes(clockStyle)
+        ? (clockStyle as 'minimal' | 'neon' | 'flip')
+        : 'minimal'
+      const color = theme === 'light'
+        ? (digitalType === 'neon' ? '#0077ff' : '#111')
+        : (digitalType === 'neon' ? '#00e5ff' : '#fff')
+      return <DigitalClock timezone={config?.timezone || 'UTC'} type={digitalType} size={Math.max(24, Math.round(size * 0.45))} color={color} />
+    }
+    const t = buildAnalogTheme(clockStyle, theme)
+    return <AnalogClock timezone={config?.timezone || 'UTC'} size={size} theme={t} />
+  }
+
+  function buildAnalogTheme(style: string, uiTheme: 'dark' | 'light') {
+    const isLight = uiTheme === 'light'
+    if (style === 'mono') {
+      const ink = isLight ? '#222' : '#fff'
+      return { background: isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.35)', tick: ink, hourHand: ink, minuteHand: ink, secondHand: ink, center: ink }
+    }
+    if (style === 'glass') {
+      return {
+        background: isLight ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.25)',
+        tick: isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)',
+        hourHand: isLight ? '#333' : '#fff',
+        minuteHand: isLight ? '#555' : '#ddd',
+        secondHand: isLight ? '#e33' : '#ff5757',
+        center: isLight ? '#333' : '#fff',
+      }
+    }
+    return {
+      background: isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.35)',
+      tick: isLight ? '#444' : '#666',
+      hourHand: isLight ? '#222' : '#fff',
+      minuteHand: isLight ? '#444' : '#ddd',
+      secondHand: isLight ? '#e33' : '#ff4d4d',
+      center: isLight ? '#222' : '#fff',
+    }
+  }
+
+  function renderWelcomeText(input: string, defaultColor: string) {
+    const parts: Array<{ text: string; color?: string }> = []
+    const pattern = /\{#([0-9a-fA-F]{3,8}|[a-zA-Z]+)\}([\s\S]*?)\{\/\}/g
+    let lastIndex = 0
+    let m: RegExpExecArray | null
+    while ((m = pattern.exec(input))) {
+      const [full, color, text] = m
+      if (m.index > lastIndex) {
+        parts.push({ text: input.slice(lastIndex, m.index) })
+      }
+      parts.push({ text, color: `#${color}`.startsWith('##') ? color : (/#/ .test(color[0]) ? color : (color.match(/^[a-zA-Z]+$/) ? color : `#${color}`)) })
+      lastIndex = m.index + full.length
+    }
+    if (lastIndex < input.length) parts.push({ text: input.slice(lastIndex) })
+    return parts.map((p, i) => (
+      <span key={i} style={{ color: p.color || defaultColor }}>{p.text}</span>
+    ))
+  }
   return (
-    <div className="kiosk">
+    <div className={`kiosk theme-${theme}`}>
       {layout === 'default' && (
         <div className="grid">
           <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
@@ -143,12 +211,29 @@ export default function Player() {
           </div>
           <div className="cell slideshow">
             <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
-            <div className="clock-overlay">
-              {theme === 'light' ? (
-                <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
-              ) : (
-                <AnalogClock timezone={config?.timezone || 'UTC'} size={200} theme={{ background: 'rgba(0,0,0,0.35)' }} />
-              )}
+            <div className="clock-overlay">{renderClock(200)}</div>
+          </div>
+        </div>
+      )}
+
+      {layout === 'slideshow' && (
+        <div className="grid-slideshow">
+          <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell viewer">
+            <div className="ratio-16x9">
+              {/* Slideshow in the main area; can be empty */}
+              <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+            </div>
+          </div>
+          <div className="cell slideshow">
+            <div className="bottom-widgets" style={{
+              background: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage}) center/cover no-repeat` : undefined),
+              backgroundColor: (!config?.bottomWidgetsBgImage ? (config?.bottomWidgetsBgColor || undefined) : undefined),
+            }}>
+              <div className="bottom-clock">{renderClock(140)}</div>
+              <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
+                {renderWelcomeText(config?.welcomeText || 'Herzlich Willkommen', config?.welcomeTextColor || '#fff')}
+              </div>
             </div>
           </div>
         </div>
@@ -159,13 +244,7 @@ export default function Player() {
           <div className="cell v-weather">
             <div className="v-weather-inner">
               <WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} />
-              <div className="v-clock">
-                {theme === 'light' ? (
-                  <AnalogClock timezone={config?.timezone || 'UTC'} size={140} theme={{ background: 'rgba(255,255,255,0.6)', hourHand: '#333', minuteHand: '#555', secondHand: '#e33', tick: 'rgba(0,0,0,0.4)', center: '#222' }} />
-                ) : (
-                  <AnalogClock timezone={config?.timezone || 'UTC'} size={140} theme={{ background: 'rgba(0,0,0,0.35)' }} />
-                )}
-              </div>
+              <div className="v-clock">{renderClock(140)}</div>
             </div>
           </div>
           <div className="cell v-slideshow">
