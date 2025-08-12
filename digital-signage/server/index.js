@@ -155,6 +155,9 @@ function defaultConfig(screenId) {
     snapshotRefreshMs: 300000, // 5 minutes
     theme: 'dark', // 'dark' | 'light'
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
+    autoScrollEnabled: false,
+    autoScrollMs: 30000,
+    autoScrollDistancePct: 25,
     schedule: [],
     updatedAt: new Date().toISOString(),
   };
@@ -196,7 +199,9 @@ app.get('/api/snapshot', async (req, res) => {
     if (!url) return res.status(400).json({ error: 'url is required' });
     const w = Number(req.query.w || 1920);
     const h = Number(req.query.h || 1080);
-    const buffer = await getSnapshotForUrl(String(url), w, h);
+    const fullPage = String(req.query.fullPage || 'true') === 'true';
+    const ttlMs = Number(req.query.ttlMs || 5 * 60 * 1000);
+    const buffer = await getSnapshotForUrl(String(url), w, h, { fullPage, ttlMs });
     res.setHeader('Content-Type', 'image/jpeg');
     res.send(buffer);
   } catch (err) {

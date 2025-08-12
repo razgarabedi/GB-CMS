@@ -16,6 +16,9 @@ type Config = {
   theme?: 'dark' | 'light'
   refreshIntervals: RefreshIntervals
   schedule: any[]
+  autoScrollEnabled?: boolean
+  autoScrollMs?: number
+  autoScrollDistancePct?: number
 }
 
 // removed legacy hook
@@ -121,7 +124,16 @@ export default function Player() {
         <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
         <div className="cell viewer">
           <div className="ratio-16x9">
-            <WebViewer url={url} mode={mode} snapshotRefreshMs={snapshotMs} onSuccess={() => setLastLoadedAt(new Date().toISOString())} onError={(e) => setIframeError(e)} />
+            <WebViewer
+              url={url}
+              mode={mode}
+              snapshotRefreshMs={snapshotMs}
+              autoScrollEnabled={!!config?.autoScrollEnabled}
+              autoScrollMs={config?.autoScrollMs ?? 30000}
+              autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
+              onSuccess={() => setLastLoadedAt(new Date().toISOString())}
+              onError={(e) => setIframeError(e)}
+            />
           </div>
         </div>
         <div className="cell slideshow">
