@@ -163,6 +163,8 @@ function defaultConfig(screenId) {
     bottomWidgetsBgImage: '',
     slideshowAnimations: ['fade'], // allowed: 'fade' | 'cut' | 'wipe'
     slideshowAnimationDurationMs: 900,
+    slideshowPreloadNext: true,
+    powerProfile: 'balanced', // 'performance' | 'balanced' | 'visual'
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     autoScrollEnabled: false,
     autoScrollMs: 30000,

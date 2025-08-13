@@ -22,7 +22,7 @@ function resolveUrl(url: string): string {
 }
 
 type Anim = 'fade' | 'cut' | 'wipe'
-export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900 }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number }) {
+export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900, preloadNext = true }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number; preloadNext?: boolean }) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)
   const fadeMs = Math.max(150, durationMs)
@@ -105,7 +105,7 @@ export default function Slideshow({ images, intervalMs = 8000, animations = ['fa
         style={currentStyle}
       />
       {/* hidden preloader keeps the next image hot in cache */}
-      <img src={nextSrc} alt="" style={{ display: 'none' }} aria-hidden />
+      {preloadNext && <img src={nextSrc} alt="" style={{ display: 'none' }} aria-hidden />}
     </div>
   )
 }

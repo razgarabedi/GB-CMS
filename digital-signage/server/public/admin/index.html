@@ -100,6 +100,21 @@
             </select>
           </div>
         </div>
+        <div class="row">
+          <div>
+            <label>Power Profile</label>
+            <select id="powerProfile">
+              <option value="performance">performance</option>
+              <option value="balanced" selected>balanced</option>
+              <option value="visual">visual</option>
+            </select>
+          </div>
+          <div class="small">Profiles tune animations and effects:
+            <div><b>performance:</b> cut only, short duration, no auto-scroll, minimal effects</div>
+            <div><b>balanced:</b> fade/cut, medium duration, light Ken Burns</div>
+            <div><b>visual:</b> fade/wipe, longer duration, Ken Burns enabled</div>
+          </div>
+        </div>
         <div class="row slideshow-only">
           <div>
             <label>Slideshow Animations</label>
@@ -113,6 +128,9 @@
           <div>
             <label>Animation Duration (ms)</label>
             <input id="slideshowAnimationDurationMs" type="number" placeholder="900" />
+            <div style="margin-top:8px">
+              <label><input id="slideshowPreloadNext" type="checkbox" /> Preload next image</label>
+            </div>
           </div>
         </div>
         <div class="row slideshow-only">
@@ -269,6 +287,7 @@
             $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
             $('#theme').value = cfg.theme || 'dark';
             $('#layout').value = cfg.layout || 'default';
+            $('#powerProfile').value = cfg.powerProfile || 'balanced';
             $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
             $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
             $('#clockType').value = cfg.clockType || 'analog';
@@ -277,6 +296,7 @@
             $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
             (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
             document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
+            document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
@@ -305,6 +325,7 @@
           webViewerMode: ($('#webViewerMode').value || 'iframe'),
           snapshotRefreshMs: Number($('#snapshotRefreshMs').value) || 300000,
           theme: ($('#theme').value || 'dark'),
+          powerProfile: ($('#powerProfile').value || 'balanced'),
           layout: ($('#layout').value || 'default'),
           welcomeText: $('#welcomeText').value || 'Herzlich Willkommen',
           welcomeTextColor: $('#welcomeTextColor').value || '#ffffff',
@@ -314,6 +335,7 @@
           bottomWidgetsBgImage: $('#bottomWidgetsBgImage').value || '',
           slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
           slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
+          slideshowPreloadNext: !!document.getElementById('slideshowPreloadNext')?.checked,
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,

@@ -24,6 +24,8 @@ type Config = {
   bottomWidgetsBgImage?: string
   slideshowAnimations?: string[]
   slideshowAnimationDurationMs?: number
+  powerProfile?: 'performance' | 'balanced' | 'visual'
+  slideshowPreloadNext?: boolean
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -132,6 +134,14 @@ export default function Player() {
   const layout = config?.layout || 'default'
   const clockType = config?.clockType || 'analog'
   const clockStyle = (config?.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
+  const profile = config?.powerProfile || 'balanced'
+
+  // Apply profile to slideshow defaults if not explicitly set
+  const profileAnims = profile === 'performance' ? ['cut'] : profile === 'visual' ? ['fade','wipe'] : ['fade','cut']
+  const profileFxMs = profile === 'performance' ? 450 : profile === 'visual' ? 900 : 650
+  const animList = (config?.slideshowAnimations as any) || profileAnims
+  const animDur = config?.slideshowAnimationDurationMs ?? profileFxMs
+  const preloadNext = config?.slideshowPreloadNext ?? true
 
   function renderClock(size: number) {
     if (clockType === 'digital') {
@@ -212,7 +222,7 @@ export default function Player() {
             </div>
           </div>
           <div className="cell slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={(config?.slideshowAnimations as any) || ['fade']} durationMs={config?.slideshowAnimationDurationMs ?? 900} />
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
             <div className="clock-overlay">{renderClock(200)}</div>
           </div>
         </div>
@@ -253,7 +263,7 @@ export default function Player() {
             </div>
           </div>
           <div className="cell v-slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={(config?.slideshowAnimations as any) || ['fade']} durationMs={config?.slideshowAnimationDurationMs ?? 900} />
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
           </div>
           <div className="cell v-viewer">
             <WebViewer
