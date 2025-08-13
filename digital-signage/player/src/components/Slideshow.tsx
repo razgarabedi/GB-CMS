@@ -25,7 +25,6 @@ type Anim = 'fade' | 'cut' | 'wipe'
 export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900 }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number }) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)
-  const [nextReady, setNextReady] = useState<boolean>(false)
   const fadeMs = Math.max(150, durationMs)
 
   // Advance slides
@@ -58,16 +57,6 @@ export default function Slideshow({ images, intervalMs = 8000, animations = ['fa
   const src = resolveUrl(images[i])
   const prevSrc = prevI !== null ? resolveUrl(images[prevI]) : null
   const nextSrc = resolveUrl(images[(i + 1) % images.length || 0])
-
-  // Preload next image in background
-  useEffect(() => {
-    setNextReady(false)
-    const img = new Image()
-    img.onload = () => setNextReady(true)
-    img.onerror = () => setNextReady(false)
-    img.src = nextSrc
-    return () => { img.onload = null; img.onerror = null }
-  }, [nextSrc])
 
   // Pick animation for this transition
   const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
