@@ -93,8 +93,7 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 .grid-vertical-3 .v-weather { display: flex; flex-direction: column; }
 .grid-vertical-3 .v-weather .v-weather-inner { display: grid; grid-template-rows: 1fr auto; height: 100%; }
 .grid-vertical-3 .v-weather .v-clock { display: flex; align-items: center; justify-content: center; padding: 8px; }
-.grid-vertical-3 .v-slideshow { }
-.grid-vertical-3 .v-viewer { }
+/* (removed empty rules) */
 
 /* Slideshow layout (like default but smaller bottom strip) */
 .grid-slideshow {

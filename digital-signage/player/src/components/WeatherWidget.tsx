@@ -87,10 +87,10 @@ export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidge
   return (
     <div className={`weather-card ${animVariant}`} style={{ padding: '18px', width: '100%', height: '100%', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'auto 1fr auto', color: textColor }}>
       {prevBgUrl && (
-        <div className="ww-bg previous" style={{ backgroundImage: `${overlay}, url(${prevBgUrl})` }} />
+        <div className="ww-bg previous" style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl || prevBgUrl)})` }} />
       )}
       {bgUrl && (
-        <div className="ww-bg current" style={{ backgroundImage: `${overlay}, url(${bgUrl})` }} />
+        <div className="ww-bg current" style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl)})` }} />
       )}
       <div className="ww-location" style={{ fontSize: '2.2vmin', opacity: 0.85 }}>{location}</div>
       <div className="ww-main" style={{ display: 'grid', gridTemplateColumns: '96px 1fr', alignItems: 'center', gap: 12 }}>
@@ -172,6 +172,20 @@ function photoFor(cur: any): string {
     'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?q=80&w=1920&auto=format&fit=crop', // cloudy hills
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop', // moody valley
   ])
+}
+
+function proxy(u: string): string {
+  if (!u) return u
+  try {
+    const url = new URL(u)
+    if (url.origin === window.location.origin) return u
+    const base = (import.meta.env.VITE_SERVER_URL as string) || `${window.location.protocol}//${window.location.host}`
+    const api = new URL('/api/image', base)
+    api.searchParams.set('url', u)
+    return api.toString()
+  } catch {
+    return u
+  }
 }
 
 function photoForIcon(icon: string): string {

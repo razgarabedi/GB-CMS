@@ -202,7 +202,7 @@ export default function Player() {
     ))
   }
   return (
-    <div className={`kiosk theme-${theme}`}>
+    <div className={`kiosk theme-${theme} power-${profile}`}>
       {layout === 'default' && (
         <div className="grid">
           <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
@@ -212,7 +212,7 @@ export default function Player() {
                 url={url}
                 mode={mode}
                 snapshotRefreshMs={snapshotMs}
-                autoScrollEnabled={!!config?.autoScrollEnabled}
+                autoScrollEnabled={profile === 'performance' ? false : !!config?.autoScrollEnabled}
                 autoScrollMs={config?.autoScrollMs ?? 30000}
                 autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
                 autoScrollStartDelayMs={config?.autoScrollStartDelayMs ?? 0}
@@ -234,7 +234,7 @@ export default function Player() {
           <div className="cell viewer">
             <div className="ratio-16x9">
               {/* Slideshow in the main area; can be empty */}
-              <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+              <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
             </div>
           </div>
           <div className="cell slideshow">

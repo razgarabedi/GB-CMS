@@ -232,6 +232,47 @@ const uploadsDir = path.join(__dirname, 'data', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
 
+// simple remote image proxy/cache to improve reliability of external backgrounds
+const imgCacheDir = path.join(__dirname, 'data', 'imgcache');
+if (!fs.existsSync(imgCacheDir)) fs.mkdirSync(imgCacheDir, { recursive: true });
+
+function cachePathFor(url) {
+  const safe = Buffer.from(String(url)).toString('base64url');
+  return path.join(imgCacheDir, safe);
+}
+
+app.get('/api/image', async (req, res) => {
+  try {
+    const u = String(req.query.url || '');
+    if (!/^https?:\/\//i.test(u)) return res.status(400).json({ error: 'invalid url' });
+    const p = cachePathFor(u);
+    const ttlMs = 24 * 60 * 60 * 1000; // 1 day
+    if (fs.existsSync(p)) {
+      const stat = fs.statSync(p);
+      if (Date.now() - stat.mtimeMs < ttlMs) {
+        const stream = fs.createReadStream(p);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        // best-effort content-type guess
+        const ext = path.extname(p).toLowerCase();
+        if (ext === '.png') res.setHeader('Content-Type', 'image/png');
+        else if (ext === '.webp') res.setHeader('Content-Type', 'image/webp');
+        else res.setHeader('Content-Type', 'image/jpeg');
+        return stream.pipe(res);
+      }
+    }
+    const upstream = await fetch(u);
+    if (!upstream.ok) return res.status(upstream.status).json({ error: 'fetch failed' });
+    const buff = Buffer.from(await upstream.arrayBuffer());
+    try { fs.writeFileSync(p, buff); } catch {}
+    const ct = upstream.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', ct);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(buff);
+  } catch (err) {
+    res.status(500).json({ error: 'proxy error' });
+  }
+});
+
 // uploads
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, uploadsDir),
