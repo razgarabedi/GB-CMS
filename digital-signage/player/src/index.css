@@ -136,10 +136,32 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
   transform-origin: center;
 }
 .slide.previous {
-  animation: fadeOut 900ms ease forwards;
+  animation-name: fadeOut;
+  animation-duration: var(--fx, 900ms);
+  animation-timing-function: ease;
+  animation-fill-mode: forwards;
 }
 .slide.current {
-  animation: fadeIn 900ms ease forwards, kenburns 18s ease-in-out forwards;
+  animation-name: fadeIn, kenburns;
+  animation-duration: var(--fx, 900ms), var(--ken, 18s);
+  animation-timing-function: ease, ease-in-out;
+  animation-fill-mode: forwards, forwards;
+}
+
+/* Additional slideshow animations */
+/* cut: hard switch (previous fades quickly, current appears without fade) */
+.anim-cut.slide.previous { animation-name: fadeOut; animation-duration: var(--fx, 350ms); animation-timing-function: linear; }
+.anim-cut.slide.current { animation-name: none, kenburns; opacity: 1; }
+
+/* wipe: horizontal reveal of the current over the previous */
+.anim-wipe.slide.previous { animation-name: fadeOut; }
+.anim-wipe.slide.current { animation-name: wipeIn, kenburns; clip-path: inset(0 100% 0 0); }
+/* explicit fade tag (optional) */
+.anim-fade.slide.previous { animation-name: fadeOut; }
+.anim-fade.slide.current { animation-name: fadeIn, kenburns; }
+@keyframes wipeIn {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
 }
 
 @keyframes fadeIn {
@@ -150,10 +172,10 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
   from { opacity: 1 }
   to   { opacity: 0 }
 }
+/* Ken Burns ends at a slightly larger scale to avoid visible zoom-out before next slide */
 @keyframes kenburns {
-  0%   { transform: scale(1.06) translate3d(0, 0, 0) }
-  50%  { transform: scale(1.1) translate3d(0, -1%, 0) }
-  100% { transform: scale(1.06) translate3d(0, 0, 0) }
+  0%   { transform: scale(1.04) translate3d(0, 0, 0) }
+  100% { transform: scale(1.10) translate3d(0, -1%, 0) }
 }
 
 /* Weather widget animations */
@@ -195,3 +217,47 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 @keyframes wwFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
 @keyframes wwPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.02) } }
 @keyframes wwPop { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: scale(1) } }
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .grid { grid-template-columns: 320px 1fr; }
+  .grid-slideshow { grid-template-columns: 320px 1fr; }
+}
+
+@media (max-width: 992px) {
+  .grid { grid-template-columns: 280px 1fr; grid-template-rows: 1fr 26vh; }
+  .grid-slideshow { grid-template-columns: 280px 1fr; grid-template-rows: 1fr 20vh; }
+  .grid-vertical-3 { grid-template-columns: 26% 44% 30%; }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "sidebar"
+      "main"
+      "slideshow";
+  }
+  .grid-slideshow {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 22vh;
+    grid-template-areas:
+      "main"
+      "slideshow";
+  }
+  .grid-vertical-3 {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .grid-vertical-3 .v-weather .v-weather-inner { grid-template-rows: auto auto; }
+  .bottom-widgets { grid-template-columns: 1fr; gap: 10px; justify-items: center; text-align: center; }
+  .clock-overlay { left: 8px; bottom: 8px; }
+  .bottom-welcome { font-size: 6vmin; }
+}
+
+@media (max-width: 480px) {
+  .grid-slideshow { grid-template-rows: auto 24vh; }
+  .weather-widget { font-size: 4.2vmin; }
+  .analog-clock .tz { font-size: 2.8vmin; }
+}

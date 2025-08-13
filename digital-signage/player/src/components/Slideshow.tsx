@@ -21,10 +21,12 @@ function resolveUrl(url: string): string {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
-export default function Slideshow({ images, intervalMs = 8000 }: { images: string[]; intervalMs?: number }) {
+type Anim = 'fade' | 'cut' | 'wipe'
+export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900 }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number }) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)
-  const fadeMs = 900
+  const [nextReady, setNextReady] = useState<boolean>(false)
+  const fadeMs = Math.max(150, durationMs)
 
   // Advance slides
   useEffect(() => {
@@ -55,23 +57,66 @@ export default function Slideshow({ images, intervalMs = 8000 }: { images: strin
 
   const src = resolveUrl(images[i])
   const prevSrc = prevI !== null ? resolveUrl(images[prevI]) : null
+  const nextSrc = resolveUrl(images[(i + 1) % images.length || 0])
+
+  // Preload next image in background
+  useEffect(() => {
+    setNextReady(false)
+    const img = new Image()
+    img.onload = () => setNextReady(true)
+    img.onerror = () => setNextReady(false)
+    img.src = nextSrc
+    return () => { img.onload = null; img.onerror = null }
+  }, [nextSrc])
+
+  // Pick animation for this transition
+  const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
+  const chosen = anims[Math.floor(Math.random() * anims.length)]
+
+  // Compute inline animation styles to ensure effect applies regardless of CSS precedence
+  const prevStyle: React.CSSProperties = {
+    // transition part
+    animationName: chosen === 'wipe' ? 'fadeOut' : 'fadeOut',
+    animationDuration: `${fadeMs}ms`,
+    animationTimingFunction: chosen === 'cut' ? 'linear' : 'ease',
+    animationFillMode: 'forwards',
+    // pass vars for kenburns even if not used here
+    ['--fx' as any]: `${fadeMs}ms`,
+    // keep the last zoomed state so it doesn't snap back before fade completes
+    transform: 'scale(1.10) translate3d(0, -1%, 0)'
+  }
+
+  const currentStyle: React.CSSProperties = {
+    // two animations: transition-in and kenburns
+    animationName: chosen === 'fade' ? 'fadeIn, kenburns' : chosen === 'wipe' ? 'wipeIn, kenburns' : 'none, kenburns',
+    animationDuration: `${fadeMs}ms, ${Math.max(intervalMs, fadeMs)}ms`,
+    animationTimingFunction: chosen === 'cut' ? `linear, ease-in-out` : `ease, ease-in-out`,
+    animationFillMode: 'forwards, forwards',
+    ['--fx' as any]: `${fadeMs}ms`,
+    ['--ken' as any]: `${Math.max(intervalMs, fadeMs)}ms`,
+    // for wipe effect, set initial clip-path so keyframes can reveal
+    ...(chosen === 'wipe' ? { clipPath: 'inset(0 100% 0 0)' } : {}),
+  }
 
   return (
     <div className="slideshow-stack">
       {prevSrc && (
         <img
           src={prevSrc}
-          className="slide previous"
+          className={`slide previous anim-${chosen}`}
           alt="previous slide"
+          style={prevStyle}
         />
       )}
       <img
         key={i}
         src={src}
-        className="slide current"
+        className={`slide current anim-${chosen}`}
         alt="current slide"
-        style={{ animationDuration: `${fadeMs}ms, ${Math.max(intervalMs, fadeMs)}ms` }}
+        style={currentStyle}
       />
+      {/* hidden preloader keeps the next image hot in cache */}
+      <img src={nextSrc} alt="" style={{ display: 'none' }} aria-hidden />
     </div>
   )
 }

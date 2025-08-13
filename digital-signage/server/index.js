@@ -161,6 +161,8 @@ function defaultConfig(screenId) {
     clockStyle: 'classic', // analog: 'classic' | 'mono' | 'glass'; digital: 'minimal' | 'neon' | 'flip'
     bottomWidgetsBgColor: '',
     bottomWidgetsBgImage: '',
+    slideshowAnimations: ['fade'], // allowed: 'fade' | 'cut' | 'wipe'
+    slideshowAnimationDurationMs: 900,
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     autoScrollEnabled: false,
     autoScrollMs: 30000,

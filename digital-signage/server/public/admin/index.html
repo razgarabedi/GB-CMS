@@ -102,6 +102,21 @@
         </div>
         <div class="row slideshow-only">
           <div>
+            <label>Slideshow Animations</label>
+            <select id="slideshowAnimations" multiple>
+              <option value="fade">fade</option>
+              <option value="cut">cut</option>
+              <option value="wipe">wipe</option>
+            </select>
+            <div class="small">Hold Ctrl/Cmd to select multiple animations. If multiple are selected, one will be chosen randomly per transition.</div>
+          </div>
+          <div>
+            <label>Animation Duration (ms)</label>
+            <input id="slideshowAnimationDurationMs" type="number" placeholder="900" />
+          </div>
+        </div>
+        <div class="row slideshow-only">
+          <div>
             <label>Welcome Text</label>
             <input id="welcomeText" type="text" placeholder="Herzlich Willkommen" />
           </div>
@@ -260,6 +275,8 @@
             $('#clockStyle').value = cfg.clockStyle || 'classic';
             $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
             $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
+            (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
+            document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
@@ -295,6 +312,8 @@
           clockStyle: $('#clockStyle').value || 'classic',
           bottomWidgetsBgColor: $('#bottomWidgetsBgColor').value || '',
           bottomWidgetsBgImage: $('#bottomWidgetsBgImage').value || '',
+          slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
+          slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,

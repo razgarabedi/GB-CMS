@@ -22,6 +22,8 @@ type Config = {
   clockStyle?: 'classic' | 'mono' | 'glass' | 'minimal' | 'neon' | 'flip'
   bottomWidgetsBgColor?: string
   bottomWidgetsBgImage?: string
+  slideshowAnimations?: string[]
+  slideshowAnimationDurationMs?: number
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -210,7 +212,7 @@ export default function Player() {
             </div>
           </div>
           <div className="cell slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={(config?.slideshowAnimations as any) || ['fade']} durationMs={config?.slideshowAnimationDurationMs ?? 900} />
             <div className="clock-overlay">{renderClock(200)}</div>
           </div>
         </div>
@@ -251,7 +253,7 @@ export default function Player() {
             </div>
           </div>
           <div className="cell v-slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} />
+            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={(config?.slideshowAnimations as any) || ['fade']} durationMs={config?.slideshowAnimationDurationMs ?? 900} />
           </div>
           <div className="cell v-viewer">
             <WebViewer
