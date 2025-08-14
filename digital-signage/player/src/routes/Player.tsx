@@ -5,6 +5,7 @@ import DigitalClock from '../components/DigitalClock'
 import WeatherWidget from '../components/WeatherWidget'
 import WebViewer from '../components/WebViewer'
 import Slideshow from '../components/Slideshow'
+import NewsWidget from '../components/NewsWidget'
 
 type RefreshIntervals = { contentMs: number; rotateMs: number }
 type Config = {
@@ -15,7 +16,7 @@ type Config = {
   webViewerMode?: 'iframe' | 'snapshot'
   snapshotRefreshMs?: number
   theme?: 'dark' | 'light'
-  layout?: 'default' | 'slideshow' | 'vertical-3'
+  layout?: 'default' | 'slideshow' | 'vertical-3' | 'news'
   welcomeText?: string
   welcomeTextColor?: string
   clockType?: 'analog' | 'digital'
@@ -26,6 +27,9 @@ type Config = {
   slideshowAnimationDurationMs?: number
   powerProfile?: 'performance' | 'balanced' | 'visual'
   slideshowPreloadNext?: boolean
+  newsCategory?: 'wirtschaft' | 'top'
+  newsLimit?: number
+  newsRotationMs?: number
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -246,6 +250,45 @@ export default function Player() {
               backgroundColor: (config?.bottomWidgetsBgColor || undefined),
             }}>
               <div className="bottom-clock">{renderClock(140)}</div>
+              <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
+                {renderWelcomeText(config?.welcomeText || 'Herzlich Willkommen', config?.welcomeTextColor || '#fff')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layout === 'news' && (
+        <div className="grid-news">
+          <div className="cell weather">
+            <div style={{ display: 'contents' }}>
+              <div style={{ gridRow: '1 / 2', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
+                <NewsWidget theme={theme} category={config?.newsCategory as any || 'wirtschaft'} limit={config?.newsLimit || 8} rotationMs={config?.newsRotationMs || 8000} />
+              </div>
+              <div style={{ gridRow: '2 / 3', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
+                <WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} showClock />
+              </div>
+            </div>
+          </div>
+          <div className="cell viewer">
+            <div className="ratio-16x9">
+              <Slideshow
+                images={(config as any)?.slides || []}
+                intervalMs={config?.refreshIntervals?.rotateMs || 8000}
+                animations={animList}
+                durationMs={animDur}
+                preloadNext={preloadNext}
+              />
+            </div>
+          </div>
+          <div className="cell bottom">
+            <div className="bottom-widgets" style={{
+              backgroundImage: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage})` : undefined),
+              backgroundPosition: (config?.bottomWidgetsBgImage ? 'right center' : undefined),
+              backgroundRepeat: (config?.bottomWidgetsBgImage ? 'no-repeat' : undefined),
+              backgroundSize: (config?.bottomWidgetsBgImage ? 'contain' : undefined),
+              backgroundColor: (config?.bottomWidgetsBgColor || undefined),
+            }}>
               <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
                 {renderWelcomeText(config?.welcomeText || 'Herzlich Willkommen', config?.welcomeTextColor || '#fff')}
               </div>

@@ -110,6 +110,36 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
     "sidebar main"
     "slideshow slideshow";
 }
+.grid-news {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: 1fr 18vh; /* bottom widget only under slideshow */
+  gap: 2px;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  background: var(--grid-line);
+  grid-template-areas:
+    "sidebar main"
+    "sidebar bottom";
+}
+.grid-news .cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
+.grid-news .weather { grid-area: sidebar; display: grid; grid-template-rows: 1fr 1fr; height: 100%; }
+.grid-news .viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: var(--panel-bg); }
+.grid-news .bottom { grid-area: bottom; background: var(--panel-weak); }
+.grid-news .bottom .bottom-widgets { grid-template-columns: 1fr; justify-items: center; }
+
+@media (max-width: 768px) {
+  .grid-news {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "sidebar"
+      "main"
+      "bottom";
+  }
+}
 .grid-slideshow .cell { background: var(--panel-bg); border-radius: var(--corner-radius); overflow: hidden; position: relative; }
 .grid-slideshow .weather { grid-area: sidebar; display: flex; align-items: center; justify-content: center; }
 .grid-slideshow .viewer { grid-area: main; display: flex; align-items: center; justify-content: center; background: var(--panel-bg); }

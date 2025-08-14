@@ -97,6 +97,7 @@
               <option value="default">default</option>
               <option value="slideshow">slideshow</option>
               <option value="vertical-3">vertical-3</option>
+              <option value="news">news</option>
             </select>
           </div>
         </div>
@@ -115,7 +116,27 @@
             <div><b>visual:</b> fade/wipe, longer duration, Ken Burns enabled</div>
           </div>
         </div>
-        <div class="row slideshow-only">
+        <div class="row">
+          <div>
+            <label>News Category (Tagesschau)</label>
+            <select id="newsCategory">
+              <option value="wirtschaft" selected>wirtschaft</option>
+              <option value="top">top</option>
+            </select>
+          </div>
+          <div>
+            <label>News Limit</label>
+            <input id="newsLimit" type="number" placeholder="8" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>News Rotation (ms)</label>
+            <input id="newsRotationMs" type="number" placeholder="8000" />
+          </div>
+          <div></div>
+        </div>
+        <div class="row slideshow-effects">
           <div>
             <label>Slideshow Animations</label>
             <select id="slideshowAnimations" multiple>
@@ -297,6 +318,9 @@
             (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
             document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
             document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
+            document.getElementById('newsCategory').value = cfg.newsCategory || 'wirtschaft';
+            document.getElementById('newsLimit').value = cfg.newsLimit ?? 8;
+            document.getElementById('newsRotationMs').value = cfg.newsRotationMs ?? 8000;
             $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
             $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
             $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
@@ -336,6 +360,9 @@
           slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
           slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
           slideshowPreloadNext: !!document.getElementById('slideshowPreloadNext')?.checked,
+          newsCategory: (document.getElementById('newsCategory')?.value || 'wirtschaft'),
+          newsLimit: Number(document.getElementById('newsLimit')?.value) || 8,
+          newsRotationMs: Number(document.getElementById('newsRotationMs')?.value) || 8000,
           autoScrollEnabled: ($('#autoScrollEnabled').value === 'true'),
           autoScrollMs: Number($('#autoScrollMs').value) || 30000,
           autoScrollDistancePct: Number($('#autoScrollDistancePct').value) || 25,
@@ -510,9 +537,15 @@
       document.getElementById('layout')?.addEventListener('change', () => { toggleSlideshowOnly(); updatePreview(); })
 
       function toggleSlideshowOnly() {
-        const isShow = (document.getElementById('layout')?.value || 'default') === 'slideshow'
+        const layoutVal = (document.getElementById('layout')?.value || 'default')
+        const isShow = layoutVal === 'slideshow'
+        // Effects apply to both slideshow and news (as both use slideshow component)
+        const showEffects = layoutVal === 'slideshow' || layoutVal === 'news'
         document.querySelectorAll('.slideshow-only').forEach((el) => {
           el.classList.toggle('hidden', !isShow)
+        })
+        document.querySelectorAll('.slideshow-effects').forEach((el) => {
+          el.classList.toggle('hidden', !showEffects)
         })
       }
 

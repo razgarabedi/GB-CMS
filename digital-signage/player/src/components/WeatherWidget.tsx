@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react'
 export type WeatherWidgetProps = {
   location: string
   theme?: 'dark' | 'light'
+  showClock?: boolean
 }
 
 /**
  * WeatherWidget fetches weather data from the server's cached proxy endpoint.
  * Shows a simple icon, temperature, and short description. Handles loading state.
  */
-export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidgetProps) {
+export default function WeatherWidget({ location, theme = 'dark', showClock = false }: WeatherWidgetProps) {
   const [current, setCurrent] = useState<any>(null)
   const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -17,6 +18,8 @@ export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidge
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [prevBgUrl, setPrevBgUrl] = useState<string | null>(null)
   const bgFadeMs = 900
+  // ticker for live clock when enabled
+  const [nowMs, setNowMs] = useState<number>(() => Date.now())
 
   function computeApiBase(): string {
     const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -59,6 +62,13 @@ export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidge
     return () => { mounted = false; clearInterval(id) }
   }, [location])
 
+  // live clock updater when showClock is enabled
+  useEffect(() => {
+    if (!showClock) return
+    const id = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [showClock])
+
   // Update animated background when current weather changes
   useEffect(() => {
     if (!current) return
@@ -85,7 +95,7 @@ export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidge
   const subColor = theme === 'light' ? '#333' : '#fff'
   // const chipBg = theme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.2)'
   return (
-    <div className={`weather-card ${animVariant}`} style={{ padding: '18px', width: '100%', height: '100%', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'auto 1fr auto', color: textColor }}>
+    <div className={`weather-card ${animVariant}`} style={{ padding: '18px', width: '100%', height: '100%', boxSizing: 'border-box', display: 'grid', gridTemplateRows: showClock ? 'auto 1fr auto' : 'auto 1fr', color: textColor }}>
       {prevBgUrl && (
         <div className="ww-bg previous" style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl || prevBgUrl)})` }} />
       )}
@@ -127,6 +137,11 @@ export default function WeatherWidget({ location, theme = 'dark' }: WeatherWidge
           </div>
         ))}
       </div>
+      {showClock && (
+        <div style={{ marginTop: 12, textAlign: 'center', fontFamily: 'ui-rounded, SF Pro Rounded, Segoe UI, Roboto, system-ui', fontWeight: 700, fontSize: '4vmin', opacity: 0.95 }}>
+          {new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(nowMs))}
+        </div>
+      )}
     </div>
   )
 }

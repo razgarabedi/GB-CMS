@@ -154,7 +154,7 @@ function defaultConfig(screenId) {
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
     theme: 'dark', // 'dark' | 'light'
-    layout: 'default', // 'default' | 'slideshow' | 'vertical-3'
+    layout: 'default', // 'default' | 'slideshow' | 'vertical-3' | 'news'
     welcomeText: 'Herzlich Willkommen',
     welcomeTextColor: '#ffffff',
     clockType: 'analog', // 'analog' | 'digital'
@@ -165,6 +165,9 @@ function defaultConfig(screenId) {
     slideshowAnimationDurationMs: 900,
     slideshowPreloadNext: true,
     powerProfile: 'balanced', // 'performance' | 'balanced' | 'visual'
+    newsCategory: 'wirtschaft',
+    newsLimit: 8,
+    newsRotationMs: 8000,
     refreshIntervals: { contentMs: 30000, rotateMs: 8000 },
     autoScrollEnabled: false,
     autoScrollMs: 30000,
@@ -270,6 +273,123 @@ app.get('/api/image', async (req, res) => {
     res.send(buff);
   } catch (err) {
     res.status(500).json({ error: 'proxy error' });
+  }
+});
+
+// ---- Simple Tagesschau news proxy (RSS -> JSON) ----
+/** @type {Map<string, { ts: number, data: any }>} */
+const newsCache = new Map();
+
+function buildTagesschauRssUrl(category) {
+  // Tagesschau RSS main feed: https://www.tagesschau.de/xml/rss2
+  // Wirtschaft (economy) feed (commonly used category)
+  if (category === 'wirtschaft') return 'https://www.tagesschau.de/xml/rss2?ressort=wirtschaft';
+  return 'https://www.tagesschau.de/xml/rss2';
+}
+
+function parseRssItems(xml) {
+  const items = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+  let m;
+  while ((m = itemRe.exec(xml))) {
+    const block = m[1] || '';
+    const grab = (re) => {
+      const mm = re.exec(block);
+      return (mm && (mm[1] || '') || '').replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+    };
+    const title = grab(/<title>([\s\S]*?)<\/title>/i);
+    const link = grab(/<link>([\s\S]*?)<\/link>/i);
+    const pubDate = grab(/<pubDate>([\s\S]*?)<\/pubDate>/i);
+    let description = grab(/<description>([\s\S]*?)<\/description>/i);
+    const content = grab(/<content:encoded>([\s\S]*?)<\/content:encoded>/i);
+    const subtitle = grab(/<subtitle>([\s\S]*?)<\/subtitle>/i);
+    if (!description) description = content || subtitle;
+
+    // Try to extract an image from common RSS tags used by Tagesschau
+    let image = null;
+    const mediaContent = /<media:content[^>]*url="([^"]+)"[^>]*>/i.exec(block);
+    const mediaThumb = /<media:thumbnail[^>]*url="([^"]+)"[^>]*>/i.exec(block);
+    const enclosureImg = /<enclosure[^>]*url="([^"]+)"[^>]*type="image\/[^"]+"[^>]*>/i.exec(block);
+    const descImg = /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(description || '')
+      || /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(content || '')
+      || /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(block || '');
+    const candidate = (mediaContent && mediaContent[1]) || (mediaThumb && mediaThumb[1]) || (enclosureImg && enclosureImg[1]) || (descImg && descImg[1]) || null;
+    if (candidate) {
+      try {
+        image = new URL(candidate, link || undefined).toString();
+      } catch {
+        image = candidate;
+      }
+    }
+
+    if (title && link) items.push({ title, link, pubDate, description, image });
+  }
+  return items;
+}
+
+app.get('/api/news/tagesschau', async (req, res) => {
+  try {
+    const category = String(req.query.category || 'wirtschaft').toLowerCase();
+    const limit = Math.max(1, Math.min(20, Number(req.query.limit || 8)));
+    const key = `${category}|${limit}`;
+    const ttl = 10 * 60 * 1000; // 10 minutes
+    // helpers for summary
+    function decodeEntities(s) {
+      return String(s || '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ');
+    }
+    function stripHtml(s) {
+      return decodeEntities(String(s || '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+    }
+    function firstParagraph(html) {
+      const pMatch = /<p[\s\S]*?>([\s\S]*?)<\/p>/i.exec(String(html || ''));
+      const raw = pMatch ? pMatch[1] : html;
+      const text = stripHtml(raw);
+      return text.length > 380 ? text.slice(0, 377) + '…' : text;
+    }
+    const cached = newsCache.get(key);
+    if (cached && Date.now() - cached.ts < ttl) {
+      // enrich cached with summaries if missing
+      const data = { ...cached.data };
+      if (Array.isArray(data.items)) {
+        data.items = data.items.map(it => ({ ...it, summary: it.summary || firstParagraph(it.description) }));
+      }
+      return res.json(data);
+    }
+    const url = buildTagesschauRssUrl(category);
+    const r = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; DigitalSignageBot/1.0; +https://example.invalid) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml;q=0.9, */*;q=0.8',
+      },
+    });
+    const xml = await r.text();
+    let items = parseRssItems(xml);
+    // Fallback: if category-specific feed yields nothing, try main feed
+    if (!items.length && category !== 'top') {
+      const r2 = await fetch(buildTagesschauRssUrl('top'));
+      const xml2 = await r2.text();
+      items = parseRssItems(xml2);
+    }
+    // Post-filter by category when necessary since Tagesschau may ignore ressort param
+    if (category === 'wirtschaft') {
+      items = items.filter((it) => {
+        const link = String(it.link || '').toLowerCase()
+        const text = `${it.title || ''} ${it.description || ''}`.toLowerCase()
+        return link.includes('/wirtschaft/') || link.includes('/boerse/') || /\b(boerse|börse|wirtschaft)\b/.test(text)
+      })
+    }
+    items = items.slice(0, limit).map((it) => ({ ...it, summary: firstParagraph(it.description) }));
+    const data = { category, items, updatedAt: new Date().toISOString() };
+    newsCache.set(key, { ts: Date.now(), data });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'failed to fetch news' });
   }
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 function computeApiBase(): string {
   const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -25,24 +25,30 @@ type Anim = 'fade' | 'cut' | 'wipe'
 export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900, preloadNext = true }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number; preloadNext?: boolean }) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)
+  const [currentAnim, setCurrentAnim] = useState<Anim>('fade')
   const fadeMs = Math.max(150, durationMs)
 
   // Advance slides
   useEffect(() => {
     if (!images?.length) return
+    const pickAnim = () => {
+      const list = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
+      return list[Math.floor(Math.random() * list.length)]
+    }
     const id = setInterval(() => {
       setI((v) => {
         setPrevI(v)
+        setCurrentAnim(pickAnim())
         return (v + 1) % images.length
       })
     }, intervalMs)
     return () => clearInterval(id)
-  }, [images, intervalMs])
+  }, [images, intervalMs, animations])
 
   // Reset indices if images change length
   useEffect(() => {
-    if (!images?.length) { setI(0); setPrevI(null) }
-    else if (i >= images.length) { setI(0); setPrevI(null) }
+    if (!images?.length) { setI(0); setPrevI(null); setCurrentAnim('fade') }
+    else if (i >= images.length) { setI(0); setPrevI(null); setCurrentAnim('fade') }
   }, [images, i])
 
   // After fade, clear previous image
@@ -58,14 +64,16 @@ export default function Slideshow({ images, intervalMs = 8000, animations = ['fa
   const prevSrc = prevI !== null ? resolveUrl(images[prevI]) : null
   const nextSrc = resolveUrl(images[(i + 1) % images.length || 0])
 
-  // Pick animation for this transition
+  // Use a deterministic animation chosen per transition
   const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
-  const chosen = anims[Math.floor(Math.random() * anims.length)]
+  const chosen: Anim = useMemo(() => {
+    return (anims.includes(currentAnim) ? currentAnim : anims[0])
+  }, [currentAnim, anims])
 
   // Compute inline animation styles to ensure effect applies regardless of CSS precedence
   const prevStyle: React.CSSProperties = {
     // transition part
-    animationName: chosen === 'wipe' ? 'fadeOut' : 'fadeOut',
+    animationName: 'fadeOut',
     animationDuration: `${fadeMs}ms`,
     animationTimingFunction: chosen === 'cut' ? 'linear' : 'ease',
     animationFillMode: 'forwards',
