@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function computeApiBase(): string {
   const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -58,17 +58,15 @@ export default function Slideshow({ images, intervalMs = 8000, animations = ['fa
     return () => clearTimeout(t)
   }, [prevI])
 
+  // Compute animations selection unconditionally to keep hook order stable
+  const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
+  const chosen: Anim = (anims.includes(currentAnim) ? currentAnim : anims[0])
+
   if (!images?.length) return <div style={{ color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Keine Bilder</div>
 
   const src = resolveUrl(images[i])
   const prevSrc = prevI !== null ? resolveUrl(images[prevI]) : null
   const nextSrc = resolveUrl(images[(i + 1) % images.length || 0])
-
-  // Use a deterministic animation chosen per transition
-  const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
-  const chosen: Anim = useMemo(() => {
-    return (anims.includes(currentAnim) ? currentAnim : anims[0])
-  }, [currentAnim, anims])
 
   // Compute inline animation styles to ensure effect applies regardless of CSS precedence
   const prevStyle: React.CSSProperties = {

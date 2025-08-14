@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import AnalogClock from '../components/AnalogClock'
 import DigitalClock from '../components/DigitalClock'
 import WeatherWidget from '../components/WeatherWidget'
@@ -174,38 +174,7 @@ export default function Preview() {
     }
   }
 
-  function getEffectiveConfig(base: Config): Config {
-    const rules = Array.isArray(base.schedule) ? base.schedule : []
-    if (!rules.length) return base
-    const now = new Date()
-    const locale = (base.timezone || 'UTC')
-    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: locale, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false })
-    const parts = fmt.formatToParts(now)
-    const wd = parts.find(p => p.type === 'weekday')?.value?.toLowerCase() || ''
-    const hourStr = parts.find(p => p.type === 'hour')?.value || '00'
-    const minStr = parts.find(p => p.type === 'minute')?.value || '00'
-    const minutesOfDay = Number(hourStr) * 60 + Number(minStr)
-    const dayAliases: Record<string,string> = { sun:'sun', mon:'mon', tue:'tue', wed:'wed', thu:'thu', fri:'fri', sat:'sat', so:'sun', mo:'mon', di:'tue', mi:'wed', do:'thu', fr:'fri', sa:'sat' }
-    const curDay = dayAliases[wd.slice(0,2)] || dayAliases[wd.slice(0,3)] || 'sun'
-    const within = (start: string, end: string): boolean => {
-      const [sh, sm] = start.split(':').map(n => Number(n) || 0)
-      const [eh, em] = end.split(':').map(n => Number(n) || 0)
-      const s = sh * 60 + sm
-      const e = eh * 60 + em
-      if (e >= s) return minutesOfDay >= s && minutesOfDay < e
-      return minutesOfDay >= s || minutesOfDay < e
-    }
-    const match = rules.find((r: any) => {
-      if (!r || typeof r !== 'object') return false
-      const ds = Array.isArray(r.days) ? r.days.map((d:any)=>String(d).toLowerCase().slice(0,3)) : null
-      if (ds && !ds.includes(curDay)) return false
-      const st = typeof r.start === 'string' ? r.start : '00:00'
-      const en = typeof r.end === 'string' ? r.end : '24:00'
-      return within(st, en)
-    })
-    if (!match || !match.overrides || typeof match.overrides !== 'object') return base
-    return { ...base, ...match.overrides }
-  }
+  // Note: schedule overrides are not applied in Preview (live editing). If needed, reintroduce a safe evaluator here.
 
   return (
     <div className={`kiosk theme-${theme} power-${profile}`}>
