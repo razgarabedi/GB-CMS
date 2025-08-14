@@ -30,6 +30,7 @@ type Config = {
   newsCategory?: 'wirtschaft' | 'top'
   newsLimit?: number
   newsRotationMs?: number
+    weatherAnimatedBackground?: boolean
   refreshIntervals: RefreshIntervals
   schedule: any[]
   autoScrollEnabled?: boolean
@@ -263,7 +264,7 @@ export default function Player() {
     <div className={`kiosk theme-${theme} power-${profile}`}>
       {layout === 'default' && (
         <div className="grid">
-          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showAnimatedBg={!!effective?.weatherAnimatedBackground} /></div>
           <div className="cell viewer">
             <div className="ratio-16x9">
               <WebViewer
@@ -288,7 +289,7 @@ export default function Player() {
 
       {layout === 'slideshow' && (
         <div className="grid-slideshow">
-          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showAnimatedBg={!!effective?.weatherAnimatedBackground} /></div>
           <div className="cell viewer">
             <div className="ratio-16x9">
               {/* Slideshow in the main area; can be empty */}
@@ -320,7 +321,7 @@ export default function Player() {
                 <NewsWidget theme={theme} category={effective?.newsCategory as any || 'wirtschaft'} limit={effective?.newsLimit || 8} rotationMs={effective?.newsRotationMs || 8000} />
               </div>
               <div style={{ gridRow: '2 / 3', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
-                <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showClock />
+                <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showClock showAnimatedBg={!!effective?.weatherAnimatedBackground} />
               </div>
             </div>
           </div>
@@ -355,7 +356,7 @@ export default function Player() {
         <div className="grid-vertical-3">
           <div className="cell v-weather">
             <div className="v-weather-inner">
-              <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} />
+              <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showAnimatedBg={!!effective?.weatherAnimatedBackground} />
               <div className="v-clock">{renderClock(140)}</div>
             </div>
           </div>

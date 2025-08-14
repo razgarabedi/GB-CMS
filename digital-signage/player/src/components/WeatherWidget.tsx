@@ -4,19 +4,25 @@ export type WeatherWidgetProps = {
   location: string
   theme?: 'dark' | 'light'
   showClock?: boolean
+  showAnimatedBg?: boolean
 }
 
 /**
  * WeatherWidget fetches weather data from the server's cached proxy endpoint.
  * Shows a simple icon, temperature, and short description. Handles loading state.
  */
-export default function WeatherWidget({ location, theme = 'dark', showClock = false }: WeatherWidgetProps) {
+export default function WeatherWidget({ location, theme = 'dark', showClock = false, showAnimatedBg = false }: WeatherWidgetProps) {
   const [current, setCurrent] = useState<any>(null)
   const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [animVariant, setAnimVariant] = useState<string>('')
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [prevBgUrl, setPrevBgUrl] = useState<string | null>(null)
+  const [bgAnimSeed, setBgAnimSeed] = useState<number>(() => Math.floor(Math.random()*1000))
+  const [bgVideoUrl, setBgVideoUrl] = useState<string | null>(null)
+  const [prevBgVideoUrl, setPrevBgVideoUrl] = useState<string | null>(null)
+  const [bgVideoFallbackUrl, setBgVideoFallbackUrl] = useState<string | null>(null)
+  const [prevBgVideoFallbackUrl, setPrevBgVideoFallbackUrl] = useState<string | null>(null)
   const bgFadeMs = 900
   // ticker for live clock when enabled
   const [nowMs, setNowMs] = useState<number>(() => Date.now())
@@ -69,15 +75,29 @@ export default function WeatherWidget({ location, theme = 'dark', showClock = fa
     return () => clearInterval(id)
   }, [showClock])
 
-  // Update animated background when current weather changes
+  // Update background when current weather changes
   useEffect(() => {
     if (!current) return
-    const next = photoFor(current)
+    const nextImage = photoFor(current)
+    const nextVideo = showAnimatedBg ? videoFor(current, computeApiBase()) : null
     setPrevBgUrl(bgUrl)
-    setBgUrl(next)
+    setPrevBgVideoUrl(bgVideoUrl)
+    setBgUrl(nextImage)
+    setBgVideoUrl(nextVideo?.primary || null)
+    setBgVideoFallbackUrl(nextVideo?.fallback || null)
+    setPrevBgVideoFallbackUrl(bgVideoFallbackUrl)
     const t = setTimeout(() => setPrevBgUrl(null), bgFadeMs + 50)
-    return () => clearTimeout(t)
+    const t2 = setTimeout(() => setPrevBgVideoUrl(null), bgFadeMs + 50)
+    return () => { clearTimeout(t); clearTimeout(t2) }
   }, [current])
+
+  // Ensure endless subtle motion when animated backgrounds enabled
+  useEffect(() => {
+    if (!showAnimatedBg) return
+    // change seed occasionally to vary motion subtly
+    const id = setInterval(() => setBgAnimSeed((s) => (s + 1) % 10_000), 30000)
+    return () => clearInterval(id)
+  }, [showAnimatedBg])
 
   if (loading) return <div>Wetter wird geladen…</div>
   if (!current) return <div>Wetter nicht verfügbar</div>
@@ -96,11 +116,46 @@ export default function WeatherWidget({ location, theme = 'dark', showClock = fa
   // const chipBg = theme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.2)'
   return (
     <div className={`weather-card ${animVariant}`} style={{ padding: '18px', width: '100%', height: '100%', boxSizing: 'border-box', display: 'grid', gridTemplateRows: showClock ? 'auto 1fr auto' : 'auto 1fr', color: textColor }}>
-      {prevBgUrl && (
-        <div className="ww-bg previous" style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl || prevBgUrl)})` }} />
-      )}
-      {bgUrl && (
-        <div className="ww-bg current" style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl)})` }} />
+      {/* Background: prefer looping video when animated backgrounds are enabled */}
+      {showAnimatedBg && (bgVideoUrl || prevBgVideoUrl) ? (
+        <>
+          {(prevBgVideoUrl || prevBgVideoFallbackUrl) && (
+            <video
+              key={`prev-${prevBgVideoUrl || prevBgVideoFallbackUrl}`}
+              className="ww-bg-video previous"
+              src={proxyVideo(prevBgVideoUrl || prevBgVideoFallbackUrl || '')}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          )}
+          {(bgVideoUrl || bgVideoFallbackUrl) && (
+            <video
+              key={`cur-${bgVideoUrl || bgVideoFallbackUrl}`}
+              className="ww-bg-video current"
+              src={proxyVideo(bgVideoUrl || bgVideoFallbackUrl || '')}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          )}
+          {/* Dim overlay to keep text readable */}
+          <div className="ww-bg-dim" style={{ background: overlay }} />
+        </>
+      ) : (
+        <>
+          {prevBgUrl && (
+            <div className={`ww-bg previous ${showAnimatedBg ? 'ww-bg-animated' : ''}`} style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl || prevBgUrl)})` }} />
+          )}
+          {bgUrl && (
+            <div className={`ww-bg current ${showAnimatedBg ? 'ww-bg-animated' : ''}`} style={{ backgroundImage: `${overlay}, url(${proxy(bgUrl)})`, 
+              // @ts-ignore CSS variables
+              '--ww-pan-seed': bgAnimSeed,
+            } as any} />
+          )}
+        </>
       )}
       <div className="ww-location" style={{ fontSize: '2.2vmin', opacity: 0.85 }}>{location}</div>
       <div className="ww-main" style={{ display: 'grid', gridTemplateColumns: '96px 1fr', alignItems: 'center', gap: 12 }}>
@@ -152,32 +207,52 @@ function formatDay(unix: number, locale: string) {
 
 // kept for reference; not used since we switched to photo backgrounds
 
+function categoryFromCurrent(cur: any): 'thunder' | 'rain' | 'snow' | 'clouds' | 'clear' | 'mist' {
+  // Prefer icon prefix if present (works with Open-Meteo mapping), fallback to "main" or description
+  const icon: string = String(cur?.weather?.[0]?.icon || '')
+  const main: string = String(cur?.weather?.[0]?.main || '').toLowerCase()
+  const desc: string = String(cur?.weather?.[0]?.description || '').toLowerCase()
+  const icon2 = icon.slice(0, 2) // 01,02,03,04,09,10,11,13,50
+  if (icon2 === '11') return 'thunder'
+  if (icon2 === '09' || icon2 === '10') return 'rain'
+  if (icon2 === '13') return 'snow'
+  if (icon2 === '02' || icon2 === '03' || icon2 === '04') return 'clouds'
+  if (icon2 === '01') return 'clear'
+  if (icon2 === '50') return 'mist'
+  if (/thunder|storm|gewitter/.test(main) || /thunder|storm|gewitter/.test(desc)) return 'thunder'
+  if (/rain|drizzle|regen|schauer/.test(main) || /rain|drizzle|regen|schauer/.test(desc)) return 'rain'
+  if (/snow|schnee/.test(main) || /snow|schnee/.test(desc)) return 'snow'
+  if (/cloud|bewölkt|wolke|wolkig/.test(main) || /cloud|bewölkt|wolke|wolkig/.test(desc)) return 'clouds'
+  if (/mist|fog|nebel|dunst|diesig|haze/.test(main) || /mist|fog|nebel|dunst|diesig|haze/.test(desc)) return 'mist'
+  if (/clear|klar|heiter|sonnig/.test(main) || /clear|klar|heiter|sonnig/.test(desc)) return 'clear'
+  return 'clear'
+}
+
 function photoFor(cur: any): string {
-  const code = cur?.weather?.[0]?.main?.toLowerCase() || ''
-  // Royalty-free representative backgrounds (Unsplash). Replace with your own assets if needed.
+  const category = categoryFromCurrent(cur)
   const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
   // Terrain-only selections (no cars/buildings)
-  if (/thunder/.test(code)) return pick([
+  if (category === 'thunder') return pick([
     'https://images.unsplash.com/photo-1500674425229-f692875b0ab7?q=80&w=1920&auto=format&fit=crop', // lightning over plains
     'https://images.unsplash.com/photo-1504386106331-3e4e71712b38?q=80&w=1920&auto=format&fit=crop', // lightning over sea
     'https://images.unsplash.com/photo-1495305379050-64540d6ee95d?q=80&w=1920&auto=format&fit=crop', // storm clouds over fields
   ])
-  if (/rain|drizzle/.test(code)) return pick([
+  if (category === 'rain') return pick([
     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop', // mountain lake, moody rain clouds
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop', // valley under rain clouds
     'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1920&auto=format&fit=crop', // foggy/rainy forest
   ])
-  if (/snow/.test(code)) return pick([
+  if (category === 'snow') return pick([
     'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop', // snowy forest
     'https://images.unsplash.com/photo-1482192505345-5655af888cc4?q=80&w=1920&auto=format&fit=crop', // snowy mountain
     'https://images.unsplash.com/photo-1455717974081-0436a066bb96?q=80&w=1920&auto=format&fit=crop', // snow trail in woods
   ])
-  if (/cloud/.test(code)) return pick([
+  if (category === 'clouds') return pick([
     'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?q=80&w=1920&auto=format&fit=crop', // dramatic clouds over hills
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1920&auto=format&fit=crop', // valley with cloud cover
     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop', // lake and clouds
   ])
-  if (/clear/.test(code)) return pick([
+  if (category === 'clear') return pick([
     'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1920&auto=format&fit=crop', // clear sky over dunes
     'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=1920&auto=format&fit=crop', // grassland under blue sky
     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop', // mountain lake, clear
@@ -189,6 +264,21 @@ function photoFor(cur: any): string {
   ])
 }
 
+// Optional looping background videos per weather condition
+function videoFor(cur: any, base: string): { primary: string | null; fallback: string | null } {
+  const category = categoryFromCurrent(cur)
+  // Prefer local assets from the player build for smoothness and reliability; fall back to CDN.
+  // Place your local mp4 assets under /public/videos/weather/...
+  const local = (name: string) => `/videos/weather/${name}.mp4`
+  const cdn = (url: string) => url
+  if (category === 'thunder') return { primary: local('thunder-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-thunderstorm-9561/1080p.mp4') }
+  if (category === 'rain') return { primary: local('rain-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-rain-drops-on-window-5905/1080p.mp4') }
+  if (category === 'snow') return { primary: local('snow-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-snowfall-in-forest-7616/1080p.mp4') }
+  if (category === 'clouds') return { primary: local('clouds-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-clouds-timelapse-5734/1080p.mp4') }
+  if (category === 'clear') return { primary: local('clear-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-sunny-sky-8741/1080p.mp4') }
+  return { primary: local('mist-1'), fallback: cdn('https://cdn.coverr.co/videos/coverr-morning-mist-over-the-forest-4757/1080p.mp4') }
+}
+
 function proxy(u: string): string {
   if (!u) return u
   try {
@@ -196,6 +286,20 @@ function proxy(u: string): string {
     if (url.origin === window.location.origin) return u
     const base = (import.meta.env.VITE_SERVER_URL as string) || `${window.location.protocol}//${window.location.host}`
     const api = new URL('/api/image', base)
+    api.searchParams.set('url', u)
+    return api.toString()
+  } catch {
+    return u
+  }
+}
+
+function proxyVideo(u: string): string {
+  if (!u) return u
+  try {
+    const url = new URL(u)
+    if (url.origin === window.location.origin) return u
+    const base = (import.meta.env.VITE_SERVER_URL as string) || `${window.location.protocol}//${window.location.host}`
+    const api = new URL('/api/video', base)
     api.searchParams.set('url', u)
     return api.toString()
   } catch {

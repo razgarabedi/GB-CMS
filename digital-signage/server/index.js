@@ -150,6 +150,7 @@ function defaultConfig(screenId) {
     screenId,
     timezone: 'UTC',
     weatherLocation: 'London',
+    weatherAnimatedBackground: false,
     webViewerUrl: '',
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
@@ -238,10 +239,17 @@ app.use('/uploads', express.static(uploadsDir));
 // simple remote image proxy/cache to improve reliability of external backgrounds
 const imgCacheDir = path.join(__dirname, 'data', 'imgcache');
 if (!fs.existsSync(imgCacheDir)) fs.mkdirSync(imgCacheDir, { recursive: true });
+// simple remote video proxy/cache to improve reliability of external background videos
+const vidCacheDir = path.join(__dirname, 'data', 'vidcache');
+if (!fs.existsSync(vidCacheDir)) fs.mkdirSync(vidCacheDir, { recursive: true });
 
 function cachePathFor(url) {
   const safe = Buffer.from(String(url)).toString('base64url');
   return path.join(imgCacheDir, safe);
+}
+function cachePathForVideo(url) {
+  const safe = Buffer.from(String(url)).toString('base64url');
+  return path.join(vidCacheDir, safe + '.mp4');
 }
 
 app.get('/api/image', async (req, res) => {
@@ -268,6 +276,34 @@ app.get('/api/image', async (req, res) => {
     const buff = Buffer.from(await upstream.arrayBuffer());
     try { fs.writeFileSync(p, buff); } catch {}
     const ct = upstream.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', ct);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(buff);
+  } catch (err) {
+    res.status(500).json({ error: 'proxy error' });
+  }
+});
+
+// Proxy for videos (mp4/webm). Streams and caches for a day.
+app.get('/api/video', async (req, res) => {
+  try {
+    const u = String(req.query.url || '');
+    if (!/^https?:\/\//i.test(u)) return res.status(400).json({ error: 'invalid url' });
+    const p = cachePathForVideo(u);
+    const ttlMs = 24 * 60 * 60 * 1000; // 1 day
+    if (fs.existsSync(p)) {
+      const stat = fs.statSync(p);
+      if (Date.now() - stat.mtimeMs < ttlMs) {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Content-Type', 'video/mp4');
+        return fs.createReadStream(p).pipe(res);
+      }
+    }
+    const upstream = await fetch(u);
+    if (!upstream.ok) return res.status(upstream.status).json({ error: 'fetch failed' });
+    const buff = Buffer.from(await upstream.arrayBuffer());
+    try { fs.writeFileSync(p, buff); } catch {}
+    const ct = upstream.headers.get('content-type') || 'video/mp4';
     res.setHeader('Content-Type', ct);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(buff);

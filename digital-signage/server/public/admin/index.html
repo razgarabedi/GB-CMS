@@ -129,6 +129,16 @@
             <input id="webViewerUrl" type="text" placeholder="https://example.com" />
           </div>
         </div>
+        <div class="row">
+          <div>
+            <label class="i18n" data-i18n="field.weatherAnimated">Animiertes Wetter</label>
+            <select id="weatherAnimatedBackground">
+              <option value="false" class="i18n" data-i18n="opt.no">Aus</option>
+              <option value="true" class="i18n" data-i18n="opt.yes">An</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
         </section>
 
         <section id="group-theme" class="group tab-panel hidden">
@@ -372,6 +382,7 @@
           'field.screenId': 'Screen ID',
           'field.timezone': 'Zeitzone',
           'field.weatherLocation': 'Wetter-Ort',
+          'field.weatherAnimated': 'Animiertes Wetter',
           'field.theme': 'Thema',
           'opt.dark': 'dunkel',
           'opt.light': 'hell',
@@ -474,6 +485,7 @@
           'field.screenId': 'Screen ID',
           'field.timezone': 'Timezone',
           'field.weatherLocation': 'Weather Location',
+          'field.weatherAnimated': 'Animated Weather',
           'field.theme': 'Theme',
           'opt.dark': 'dark',
           'opt.light': 'light',
@@ -573,6 +585,7 @@
         $('#screenId').value = cfg.screenId || idFromList || '';
             $('#timezone').value = cfg.timezone || '';
             $('#weatherLocation').value = cfg.weatherLocation || '';
+            $('#weatherAnimatedBackground').value = String(!!cfg.weatherAnimatedBackground);
             $('#webViewerUrl').value = cfg.webViewerUrl || '';
             $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
             $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
@@ -670,6 +683,7 @@
           screenId,
           timezone: $('#timezone').value.trim() || 'UTC',
           weatherLocation: $('#weatherLocation').value.trim() || 'London',
+          weatherAnimatedBackground: ($('#weatherAnimatedBackground').value === 'true'),
           webViewerUrl: $('#webViewerUrl').value.trim(),
           refreshIntervals: {
             contentMs: Number($('#contentMs').value) || 30000,
@@ -726,16 +740,16 @@
         try {
           $('#uploadBtn').disabled = true
           for (const f of files) {
-            const fd = new FormData()
-            fd.append('file', f)
-            const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
+        const fd = new FormData()
+        fd.append('file', f)
+        const res = await fetch('/api/uploads', { method: 'POST', headers: apiKey ? { 'X-Api-Key': apiKey } : {}, body: fd })
             if (!res.ok) throw new Error('Upload failed: ' + res.status)
-            const { url } = await res.json()
+        const { url } = await res.json()
             uploaded.push(url)
           }
-          const arr = JSON.parse($('#slides').value || '[]')
+        const arr = JSON.parse($('#slides').value || '[]')
           uploaded.forEach((u) => arr.push(u))
-          $('#slides').value = JSON.stringify(arr, null, 2)
+        $('#slides').value = JSON.stringify(arr, null, 2)
           alert('Uploaded ' + uploaded.length + ' file(s)')
         } catch (err) {
           alert(String(err?.message || err || 'Upload failed'))
@@ -877,6 +891,7 @@
             screenId: document.getElementById('screenId')?.value || 'preview',
             timezone: document.getElementById('timezone')?.value || 'UTC',
             weatherLocation: document.getElementById('weatherLocation')?.value || 'London',
+            weatherAnimatedBackground: (document.getElementById('weatherAnimatedBackground')?.value === 'true'),
             webViewerUrl: document.getElementById('webViewerUrl')?.value || '',
             webViewerMode: document.getElementById('webViewerMode')?.value || 'iframe',
             snapshotRefreshMs: Number(document.getElementById('snapshotRefreshMs')?.value) || 300000,
@@ -922,7 +937,7 @@
         }
       }
 
-      ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage','layout','webViewerMode','snapshotRefreshMs','newsCategory','newsLimit','newsRotationMs','contentMs','rotateMs','autoScrollEnabled','autoScrollMs','autoScrollDistancePct','autoScrollStartDelayMs','schedule','slides','webViewerUrl','weatherLocation','timezone','powerProfile'].forEach((id)=>{
+      ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage','layout','webViewerMode','snapshotRefreshMs','newsCategory','newsLimit','newsRotationMs','contentMs','rotateMs','autoScrollEnabled','autoScrollMs','autoScrollDistancePct','autoScrollStartDelayMs','schedule','slides','webViewerUrl','weatherLocation','timezone','powerProfile','weatherAnimatedBackground'].forEach((id)=>{
         const el = document.getElementById(id); if (el) el.addEventListener('input', updatePreview)
       })
       // Keep preview in sync with Screen ID changes
