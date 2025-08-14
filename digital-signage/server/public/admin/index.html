@@ -41,7 +41,11 @@
         .tab.tab-active { background: #1b2a4a; border-color: #334155; color: #fff; }
         .tab-panel.hidden { display: none; }
         .group { margin-bottom: 12px; }
+        .player-preview { display: grid; gap: 8px; }
+        .player-preview .ratio-16x9-box { position: relative; width: 100%; max-width: 960px; aspect-ratio: 16 / 9; background: #000; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; margin: 0 auto; }
+        .player-preview .ratio-16x9-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
         @media (max-width: 720px) { .toolbar .toolbar-row { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .preview { grid-template-columns: 1fr; } }
+        @media (max-width: 992px) { #previewCard { display: none; } }
     </style>
   </head>
   <body>
@@ -82,11 +86,13 @@
 
     
 
-    <section class="card">
+    <section class="card" id="previewCard">
       <h2 class="i18n" data-i18n="heading.preview">Vorschau</h2>
-      <div class="preview">
-        <div class="clock" id="clockPreview"></div>
-        <div class="welcome" id="welcomePreview">Herzlich Willkommen</div>
+      <div class="player-preview">
+        <div class="ratio-16x9-box">
+          <iframe id="playerPreview" title="Player Preview" src="" allowfullscreen></iframe>
+        </div>
+        <div class="small i18n" data-i18n="hint.previewNote" style="margin-top:6px">Die Vorschau lädt /player/{Screen ID} in einem kleinen Fenster. Für Live-Änderungen bitte speichern und ggf. neu laden.</div>
       </div>
     </section>
 
@@ -155,6 +161,26 @@
             </select>
           </div>
           <div class="small i18n" data-i18n-html="hint.profile"></div>
+        </div>
+          <div class="row">
+          <div>
+            <label class="i18n" data-i18n="field.clockType">Uhrtyp</label>
+            <select id="clockType">
+              <option value="analog" class="i18n" data-i18n="opt.clock.analog">Analog</option>
+              <option value="digital" class="i18n" data-i18n="opt.clock.digital">Digital</option>
+            </select>
+          </div>
+          <div>
+            <label class="i18n" data-i18n="field.clockStyle">Uhrstil</label>
+            <select id="clockStyle">
+              <option value="classic" class="i18n" data-i18n="opt.clock.classic">Classic</option>
+              <option value="mono" class="i18n" data-i18n="opt.clock.mono">Mono</option>
+              <option value="glass" class="i18n" data-i18n="opt.clock.glass">Glass</option>
+              <option value="minimal" class="i18n" data-i18n="opt.clock.minimal">Minimal</option>
+              <option value="neon" class="i18n" data-i18n="opt.clock.neon">Neon</option>
+              <option value="flip" class="i18n" data-i18n="opt.clock.flip">Flip</option>
+            </select>
+          </div>
         </div>
         </section>
 
@@ -227,29 +253,6 @@
         </div>
         </section>
 
-        <section id="group-clock" class="group hidden">
-          <h3>Clock</h3>
-        <div class="row">
-          <div>
-            <label>Clock Type</label>
-            <select id="clockType">
-              <option value="analog">analog</option>
-              <option value="digital">digital</option>
-            </select>
-          </div>
-          <div>
-            <label>Clock Style</label>
-            <select id="clockStyle">
-              <option value="classic">classic</option>
-              <option value="mono">mono</option>
-              <option value="glass">glass</option>
-              <option value="minimal">minimal</option>
-              <option value="neon">neon</option>
-              <option value="flip">flip</option>
-            </select>
-          </div>
-        </div>
-        </section>
 
         <section id="group-web" class="group tab-panel hidden">
            <h3 class="i18n" data-i18n="group.web">Web Viewer</h3>
@@ -441,6 +444,7 @@
           'btn.upload': 'Hochladen',
           'hint.upload': 'Tipp: Mehrere Bilder auswählen, um alle auf einmal hinzuzufügen. Dateien werden unter /uploads/... bereitgestellt.',
           'heading.preview': 'Vorschau',
+          'hint.previewNote': 'Die Vorschau lädt /player/{Screen ID} in einem kleinen Fenster. Für Live-Änderungen bitte speichern und ggf. neu laden.',
           'heading.edit': 'Bildschirm bearbeiten',
           'hint.slideshowAnims': 'Tipp: Mit Strg/Cmd mehrere Animationen auswählen. Wenn mehrere gewählt sind, wird pro Übergang zufällig eine verwendet.',
           'hint.saveForm': 'Zum Speichern ist ein gültiger API-Schlüssel erforderlich.',
@@ -542,6 +546,7 @@
           'btn.upload': 'Upload',
           'hint.upload': 'Tip: Select multiple images to add them all at once. Uploaded files are served at /uploads/...',
           'heading.preview': 'Preview',
+          'hint.previewNote': 'The preview loads /player/{Screen ID} in a small window. For live changes, save and refresh as needed.',
           'heading.edit': 'Edit Screen',
           'hint.slideshowAnims': 'Tip: Hold Ctrl/Cmd to select multiple animations. If multiple are selected, one will be chosen at random per transition.',
           'hint.saveForm': 'A valid API key is required to save.',
@@ -851,21 +856,61 @@
         const color = (document.getElementById('welcomeTextColor')?.value || '#ffffff');
         const bgCol = (document.getElementById('bottomWidgetsBgColor')?.value || '');
         const bgImg = (document.getElementById('bottomWidgetsBgImage')?.value || '');
-        if (type==='digital') clockPreviewDigital(style);
-        else clockPreviewAnalog(style, theme);
-        const wp = document.getElementById('welcomePreview');
-        if (wp) {
-          wp.innerHTML = '';
-          const colored = renderColoredText(welcome, color); wp.appendChild(colored);
-          wp.style.backgroundImage = bgImg ? `url(${bgImg})` : '';
-          wp.style.backgroundSize = 'cover'; wp.style.backgroundPosition = 'center'; wp.style.backgroundRepeat = 'no-repeat';
-          wp.style.backgroundColor = bgCol || '#0a0f1a';
-        }
-        const cp = document.getElementById('clockPreview');
-        if (cp) {
-          cp.style.backgroundImage = bgImg ? `url(${bgImg})` : '';
-          cp.style.backgroundSize = 'cover'; cp.style.backgroundPosition = 'center'; cp.style.backgroundRepeat = 'no-repeat';
-          cp.style.backgroundColor = bgCol || '#0a0f1a';
+        // Update player preview with a live config (no save required)
+        const ifr = document.getElementById('playerPreview');
+        if (ifr) {
+          // Keep URL fixed to the preview route; we postMessage config below
+          const loc = window.location;
+          const proto = loc.protocol;
+          const host = loc.hostname;
+          const cur = loc.port ? `${proto}//${host}:${loc.port}` : `${proto}//${host}`;
+          let base = cur;
+          if (loc.port !== '5173' && loc.port !== '8080') {
+            base = `${proto}//${host}:5173`;
+          }
+          const desiredSrc = `${base}/preview`;
+          if ((/** @type {HTMLIFrameElement} */ (ifr)).src !== desiredSrc) {
+            /** @type {HTMLIFrameElement} */ (ifr).src = desiredSrc;
+          }
+          // Build a transient config from the current form values
+          const cfg = {
+            screenId: document.getElementById('screenId')?.value || 'preview',
+            timezone: document.getElementById('timezone')?.value || 'UTC',
+            weatherLocation: document.getElementById('weatherLocation')?.value || 'London',
+            webViewerUrl: document.getElementById('webViewerUrl')?.value || '',
+            webViewerMode: document.getElementById('webViewerMode')?.value || 'iframe',
+            snapshotRefreshMs: Number(document.getElementById('snapshotRefreshMs')?.value) || 300000,
+            theme: document.getElementById('theme')?.value || 'dark',
+            layout: document.getElementById('layout')?.value || 'default',
+            welcomeText: document.getElementById('welcomeText')?.value || 'Herzlich Willkommen',
+            welcomeTextColor: document.getElementById('welcomeTextColor')?.value || '#ffffff',
+            clockType: document.getElementById('clockType')?.value || 'analog',
+            clockStyle: document.getElementById('clockStyle')?.value || 'classic',
+            bottomWidgetsBgColor: document.getElementById('bottomWidgetsBgColor')?.value || '',
+            bottomWidgetsBgImage: document.getElementById('bottomWidgetsBgImage')?.value || '',
+            slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
+            slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
+            powerProfile: document.getElementById('powerProfile')?.value || 'balanced',
+            slideshowPreloadNext: !!document.getElementById('slideshowPreloadNext')?.checked,
+            newsCategory: document.getElementById('newsCategory')?.value || 'wirtschaft',
+            newsLimit: Number(document.getElementById('newsLimit')?.value) || 8,
+            newsRotationMs: Number(document.getElementById('newsRotationMs')?.value) || 8000,
+            refreshIntervals: {
+              contentMs: Number(document.getElementById('contentMs')?.value) || 30000,
+              rotateMs: Number(document.getElementById('rotateMs')?.value) || 8000,
+            },
+            autoScrollEnabled: (document.getElementById('autoScrollEnabled')?.value === 'true'),
+            autoScrollMs: Number(document.getElementById('autoScrollMs')?.value) || 30000,
+            autoScrollDistancePct: Number(document.getElementById('autoScrollDistancePct')?.value) || 25,
+            autoScrollStartDelayMs: Number(document.getElementById('autoScrollStartDelayMs')?.value) || 0,
+            schedule: JSON.parse(document.getElementById('schedule')?.value || '[]'),
+            slides: JSON.parse(document.getElementById('slides')?.value || '[]'),
+          };
+          // Post config now and again shortly after, to cover fresh iframe loads
+          const send = () => { try { (ifr.contentWindow || window).postMessage({ type: 'previewConfig', config: cfg }, '*') } catch {} };
+          send();
+          setTimeout(send, 100);
+          setTimeout(send, 300);
         }
         // Fill example schedule snippet
         const ex = document.querySelector('pre.i18n[data-i18n="example.schedule"]');
@@ -877,9 +922,11 @@
         }
       }
 
-      ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage'].forEach((id)=>{
+      ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage','layout','webViewerMode','snapshotRefreshMs','newsCategory','newsLimit','newsRotationMs','contentMs','rotateMs','autoScrollEnabled','autoScrollMs','autoScrollDistancePct','autoScrollStartDelayMs','schedule','slides','webViewerUrl','weatherLocation','timezone','powerProfile'].forEach((id)=>{
         const el = document.getElementById(id); if (el) el.addEventListener('input', updatePreview)
       })
+      // Keep preview in sync with Screen ID changes
+      document.getElementById('screenId')?.addEventListener('input', updatePreview)
       document.getElementById('layout')?.addEventListener('change', () => { toggleSlideshowOnly(); updatePreview(); })
 
       function toggleSlideshowOnly() {
