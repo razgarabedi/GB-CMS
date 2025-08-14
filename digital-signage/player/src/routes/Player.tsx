@@ -45,6 +45,7 @@ export default function Player() {
   const [config, setConfig] = useState<Config | null>(null)
   const [lastLoadedAt, setLastLoadedAt] = useState<string | null>(null)
   const [iframeError, setIframeError] = useState<string | null>(null)
+  const [, setTimeTick] = useState(0)
 
   function computeApiBase(): string {
     const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -81,6 +82,12 @@ export default function Player() {
     const interval = setInterval(loadConfig, minutes * 60000)
     return () => clearInterval(interval)
   }, [config?.refreshIntervals?.contentMs])
+
+  // lightweight tick to re-evaluate schedule without full config reload
+  useEffect(() => {
+    const id = setInterval(() => setTimeTick((v) => (v + 1) % 1_000_000), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   // websocket for live pushes (match HTTP base detection)
   const wsUrl = useMemo(() => {
@@ -134,18 +141,19 @@ export default function Player() {
   const url = config?.webViewerUrl || ''
   const mode = config?.webViewerMode || 'iframe'
   const snapshotMs = config?.snapshotRefreshMs ?? 300000
-  const theme = config?.theme || 'dark'
-  const layout = config?.layout || 'default'
-  const clockType = config?.clockType || 'analog'
-  const clockStyle = (config?.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
-  const profile = config?.powerProfile || 'balanced'
+  const effective = getEffectiveConfig(config)
+  const theme = effective?.theme || 'dark'
+  const layout = effective?.layout || 'default'
+  const clockType = effective?.clockType || 'analog'
+  const clockStyle = (effective?.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
+  const profile = effective?.powerProfile || 'balanced'
 
   // Apply profile to slideshow defaults if not explicitly set
   const profileAnims = profile === 'performance' ? ['cut'] : profile === 'visual' ? ['fade','wipe'] : ['fade','cut']
   const profileFxMs = profile === 'performance' ? 450 : profile === 'visual' ? 900 : 650
-  const animList = (config?.slideshowAnimations as any) || profileAnims
-  const animDur = config?.slideshowAnimationDurationMs ?? profileFxMs
-  const preloadNext = config?.slideshowPreloadNext ?? true
+  const animList = (effective?.slideshowAnimations as any) || profileAnims
+  const animDur = effective?.slideshowAnimationDurationMs ?? profileFxMs
+  const preloadNext = effective?.slideshowPreloadNext ?? true
 
   function renderClock(size: number) {
     if (clockType === 'digital') {
@@ -155,10 +163,10 @@ export default function Player() {
       const color = theme === 'light'
         ? (digitalType === 'neon' ? '#0077ff' : '#111')
         : (digitalType === 'neon' ? '#00e5ff' : '#fff')
-      return <DigitalClock timezone={config?.timezone || 'UTC'} type={digitalType} size={Math.max(24, Math.round(size * 0.45))} color={color} />
+      return <DigitalClock timezone={effective?.timezone || 'UTC'} type={digitalType} size={Math.max(24, Math.round(size * 0.45))} color={color} />
     }
     const t = buildAnalogTheme(clockStyle, theme)
-    return <AnalogClock timezone={config?.timezone || 'UTC'} size={size} theme={t} />
+    return <AnalogClock timezone={effective?.timezone || 'UTC'} size={size} theme={t} />
   }
 
   function buildAnalogTheme(style: string, uiTheme: 'dark' | 'light') {
@@ -187,6 +195,52 @@ export default function Player() {
     }
   }
 
+  // Compute effective config by applying schedule overrides if a rule is active now
+  function getEffectiveConfig(base: Config | null): Config | null {
+    if (!base) return base
+    const rules = Array.isArray(base.schedule) ? base.schedule : []
+    if (!rules.length) return base
+    const now = new Date()
+    // Use provided timezone if any for day/hour matching by converting to that locale
+    const locale = (base.timezone || 'UTC')
+    // Build a helper to get weekday (0=Sun..6=Sat) and minutes-of-day in target tz using Intl
+    const fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: locale,
+      weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+    })
+    const parts = fmt.formatToParts(now)
+    const wd = parts.find(p => p.type === 'weekday')?.value?.toLowerCase() || ''
+    const hourStr = parts.find(p => p.type === 'hour')?.value || '00'
+    const minStr = parts.find(p => p.type === 'minute')?.value || '00'
+    const minutesOfDay = Number(hourStr) * 60 + Number(minStr)
+
+    // Normalize days names
+    const dayAliases: Record<string,string> = { sun:'sun', mon:'mon', tue:'tue', wed:'wed', thu:'thu', fri:'fri', sat:'sat', so:'sun', mo:'mon', di:'tue', mi:'wed', do:'thu', fr:'fri', sa:'sat' }
+    const curDay = dayAliases[wd.slice(0,2)] || dayAliases[wd.slice(0,3)] || 'sun'
+
+    const within = (start: string, end: string): boolean => {
+      const [sh, sm] = start.split(':').map(n => Number(n) || 0)
+      const [eh, em] = end.split(':').map(n => Number(n) || 0)
+      const s = sh * 60 + sm
+      const e = eh * 60 + em
+      if (e >= s) return minutesOfDay >= s && minutesOfDay < e
+      // spans midnight
+      return minutesOfDay >= s || minutesOfDay < e
+    }
+
+    // Find first matching rule (topmost wins). Rule shape: { days: ['mon','tue'], start:'08:00', end:'12:00', overrides: { theme:'light', layout:'news' } }
+    const match = rules.find((r: any) => {
+      if (!r || typeof r !== 'object') return false
+      const ds = Array.isArray(r.days) ? r.days.map((d:any)=>String(d).toLowerCase().slice(0,3)) : null
+      if (ds && !ds.includes(curDay)) return false
+      const st = typeof r.start === 'string' ? r.start : '00:00'
+      const en = typeof r.end === 'string' ? r.end : '24:00'
+      return within(st, en)
+    })
+    if (!match || !match.overrides || typeof match.overrides !== 'object') return base
+    return { ...base, ...match.overrides }
+  }
+
   function renderWelcomeText(input: string, defaultColor: string) {
     const parts: Array<{ text: string; color?: string }> = []
     const pattern = /\{#([0-9a-fA-F]{3,8}|[a-zA-Z]+)\}([\s\S]*?)\{\/\}/g
@@ -209,24 +263,24 @@ export default function Player() {
     <div className={`kiosk theme-${theme} power-${profile}`}>
       {layout === 'default' && (
         <div className="grid">
-          <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} /></div>
           <div className="cell viewer">
             <div className="ratio-16x9">
               <WebViewer
                 url={url}
                 mode={mode}
                 snapshotRefreshMs={snapshotMs}
-                autoScrollEnabled={profile === 'performance' ? false : !!config?.autoScrollEnabled}
-                autoScrollMs={config?.autoScrollMs ?? 30000}
-                autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
-                autoScrollStartDelayMs={config?.autoScrollStartDelayMs ?? 0}
+                autoScrollEnabled={profile === 'performance' ? false : !!effective?.autoScrollEnabled}
+                autoScrollMs={effective?.autoScrollMs ?? 30000}
+                autoScrollDistancePct={effective?.autoScrollDistancePct ?? 25}
+                autoScrollStartDelayMs={effective?.autoScrollStartDelayMs ?? 0}
                 onSuccess={() => setLastLoadedAt(new Date().toISOString())}
                 onError={(e) => setIframeError(e)}
               />
             </div>
           </div>
           <div className="cell slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
+            <Slideshow images={(effective as any)?.slides || []} intervalMs={effective?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
             <div className="clock-overlay">{renderClock(200)}</div>
           </div>
         </div>
@@ -234,24 +288,24 @@ export default function Player() {
 
       {layout === 'slideshow' && (
         <div className="grid-slideshow">
-          <div className="cell weather"><WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} /></div>
+          <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} /></div>
           <div className="cell viewer">
             <div className="ratio-16x9">
               {/* Slideshow in the main area; can be empty */}
-              <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
+              <Slideshow images={(effective as any)?.slides || []} intervalMs={effective?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
             </div>
           </div>
           <div className="cell slideshow">
             <div className="bottom-widgets" style={{
-              backgroundImage: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage})` : undefined),
+              backgroundImage: (effective?.bottomWidgetsBgImage ? `url(${effective.bottomWidgetsBgImage})` : undefined),
               backgroundPosition: (config?.bottomWidgetsBgImage ? 'right center' : undefined),
               backgroundRepeat: (config?.bottomWidgetsBgImage ? 'no-repeat' : undefined),
               backgroundSize: (config?.bottomWidgetsBgImage ? 'contain' : undefined),
-              backgroundColor: (config?.bottomWidgetsBgColor || undefined),
+              backgroundColor: (effective?.bottomWidgetsBgColor || undefined),
             }}>
               <div className="bottom-clock">{renderClock(140)}</div>
-              <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
-                {renderWelcomeText(config?.welcomeText || 'Herzlich Willkommen', config?.welcomeTextColor || '#fff')}
+              <div className="bottom-welcome" style={{ color: effective?.welcomeTextColor || '#fff' }}>
+                {renderWelcomeText(effective?.welcomeText || 'Herzlich Willkommen', effective?.welcomeTextColor || '#fff')}
               </div>
             </div>
           </div>
@@ -263,18 +317,18 @@ export default function Player() {
           <div className="cell weather">
             <div style={{ display: 'contents' }}>
               <div style={{ gridRow: '1 / 2', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
-                <NewsWidget theme={theme} category={config?.newsCategory as any || 'wirtschaft'} limit={config?.newsLimit || 8} rotationMs={config?.newsRotationMs || 8000} />
+                <NewsWidget theme={theme} category={effective?.newsCategory as any || 'wirtschaft'} limit={effective?.newsLimit || 8} rotationMs={effective?.newsRotationMs || 8000} />
               </div>
               <div style={{ gridRow: '2 / 3', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
-                <WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} showClock />
+                <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showClock />
               </div>
             </div>
           </div>
           <div className="cell viewer">
             <div className="ratio-16x9">
               <Slideshow
-                images={(config as any)?.slides || []}
-                intervalMs={config?.refreshIntervals?.rotateMs || 8000}
+                images={(effective as any)?.slides || []}
+                intervalMs={effective?.refreshIntervals?.rotateMs || 8000}
                 animations={animList}
                 durationMs={animDur}
                 preloadNext={preloadNext}
@@ -283,14 +337,14 @@ export default function Player() {
           </div>
           <div className="cell bottom">
             <div className="bottom-widgets" style={{
-              backgroundImage: (config?.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage})` : undefined),
+              backgroundImage: (effective?.bottomWidgetsBgImage ? `url(${effective.bottomWidgetsBgImage})` : undefined),
               backgroundPosition: (config?.bottomWidgetsBgImage ? 'right center' : undefined),
               backgroundRepeat: (config?.bottomWidgetsBgImage ? 'no-repeat' : undefined),
               backgroundSize: (config?.bottomWidgetsBgImage ? 'contain' : undefined),
-              backgroundColor: (config?.bottomWidgetsBgColor || undefined),
+              backgroundColor: (effective?.bottomWidgetsBgColor || undefined),
             }}>
-              <div className="bottom-welcome" style={{ color: config?.welcomeTextColor || '#fff' }}>
-                {renderWelcomeText(config?.welcomeText || 'Herzlich Willkommen', config?.welcomeTextColor || '#fff')}
+              <div className="bottom-welcome" style={{ color: effective?.welcomeTextColor || '#fff' }}>
+                {renderWelcomeText(effective?.welcomeText || 'Herzlich Willkommen', effective?.welcomeTextColor || '#fff')}
               </div>
             </div>
           </div>
@@ -301,22 +355,22 @@ export default function Player() {
         <div className="grid-vertical-3">
           <div className="cell v-weather">
             <div className="v-weather-inner">
-              <WeatherWidget location={config?.weatherLocation || 'London'} theme={theme} />
+              <WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} />
               <div className="v-clock">{renderClock(140)}</div>
             </div>
           </div>
           <div className="cell v-slideshow">
-            <Slideshow images={(config as any)?.slides || []} intervalMs={config?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
+            <Slideshow images={(effective as any)?.slides || []} intervalMs={effective?.refreshIntervals?.rotateMs || 8000} animations={animList} durationMs={animDur} preloadNext={preloadNext} />
           </div>
           <div className="cell v-viewer">
             <WebViewer
               url={url}
               mode={mode}
               snapshotRefreshMs={snapshotMs}
-              autoScrollEnabled={!!config?.autoScrollEnabled}
-              autoScrollMs={config?.autoScrollMs ?? 30000}
-              autoScrollDistancePct={config?.autoScrollDistancePct ?? 25}
-              autoScrollStartDelayMs={config?.autoScrollStartDelayMs ?? 0}
+                autoScrollEnabled={!!effective?.autoScrollEnabled}
+                autoScrollMs={effective?.autoScrollMs ?? 30000}
+                autoScrollDistancePct={effective?.autoScrollDistancePct ?? 25}
+                autoScrollStartDelayMs={effective?.autoScrollStartDelayMs ?? 0}
               onSuccess={() => setLastLoadedAt(new Date().toISOString())}
               onError={(e) => setIframeError(e)}
             />

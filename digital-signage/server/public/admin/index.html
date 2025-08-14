@@ -7,6 +7,8 @@
     <style>
       body { font-family: system-ui, sans-serif; margin: 1rem auto; max-width: 1000px; padding: 0 1rem; background: #0f172a; color: #e2e8f0; }
       header { display: flex; align-items: center; justify-content: space-between; }
+      .header-right { display: flex; align-items: center; gap: 8px; }
+      #langPicker { background: #0b1220; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 8px; padding: 6px 10px; }
       h1 { margin: 0.5rem 0; }
       h2 { margin: 1rem 0 0.5rem; }
         h3 { margin: 0.75rem 0 0.5rem; font-size: 1.05rem; color: #cbd5e1; }
@@ -30,33 +32,50 @@
         /* toolbar and picker */
         .toolbar .toolbar-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
         .picker .picker-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-        /* sub-navigation */
-        .subnav { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 10px; background: linear-gradient(180deg, #0b1220, rgba(11,18,32,0.6)); border-bottom: 1px solid #1e293b; margin-bottom: 10px; }
-        .subnav a { display: inline-block; padding: 6px 10px; border-radius: 8px; background: #0a0f1a; border: 1px solid #1e293b; color: #cbd5e1; text-decoration: none; font-size: 0.9rem; }
-        .subnav a:hover { background: #0c1424; }
+        /* tabs and save controls */
+        .save-controls .save-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+        .save-controls .actions { display: inline-flex; gap: 8px; }
+        .tabs { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 10px; background: linear-gradient(180deg, #0b1220, rgba(11,18,32,0.6)); border-bottom: 1px solid #1e293b; margin-bottom: 10px; }
+        .tab { background: #0a0f1a; border: 1px solid #1e293b; color: #cbd5e1; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+        .tab:hover { background: #0c1424; }
+        .tab.tab-active { background: #1b2a4a; border-color: #334155; color: #fff; }
+        .tab-panel.hidden { display: none; }
         .group { margin-bottom: 12px; }
         @media (max-width: 720px) { .toolbar .toolbar-row { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .preview { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
     <header>
-      <h1>Digital Signage Admin</h1>
+      <h1 class="i18n" data-i18n="title">Digital Signage Admin</h1>
+      <div class="header-right">
       <nav class="muted">/admin</nav>
+        <select id="langPicker" title="Sprache">
+          <option value="de" selected>Deutsch</option>
+          <option value="en">English</option>
+        </select>
+      </div>
     </header>
 
     <section class="card toolbar">
       <div class="toolbar-row">
         <div class="picker">
-          <label for="screenPicker" class="small">Screen</label>
+          <label for="screenPicker" class="small i18n" data-i18n="toolbar.screen">Bildschirm</label>
           <div class="picker-row">
             <select id="screenPicker"><option value="">– Select screen –</option></select>
-            <button type="button" id="newScreenBtn" title="Create or start editing a new screen">New</button>
+            <button type="button" id="newScreenBtn" class="i18n" data-i18n="btn.new" title="Neuen Bildschirm anlegen">Neu</button>
           </div>
-          <div class="small">Use the dropdown to quickly switch between screens. Click New to start a new configuration.</div>
+          <div class="small i18n" data-i18n="hint.useDropdown">Nutzen Sie die Auswahl, um schnell zwischen Bildschirmen zu wechseln.</div>
         </div>
-        <div class="quick-help small">
-          <div><b>Tip:</b> Save requires a server API key. Set it at the bottom of the form.</div>
-          <div><b>Preview:</b> Live clock and welcome text preview updates as you edit.</div>
+        <div class="save-controls">
+          <label class="small i18n" data-i18n="save.apiKey" for="apiKeyTop">API-Schlüssel (X-Api-Key)</label>
+          <div class="save-row">
+            <input id="apiKeyTop" type="text" placeholder="Ihr API-Schlüssel" data-i18n-placeholder="ph.apiKey" />
+            <div class="actions">
+              <button type="submit" form="editForm" class="i18n" data-i18n="btn.save">Speichern</button>
+              <button type="button" id="refreshBtnTop" class="secondary i18n" data-i18n="btn.refresh">Neu laden</button>
+            </div>
+          </div>
+          <div class="small i18n" data-i18n="hint.saveAnywhere">Von jedem Tab speichern. "Neu laden" lädt den ausgewählten Bildschirm neu.</div>
         </div>
       </div>
     </section>
@@ -64,7 +83,7 @@
     
 
     <section class="card">
-      <h2>Preview</h2>
+      <h2 class="i18n" data-i18n="heading.preview">Vorschau</h2>
       <div class="preview">
         <div class="clock" id="clockPreview"></div>
         <div class="welcome" id="welcomePreview">Herzlich Willkommen</div>
@@ -72,123 +91,118 @@
     </section>
 
     <section class="card" id="edit">
-      <h2>Edit Screen</h2>
-      <nav class="subnav">
-        <a href="#group-general">General</a>
-        <a href="#group-theme">Theme & Layout</a>
-        <a href="#group-news">News</a>
-        <a href="#group-slideshow">Slideshow</a>
-        <a href="#group-clock">Clock</a>
-        <a href="#group-web">Web Viewer</a>
-        <a href="#group-uploads">Uploads</a>
-      </nav>
+      <h2 class="i18n" data-i18n="heading.edit">Bildschirm bearbeiten</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab tab-active i18n" data-i18n="tab.general" data-tab="group-general" role="tab" aria-selected="true">Allgemein</button>
+        <button class="tab i18n" data-i18n="tab.theme" data-tab="group-theme" role="tab">Thema & Layout</button>
+        <button class="tab i18n" data-i18n="tab.news" data-tab="group-news" role="tab">Nachrichten</button>
+        <button class="tab i18n" data-i18n="tab.slideshow" data-tab="group-slideshow" role="tab">Slideshow</button>
+        <button class="tab i18n" data-i18n="tab.web" data-tab="group-web" role="tab">Web Viewer</button>
+        <button class="tab i18n" data-i18n="tab.uploads" data-tab="group-uploads" role="tab">Uploads</button>
+      </div>
       <form id="editForm">
-        <section id="group-general" class="group">
-          <h3>General</h3>
-          <div class="row">
+        <section id="group-general" class="group tab-panel">
+          <h3 class="i18n" data-i18n="group.general">Allgemein</h3>
+        <div class="row">
           <div>
-            <label>Screen ID</label>
+            <label class="i18n" data-i18n="field.screenId">Screen ID</label>
             <input id="screenId" type="text" required />
           </div>
           <div>
-            <label>Timezone</label>
+            <label class="i18n" data-i18n="field.timezone">Zeitzone</label>
             <input id="timezone" type="text" placeholder="UTC" />
           </div>
-          </div>
-          <div class="row">
+        </div>
+        <div class="row">
           <div>
-            <label>Weather Location</label>
+            <label class="i18n" data-i18n="field.weatherLocation">Wetter-Ort</label>
             <input id="weatherLocation" type="text" placeholder="London" />
           </div>
           <div>
             <label>Web Viewer URL</label>
             <input id="webViewerUrl" type="text" placeholder="https://example.com" />
           </div>
-          </div>
+        </div>
         </section>
 
-        <section id="group-theme" class="group">
-          <h3>Theme & Layout</h3>
-          <div class="row">
+        <section id="group-theme" class="group tab-panel hidden">
+          <h3 class="i18n" data-i18n="group.theme">Thema & Layout</h3>
+        <div class="row">
           <div>
-            <label>Theme</label>
+            <label class="i18n" data-i18n="field.theme">Thema</label>
             <select id="theme">
-              <option value="dark">dark</option>
-              <option value="light">light</option>
+              <option value="dark" class="i18n" data-i18n="opt.dark">dunkel</option>
+              <option value="light" class="i18n" data-i18n="opt.light">hell</option>
             </select>
           </div>
           <div>
-            <label>Layout</label>
+            <label class="i18n" data-i18n="field.layout">Layout</label>
             <select id="layout">
-              <option value="default">default</option>
-              <option value="slideshow">slideshow</option>
-              <option value="vertical-3">vertical-3</option>
-              <option value="news">news</option>
+              <option value="default" class="i18n" data-i18n="opt.layout.default">Standard</option>
+              <option value="slideshow" class="i18n" data-i18n="opt.layout.slideshow">Slideshow</option>
+              <option value="vertical-3" class="i18n" data-i18n="opt.layout.vertical3">Vertikal 3</option>
+              <option value="news" class="i18n" data-i18n="opt.layout.news">News</option>
             </select>
           </div>
-          </div>
-          <div class="row">
+        </div>
+        <div class="row">
           <div>
-            <label>Power Profile</label>
+            <label class="i18n" data-i18n="field.powerProfile">Leistungsprofil</label>
             <select id="powerProfile">
-              <option value="performance">performance</option>
-              <option value="balanced" selected>balanced</option>
-              <option value="visual">visual</option>
+              <option value="performance" class="i18n" data-i18n="opt.profile.performance">Leistung</option>
+              <option value="balanced" selected class="i18n" data-i18n="opt.profile.balanced">Ausgewogen</option>
+              <option value="visual" class="i18n" data-i18n="opt.profile.visual">Visuell</option>
             </select>
           </div>
-          <div class="small">Profiles tune animations and effects:
-            <div><b>performance:</b> cut only, short duration, no auto-scroll, minimal effects</div>
-            <div><b>balanced:</b> fade/cut, medium duration, light Ken Burns</div>
-            <div><b>visual:</b> fade/wipe, longer duration, Ken Burns enabled</div>
-          </div>
-          </div>
+          <div class="small i18n" data-i18n-html="hint.profile"></div>
+        </div>
         </section>
 
-        <section id="group-news" class="group">
-          <h3>News</h3>
-          <div class="row">
+        <section id="group-news" class="group tab-panel hidden">
+          <h3 class="i18n" data-i18n="group.news">Nachrichten</h3>
+        <div class="row">
           <div>
-            <label>News Category (Tagesschau)</label>
+            <label class="i18n" data-i18n="field.newsCategory">Kategorie (Tagesschau)</label>
             <select id="newsCategory">
-              <option value="wirtschaft" selected>wirtschaft</option>
-              <option value="top">top</option>
+              <option value="wirtschaft" selected class="i18n" data-i18n="opt.news.wirtschaft">Wirtschaft</option>
+              <option value="top" class="i18n" data-i18n="opt.news.top">Top</option>
             </select>
           </div>
           <div>
-            <label>News Limit</label>
+            <label class="i18n" data-i18n="field.newsLimit">Anzahl</label>
             <input id="newsLimit" type="number" placeholder="8" />
           </div>
-          </div>
-          <div class="row">
+        </div>
+        <div class="row">
           <div>
-            <label>News Rotation (ms)</label>
+            <label class="i18n" data-i18n="field.newsRotationMs">Dauer pro Meldung (ms)</label>
             <input id="newsRotationMs" type="number" placeholder="8000" />
           </div>
           <div></div>
-          </div>
+        </div>
         </section>
 
-        <section id="group-slideshow" class="group">
-          <h3>Slideshow</h3>
-          <div class="row slideshow-effects">
+        <section id="group-slideshow" class="group tab-panel hidden">
+          <h3 class="i18n" data-i18n="group.slideshow">Slideshow</h3>
+        <div class="row slideshow-effects">
           <div>
-            <label>Slideshow Animations</label>
+            <label class="i18n" data-i18n="field.slideshowAnimations">Slideshow-Animationen</label>
             <select id="slideshowAnimations" multiple>
               <option value="fade">fade</option>
               <option value="cut">cut</option>
               <option value="wipe">wipe</option>
             </select>
-            <div class="small">Hold Ctrl/Cmd to select multiple animations. If multiple are selected, one will be chosen randomly per transition.</div>
+            <div class="small i18n" data-i18n="hint.slideshowAnims">Tipp: Mit Strg/Cmd mehrere Animationen auswählen. Wenn mehrere gewählt sind, wird pro Übergang zufällig eine verwendet.</div>
           </div>
           <div>
-            <label>Animation Duration (ms)</label>
+            <label class="i18n" data-i18n="field.animationDuration">Animationsdauer (ms)</label>
             <input id="slideshowAnimationDurationMs" type="number" placeholder="900" />
             <div style="margin-top:8px">
               <label><input id="slideshowPreloadNext" type="checkbox" /> Preload next image</label>
             </div>
           </div>
-          </div>
-          <div class="row slideshow-only">
+        </div>
+        <div class="row slideshow-only">
           <div>
             <label>Welcome Text</label>
             <input id="welcomeText" type="text" placeholder="Herzlich Willkommen" />
@@ -200,8 +214,8 @@
               <button type="button" id="applyWelcomeColorBtn">Apply color to selected text</button>
             </div>
           </div>
-          </div>
-          <div class="row slideshow-only">
+        </div>
+        <div class="row slideshow-only">
           <div>
             <label>Bottom Widgets Background Color (slideshow)</label>
             <input id="bottomWidgetsBgColor" type="color" />
@@ -210,12 +224,12 @@
             <label>Bottom Widgets Background Image URL (slideshow)</label>
             <input id="bottomWidgetsBgImage" type="text" placeholder="https://..." />
           </div>
-          </div>
+        </div>
         </section>
 
-        <section id="group-clock" class="group">
+        <section id="group-clock" class="group hidden">
           <h3>Clock</h3>
-          <div class="row">
+        <div class="row">
           <div>
             <label>Clock Type</label>
             <select id="clockType">
@@ -234,92 +248,93 @@
               <option value="flip">flip</option>
             </select>
           </div>
-          </div>
+        </div>
         </section>
 
-        <section id="group-web" class="group">
-          <h3>Web Viewer</h3>
-          <div class="row">
+        <section id="group-web" class="group tab-panel hidden">
+           <h3 class="i18n" data-i18n="group.web">Web Viewer</h3>
+        <div class="row">
           <div>
-            <label>Web Viewer Mode</label>
+            <label class="i18n" data-i18n="field.webMode">Web Viewer Modus</label>
             <select id="webViewerMode">
-              <option value="iframe">iframe</option>
-              <option value="snapshot">snapshot</option>
+              <option value="iframe" class="i18n" data-i18n="opt.web.iframe">Iframe</option>
+              <option value="snapshot" class="i18n" data-i18n="opt.web.snapshot">Snapshot</option>
             </select>
           </div>
           <div>
-            <label>Snapshot Refresh (ms)</label>
+            <label class="i18n" data-i18n="field.snapshotRefreshMs">Snapshot-Aktualisierung (ms)</label>
             <input id="snapshotRefreshMs" type="number" placeholder="300000" />
           </div>
-          </div>
-          <div class="small" style="margin-top:8px"><b>Auto Scroll</b></div>
-          <div class="row">
+        </div>
+           <div class="small i18n" data-i18n="group.autoScroll" style="margin-top:8px"><b>Auto Scroll</b></div>
+        <div class="row">
           <div>
-            <label>Auto Scroll</label>
+            <label class="i18n" data-i18n="field.autoScrollEnabled">Auto Scroll</label>
             <select id="autoScrollEnabled">
-              <option value="false">disabled</option>
-              <option value="true">enabled</option>
+              <option value="false" class="i18n" data-i18n="opt.no">Aus</option>
+              <option value="true" class="i18n" data-i18n="opt.yes">An</option>
             </select>
           </div>
           <div></div>
-          </div>
-          <div class="row">
+        </div>
+        <div class="row">
           <div>
-            <label>Auto Scroll Duration (ms)</label>
+            <label class="i18n" data-i18n="field.autoScrollMs">Auto Scroll Dauer (ms)</label>
             <input id="autoScrollMs" type="number" placeholder="30000" />
           </div>
           <div>
-            <label>Auto Scroll Distance (%)</label>
+            <label class="i18n" data-i18n="field.autoScrollDistance">Auto Scroll Distanz (%)</label>
             <input id="autoScrollDistancePct" type="number" placeholder="25" />
           </div>
-          </div>
-          <div class="row">
+        </div>
+        <div class="row">
           <div>
-            <label>Auto Scroll Start Delay (ms)</label>
+            <label class="i18n" data-i18n="field.autoScrollStartDelay">Auto Scroll Startverzögerung (ms)</label>
             <input id="autoScrollStartDelayMs" type="number" placeholder="0" />
           </div>
           <div></div>
-          </div>
+        </div>
 
-          <div class="small" style="margin-top:8px"><b>Refresh & Rotation</b></div>
-          <div class="row">
+           <div class="small i18n" data-i18n="group.refresh" style="margin-top:8px"><b>Aktualisierung & Rotation</b></div>
+        <div class="row">
           <div>
-            <label>Content Refresh (ms)</label>
+            <label class="i18n" data-i18n="field.contentMs">Inhalt-Aktualisierung (ms)</label>
             <input id="contentMs" type="number" placeholder="30000" />
           </div>
           <div>
-            <label>Rotate Interval (ms)</label>
+            <label class="i18n" data-i18n="field.rotateMs">Wechselintervall (ms)</label>
             <input id="rotateMs" type="number" placeholder="8000" />
           </div>
-          </div>
+        </div>
 
-          <div class="small" style="margin-top:8px"><b>Content & Schedule</b></div>
-          <div>
-          <label>Schedule (JSON array)</label>
+           <div class="small i18n" data-i18n="group.content" style="margin-top:8px"><b>Inhalt & Zeitplan</b></div>
+        <div>
+           <label class="i18n" data-i18n="field.schedule">Zeitplan (JSON Array)</label>
+             <div class="small i18n" data-i18n="desc.schedule">Zeitbasierte Regeln, die Felder des Bildschirms zu bestimmten Zeiten/Tagen überschreiben.</div>
+             <div class="small i18n" data-i18n="heading.example" style="margin-top:6px"><b>Beispiel</b></div>
+             <pre class="i18n" data-i18n="example.schedule" style="background:#0b1220;border:1px solid #1e293b;border-radius:8px;padding:8px;white-space:pre-wrap;word-break:break-word;overflow:auto"></pre>
           <textarea id="schedule" rows="4" placeholder='[]'></textarea>
-          </div>
-          <div>
-          <label>Slides (uploaded image URLs, JSON array)</label>
-          <textarea id="slides" rows="3" placeholder='[]'></textarea>
-          </div>
+        </div>
         </section>
 
-        <section id="group-uploads" class="group">
-          <h3>Uploads & API</h3>
-          <div>
-          <label>API Key (X-Api-Key)</label>
-          <input id="apiKey" type="text" />
-          </div>
-          <div>
-          <label>Upload slides</label>
+        <section id="group-uploads" class="group tab-panel hidden">
+          <h3 class="i18n" data-i18n="group.uploads">Uploads</h3>
+          <div class="small i18n" data-i18n="hint.uploadsSlidesRef">Slides werden hier verwaltet. Hochgeladene Bilder werden der Liste automatisch hinzugefügt.</div>
+        <div>
+            <label class="i18n" data-i18n="field.slides">Slides (Bild-URLs, JSON Array)</label>
+          <textarea id="slides" rows="3" placeholder='[]'></textarea>
+        </div>
+        <div>
+          <label class="i18n" data-i18n="field.uploadSlides">Slides hochladen</label>
           <input id="fileInput" type="file" accept="image/*" multiple />
-          <button type="button" id="uploadBtn">Upload</button>
-          <div class="small">Tip: Select multiple images to add them all at once. Uploaded files are served at /uploads/...</div>
-          </div>
+          <button type="button" id="uploadBtn" class="i18n" data-i18n="btn.upload">Hochladen</button>
+          <div class="small i18n" data-i18n="hint.upload">Tipp: Mehrere Bilder auswählen, um alle auf einmal hinzuzufügen. Dateien werden unter /uploads/... bereitgestellt.</div>
+        </div>
         </section>
         <div class="actions">
-          <button type="submit">Save</button>
-          <button type="button" id="refreshBtn" class="secondary">Force Refresh</button>
+          <button type="submit" class="i18n" data-i18n="btn.save">Speichern</button>
+          <button type="button" id="refreshBtn" class="secondary i18n" data-i18n="btn.refresh">Neu laden</button>
+          <div class="small i18n" data-i18n="hint.saveForm">Zum Speichern ist ein gültiger API-Schlüssel erforderlich.</div>
         </div>
       </form>
     </section>
@@ -327,38 +342,260 @@
     <script>
       const $ = (sel) => document.querySelector(sel);
 
+      // Simple i18n store (de default)
+      const I18N = {
+        de: {
+          title: 'Digital Signage Admin',
+          'toolbar.screen': 'Bildschirm',
+          'btn.new': 'Neu',
+          'hint.useDropdown': 'Nutzen Sie die Auswahl, um schnell zwischen Bildschirmen zu wechseln.',
+          'save.apiKey': 'API-Schlüssel (X-Api-Key)',
+          'ph.apiKey': 'Ihr API-Schlüssel',
+          'btn.save': 'Speichern',
+          'btn.refresh': 'Neu laden',
+          'hint.saveAnywhere': 'Von jedem Tab speichern. "Neu laden" lädt den ausgewählten Bildschirm neu.',
+          'tab.general': 'Allgemein',
+          'tab.theme': 'Thema & Layout',
+          'tab.news': 'Nachrichten',
+          'tab.slideshow': 'Slideshow',
+          'tab.web': 'Web Viewer',
+          'tab.uploads': 'Uploads',
+          'group.general': 'Allgemein',
+          'group.theme': 'Thema & Layout',
+          'group.news': 'Nachrichten',
+          'group.slideshow': 'Slideshow',
+          'group.web': 'Web Viewer',
+          'group.uploads': 'Uploads',
+          'field.screenId': 'Screen ID',
+          'field.timezone': 'Zeitzone',
+          'field.weatherLocation': 'Wetter-Ort',
+          'field.theme': 'Thema',
+          'opt.dark': 'dunkel',
+          'opt.light': 'hell',
+          'field.layout': 'Layout',
+          'opt.layout.default': 'Standard',
+          'opt.layout.slideshow': 'Slideshow',
+          'opt.layout.vertical3': 'Vertikal 3',
+          'opt.layout.news': 'News',
+          'field.powerProfile': 'Leistungsprofil',
+          'opt.profile.performance': 'Leistung',
+          'opt.profile.balanced': 'Ausgewogen',
+          'opt.profile.visual': 'Visuell',
+          'hint.profile': 'Profile passen Animationen und Effekte an:<br/>' +
+            '<div><b>Leistung:</b> nur Schnitt, kurze Dauer, kein Auto-Scroll, minimale Effekte</div>' +
+            '<div><b>Ausgewogen:</b> Fade/Schnitt, mittlere Dauer, leichter Ken Burns</div>' +
+            '<div><b>Visuell:</b> Fade/Wipe, längere Dauer, Ken Burns aktiviert</div>',
+          'desc.theme': 'Wähle ein helles oder dunkles Erscheinungsbild für die Admin-Oberfläche und Player-Widgets.',
+          'desc.layout': 'Steuert die Anordnung der Module auf dem Bildschirm.',
+          'desc.powerProfile': 'Optimiert Animationen/Effekte je nach Leistungsziel.',
+          'desc.clock': 'Stil der Uhr, die im Player angezeigt wird.',
+          'desc.welcome': 'Text und Farbe der Begrüßungszeile in Slideshow-Layouts.',
+          'desc.news': 'Tagesschau-Quelle, Anzahl und Wechseldauer der Meldungen.',
+          'desc.slideshow': 'Übergangseffekte und Dauer zwischen Bildern.',
+          'desc.web': 'Eingebettete Website oder Snapshot, inkl. Auto-Scroll und Aktualisierungsintervalle.',
+          'desc.uploads': 'Verwalte hochgeladene Bilder und füge sie den Slides hinzu.',
+          'field.clockType': 'Uhrtyp',
+          'opt.clock.analog': 'Analog',
+          'opt.clock.digital': 'Digital',
+          'field.clockStyle': 'Uhrstil',
+          'opt.clock.classic': 'Classic',
+          'opt.clock.mono': 'Mono',
+          'opt.clock.glass': 'Glass',
+          'opt.clock.minimal': 'Minimal',
+          'opt.clock.neon': 'Neon',
+          'opt.clock.flip': 'Flip',
+          'field.welcomeText': 'Begrüßungstext',
+          'field.welcomeColor': 'Textfarbe',
+          'btn.applyColor': 'Farbe auf markierten Text anwenden',
+          'field.bottomBgColor': 'Hintergrundfarbe (Slideshow)',
+          'field.bottomBgImage': 'Hintergrundbild URL (Slideshow)',
+          'field.newsCategory': 'Kategorie (Tagesschau)',
+          'opt.news.wirtschaft': 'Wirtschaft',
+          'opt.news.top': 'Top',
+          'field.newsLimit': 'Anzahl',
+          'field.newsRotationMs': 'Dauer pro Meldung (ms)',
+          'field.slideshowAnimations': 'Slideshow-Animationen',
+          'field.animationDuration': 'Animationsdauer (ms)',
+          'group.autoScroll': 'Auto Scroll',
+          'field.webUrl': 'Web Viewer URL',
+          'field.webMode': 'Web Viewer Modus',
+          'opt.web.iframe': 'Iframe',
+          'opt.web.snapshot': 'Snapshot',
+          'field.snapshotRefreshMs': 'Snapshot-Aktualisierung (ms)',
+          'field.autoScrollEnabled': 'Auto Scroll',
+          'opt.no': 'Aus',
+          'opt.yes': 'An',
+          'field.autoScrollMs': 'Auto Scroll Dauer (ms)',
+          'field.autoScrollDistance': 'Auto Scroll Distanz (%)',
+          'field.autoScrollStartDelay': 'Auto Scroll Startverzögerung (ms)',
+          'group.refresh': 'Aktualisierung & Rotation',
+          'field.contentMs': 'Inhalt-Aktualisierung (ms)',
+          'field.rotateMs': 'Wechselintervall (ms)',
+          'group.content': 'Inhalt & Zeitplan',
+          'field.schedule': 'Zeitplan (JSON Array)',
+          'desc.schedule': 'Zeitbasierte Regeln, die Felder des Bildschirms zu bestimmten Zeiten/Tagen überschreiben. Nutze kurzgeschriebene Wochentage: mon, tue, wed, thu, fri, sat, sun (auch mo, di, mi, do, fr, sa, so). Start/Ende im 24h-Format HH:MM. Bei Ende < Start wird über Mitternacht gezählt. Erste passende Regel (von oben) gewinnt.',
+          'heading.example': 'Beispiel',
+          'example.schedule': '[\n  {\n    "days": ["mon","tue","wed","thu","fri"],\n    "start": "08:00",\n    "end": "12:00",\n    "overrides": {\n      "layout": "news",\n      "theme": "light",\n      "newsRotationMs": 6000\n    }\n  },\n  {\n    "days": ["sat","sun"],\n    "start": "00:00",\n    "end": "24:00",\n    "overrides": {\n      "layout": "slideshow",\n      "powerProfile": "visual",\n      "slideshowAnimations": ["fade","wipe"],\n      "slideshowAnimationDurationMs": 1200\n    }\n  }\n]',
+          'field.slides': 'Slides (Bild-URLs, JSON Array)',
+          'field.uploadSlides': 'Slides hochladen',
+          'btn.upload': 'Hochladen',
+          'hint.upload': 'Tipp: Mehrere Bilder auswählen, um alle auf einmal hinzuzufügen. Dateien werden unter /uploads/... bereitgestellt.',
+          'heading.preview': 'Vorschau',
+          'heading.edit': 'Bildschirm bearbeiten',
+          'hint.slideshowAnims': 'Tipp: Mit Strg/Cmd mehrere Animationen auswählen. Wenn mehrere gewählt sind, wird pro Übergang zufällig eine verwendet.',
+          'hint.saveForm': 'Zum Speichern ist ein gültiger API-Schlüssel erforderlich.',
+        },
+        en: {
+          title: 'Digital Signage Admin',
+          'toolbar.screen': 'Screen',
+          'btn.new': 'New',
+          'hint.useDropdown': 'Use the dropdown to quickly switch between screens.',
+          'save.apiKey': 'API Key (X-Api-Key)',
+          'ph.apiKey': 'Your API key',
+          'btn.save': 'Save',
+          'btn.refresh': 'Force Refresh',
+          'hint.saveAnywhere': 'Save from any tab. "Force Refresh" reloads the selected screen.',
+          'tab.general': 'General',
+          'tab.theme': 'Theme & Layout',
+          'tab.news': 'News',
+          'tab.slideshow': 'Slideshow',
+          'tab.web': 'Web Viewer',
+          'tab.uploads': 'Uploads',
+          'group.general': 'General',
+          'group.theme': 'Theme & Layout',
+          'group.news': 'News',
+          'group.slideshow': 'Slideshow',
+          'group.web': 'Web Viewer',
+          'group.uploads': 'Uploads',
+          'field.screenId': 'Screen ID',
+          'field.timezone': 'Timezone',
+          'field.weatherLocation': 'Weather Location',
+          'field.theme': 'Theme',
+          'opt.dark': 'dark',
+          'opt.light': 'light',
+          'field.layout': 'Layout',
+          'opt.layout.default': 'default',
+          'opt.layout.slideshow': 'slideshow',
+          'opt.layout.vertical3': 'vertical-3',
+          'opt.layout.news': 'news',
+          'field.powerProfile': 'Power Profile',
+          'opt.profile.performance': 'performance',
+          'opt.profile.balanced': 'balanced',
+          'opt.profile.visual': 'visual',
+          'hint.profile': 'Profiles tune animations and effects:<br/>' +
+            '<div><b>performance:</b> cut only, short duration, no auto-scroll, minimal effects</div>' +
+            '<div><b>balanced:</b> fade/cut, medium duration, light Ken Burns</div>' +
+            '<div><b>visual:</b> fade/wipe, longer duration, Ken Burns enabled</div>',
+          'desc.theme': 'Choose a light or dark appearance for the admin and player widgets.',
+          'desc.layout': 'Controls how modules are arranged on screen.',
+          'desc.powerProfile': 'Optimizes animations/effects based on performance goal.',
+          'desc.clock': 'Style of the clock shown in the player.',
+          'desc.welcome': 'Text and color for the welcome line in slideshow layouts.',
+          'desc.news': 'Tagesschau source, count and rotation duration of news items.',
+          'desc.slideshow': 'Transition effects and duration between images.',
+          'desc.web': 'Embedded website or snapshot, including auto-scroll and refresh intervals.',
+          'desc.uploads': 'Manage uploaded images and add them to slides.',
+          'field.clockType': 'Clock Type',
+          'opt.clock.analog': 'analog',
+          'opt.clock.digital': 'digital',
+          'field.clockStyle': 'Clock Style',
+          'opt.clock.classic': 'classic',
+          'opt.clock.mono': 'mono',
+          'opt.clock.glass': 'glass',
+          'opt.clock.minimal': 'minimal',
+          'opt.clock.neon': 'neon',
+          'opt.clock.flip': 'flip',
+          'field.welcomeText': 'Welcome Text',
+          'field.welcomeColor': 'Welcome Text Color',
+          'btn.applyColor': 'Apply color to selected text',
+          'field.bottomBgColor': 'Bottom Widgets Background Color (slideshow)',
+          'field.bottomBgImage': 'Bottom Widgets Background Image URL (slideshow)',
+          'field.newsCategory': 'News Category (Tagesschau)',
+          'opt.news.wirtschaft': 'wirtschaft',
+          'opt.news.top': 'top',
+          'field.newsLimit': 'News Limit',
+          'field.newsRotationMs': 'News Rotation (ms)',
+          'field.slideshowAnimations': 'Slideshow Animations',
+          'field.animationDuration': 'Animation Duration (ms)',
+          'group.autoScroll': 'Auto Scroll',
+          'field.webUrl': 'Web Viewer URL',
+          'field.webMode': 'Web Viewer Mode',
+          'opt.web.iframe': 'iframe',
+          'opt.web.snapshot': 'snapshot',
+          'field.snapshotRefreshMs': 'Snapshot Refresh (ms)',
+          'field.autoScrollEnabled': 'Auto Scroll',
+          'opt.no': 'disabled',
+          'opt.yes': 'enabled',
+          'field.autoScrollMs': 'Auto Scroll Duration (ms)',
+          'field.autoScrollDistance': 'Auto Scroll Distance (%)',
+          'field.autoScrollStartDelay': 'Auto Scroll Start Delay (ms)',
+          'group.refresh': 'Refresh & Rotation',
+          'field.contentMs': 'Content Refresh (ms)',
+          'field.rotateMs': 'Rotate Interval (ms)',
+          'group.content': 'Content & Schedule',
+          'field.schedule': 'Schedule (JSON array)',
+          'desc.schedule': 'Time-based rules that override screen fields at specific times/days. Use short day names: mon, tue, wed, thu, fri, sat, sun. Start/end in 24h HH:MM. If end < start it spans midnight. First matching rule (top-most) wins.',
+          'heading.example': 'Example',
+          'example.schedule': '[\n  {\n    "days": ["mon","tue","wed","thu","fri"],\n    "start": "08:00",\n    "end": "12:00",\n    "overrides": {\n      "layout": "news",\n      "theme": "light",\n      "newsRotationMs": 6000\n    }\n  },\n  {\n    "days": ["sat","sun"],\n    "start": "00:00",\n    "end": "24:00",\n    "overrides": {\n      "layout": "slideshow",\n      "powerProfile": "visual",\n      "slideshowAnimations": ["fade","wipe"],\n      "slideshowAnimationDurationMs": 1200\n    }\n  }\n]',
+          'field.slides': 'Slides (uploaded image URLs, JSON array)',
+          'field.uploadSlides': 'Upload slides',
+          'btn.upload': 'Upload',
+          'hint.upload': 'Tip: Select multiple images to add them all at once. Uploaded files are served at /uploads/...',
+          'heading.preview': 'Preview',
+          'heading.edit': 'Edit Screen',
+          'hint.slideshowAnims': 'Tip: Hold Ctrl/Cmd to select multiple animations. If multiple are selected, one will be chosen at random per transition.',
+          'hint.saveForm': 'A valid API key is required to save.',
+        }
+      };
+
+      function applyI18n(lang) {
+        const dict = I18N[lang] || I18N.de;
+        document.querySelectorAll('.i18n').forEach((el) => {
+          const key = el.getAttribute('data-i18n');
+          const htmlKey = el.getAttribute('data-i18n-html');
+          const phKey = el.getAttribute('data-i18n-placeholder');
+          if (htmlKey && dict[htmlKey]) el.innerHTML = dict[htmlKey];
+          if (key && dict[key]) el.textContent = dict[key];
+          if (phKey && dict[phKey]) {
+            if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.placeholder = dict[phKey];
+          }
+        });
+          const titleEl = document.querySelector('h1.i18n[data-i18n="title"]');
+        if (titleEl && dict.title) titleEl.textContent = dict.title;
+      }
+
       function fillForm(cfg, idFromList) {
         $('#screenId').value = cfg.screenId || idFromList || '';
-        $('#timezone').value = cfg.timezone || '';
-        $('#weatherLocation').value = cfg.weatherLocation || '';
-        $('#webViewerUrl').value = cfg.webViewerUrl || '';
-        $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
-        $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
-        $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
-        $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
-        $('#theme').value = cfg.theme || 'dark';
-        $('#layout').value = cfg.layout || 'default';
-        $('#powerProfile').value = cfg.powerProfile || 'balanced';
-        $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
-        $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
-        $('#clockType').value = cfg.clockType || 'analog';
-        $('#clockStyle').value = cfg.clockStyle || 'classic';
-        $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
-        $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
-        (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
-        document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
-        document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
-        document.getElementById('newsCategory').value = cfg.newsCategory || 'wirtschaft';
-        document.getElementById('newsLimit').value = cfg.newsLimit ?? 8;
-        document.getElementById('newsRotationMs').value = cfg.newsRotationMs ?? 8000;
-        $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
-        $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
-        $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
-        $('#autoScrollStartDelayMs').value = cfg.autoScrollStartDelayMs ?? 0;
-        $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
-        $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
-        updatePreview();
-        toggleSlideshowOnly();
+            $('#timezone').value = cfg.timezone || '';
+            $('#weatherLocation').value = cfg.weatherLocation || '';
+            $('#webViewerUrl').value = cfg.webViewerUrl || '';
+            $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
+            $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
+            $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
+            $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
+            $('#theme').value = cfg.theme || 'dark';
+            $('#layout').value = cfg.layout || 'default';
+            $('#powerProfile').value = cfg.powerProfile || 'balanced';
+            $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
+            $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
+            $('#clockType').value = cfg.clockType || 'analog';
+            $('#clockStyle').value = cfg.clockStyle || 'classic';
+            $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
+            $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
+            (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
+            document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
+            document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
+            document.getElementById('newsCategory').value = cfg.newsCategory || 'wirtschaft';
+            document.getElementById('newsLimit').value = cfg.newsLimit ?? 8;
+            document.getElementById('newsRotationMs').value = cfg.newsRotationMs ?? 8000;
+            $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
+            $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
+            $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
+            $('#autoScrollStartDelayMs').value = cfg.autoScrollStartDelayMs ?? 0;
+            $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
+            $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
+            updatePreview();
+            toggleSlideshowOnly();
       }
 
       function populateScreenPicker(screens) {
@@ -380,6 +617,21 @@
         const { screens } = await res.json();
         populateScreenPicker(screens);
       }
+
+      // Tabs behavior
+      document.querySelectorAll('.tabs .tab').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const target = /** @type {HTMLButtonElement} */ (e.currentTarget);
+          const id = target.getAttribute('data-tab');
+          if (!id) return;
+          document.querySelectorAll('.tabs .tab').forEach((b) => b.classList.remove('tab-active'));
+          target.classList.add('tab-active');
+          document.querySelectorAll('.tab-panel').forEach((panel) => {
+            if (panel.id === id) panel.classList.remove('hidden');
+            else panel.classList.add('hidden');
+          });
+        });
+      });
 
       // Screen picker behavior
       document.getElementById('screenPicker')?.addEventListener('change', async (e) => {
@@ -442,7 +694,8 @@
           schedule: JSON.parse($('#schedule').value || '[]'),
           slides: JSON.parse($('#slides').value || '[]'),
         };
-        const apiKey = $('#apiKey').value.trim();
+        // Prefer top API key if present, fallback to bottom field
+        const apiKey = ($('#apiKeyTop')?.value || $('#apiKey')?.value || '').trim();
         const res = await fetch(`/api/config/${encodeURIComponent(screenId)}`, {
           method: 'POST',
           headers: {
@@ -487,14 +740,27 @@
         }
       })
 
-      $('#refreshBtn').addEventListener('click', async () => {
-        const id = $('#screenId').value.trim();
-        if (!id) return alert('Set Screen ID first');
-        const apiKey = $('#apiKey').value.trim();
-        const res = await fetch(`/api/push/${encodeURIComponent(id)}/refresh`, {
+      function doRefresh(apiKey) {
+        return fetch(`/api/push/${encodeURIComponent($('#screenId').value.trim())}/refresh`, {
           method: 'POST',
           headers: apiKey ? { 'X-Api-Key': apiKey } : {},
         });
+      }
+
+      $('#refreshBtn').addEventListener('click', async () => {
+        const id = $('#screenId').value.trim();
+        if (!id) return alert('Set Screen ID first');
+        const apiKey = ($('#apiKeyTop')?.value || $('#apiKey')?.value || '').trim();
+        const res = await doRefresh(apiKey);
+        if (!res.ok) return alert('Failed to push refresh');
+        alert('Refresh pushed');
+      });
+
+      document.getElementById('refreshBtnTop')?.addEventListener('click', async () => {
+        const id = $('#screenId').value.trim();
+        if (!id) return alert('Set Screen ID first');
+        const apiKey = ($('#apiKeyTop')?.value || $('#apiKey')?.value || '').trim();
+        const res = await doRefresh(apiKey);
         if (!res.ok) return alert('Failed to push refresh');
         alert('Refresh pushed');
       });
@@ -601,6 +867,14 @@
           cp.style.backgroundSize = 'cover'; cp.style.backgroundPosition = 'center'; cp.style.backgroundRepeat = 'no-repeat';
           cp.style.backgroundColor = bgCol || '#0a0f1a';
         }
+        // Fill example schedule snippet
+        const ex = document.querySelector('pre.i18n[data-i18n="example.schedule"]');
+        if (ex) {
+          const langSel = document.getElementById('langPicker');
+          const lang = (langSel && langSel.value) || 'de';
+          const dict = I18N[lang] || I18N.de;
+          ex.textContent = dict['example.schedule'] || '';
+        }
       }
 
       ['clockType','clockStyle','theme','welcomeText','welcomeTextColor','bottomWidgetsBgColor','bottomWidgetsBgImage'].forEach((id)=>{
@@ -621,11 +895,20 @@
         })
       }
 
-      // Initial preview + toggle
+      // Initial preview + toggle + language
       updatePreview();
       toggleSlideshowOnly();
+      const defaultLang = 'de';
+      document.getElementById('langPicker').value = defaultLang;
+      applyI18n(defaultLang);
 
       loadScreens();
+      document.getElementById('langPicker')?.addEventListener('change', (e) => {
+        const lang = /** @type {HTMLSelectElement} */ (e.target).value || 'de';
+        applyI18n(lang);
+        updatePreview();
+      });
+
       document.getElementById('bottomBgUploadBtn')?.addEventListener('click', async () => {
         const fileInput = /** @type {HTMLInputElement} */ (document.getElementById('bottomBgFile'))
         const f = fileInput?.files?.[0]
