@@ -9,6 +9,7 @@
       header { display: flex; align-items: center; justify-content: space-between; }
       h1 { margin: 0.5rem 0; }
       h2 { margin: 1rem 0 0.5rem; }
+        h3 { margin: 0.75rem 0 0.5rem; font-size: 1.05rem; color: #cbd5e1; }
       table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
       th, td { border: 1px solid #1e293b; padding: 0.5rem; text-align: left; }
       th { background: #0b1220; color: #93a3b8; }
@@ -26,6 +27,15 @@
       .preview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .preview .clock { display: flex; align-items: center; justify-content: center; height: 160px; border-radius: 10px; background: #0a0f1a; border: 1px solid #1e293b; }
       .preview .welcome { display: flex; align-items: center; justify-content: center; height: 64px; border-radius: 10px; background: #0a0f1a; border: 1px solid #1e293b; font-weight: 700; letter-spacing: .5px; white-space: pre-wrap; padding: 0 10px; }
+        /* toolbar and picker */
+        .toolbar .toolbar-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+        .picker .picker-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+        /* sub-navigation */
+        .subnav { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 10px; background: linear-gradient(180deg, #0b1220, rgba(11,18,32,0.6)); border-bottom: 1px solid #1e293b; margin-bottom: 10px; }
+        .subnav a { display: inline-block; padding: 6px 10px; border-radius: 8px; background: #0a0f1a; border: 1px solid #1e293b; color: #cbd5e1; text-decoration: none; font-size: 0.9rem; }
+        .subnav a:hover { background: #0c1424; }
+        .group { margin-bottom: 12px; }
+        @media (max-width: 720px) { .toolbar .toolbar-row { grid-template-columns: 1fr; } .row { grid-template-columns: 1fr; } .preview { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
@@ -34,23 +44,24 @@
       <nav class="muted">/admin</nav>
     </header>
 
-    <section class="card">
-      <h2>Screens</h2>
-      <div class="small">Configure API key in your requests via X-Api-Key header.</div>
-      <table id="screensTable">
-        <thead>
-          <tr>
-            <th>Screen ID</th>
-            <th>Timezone</th>
-            <th>Weather Location</th>
-            <th>Web Viewer URL</th>
-            <th>Updated</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <section class="card toolbar">
+      <div class="toolbar-row">
+        <div class="picker">
+          <label for="screenPicker" class="small">Screen</label>
+          <div class="picker-row">
+            <select id="screenPicker"><option value="">– Select screen –</option></select>
+            <button type="button" id="newScreenBtn" title="Create or start editing a new screen">New</button>
+          </div>
+          <div class="small">Use the dropdown to quickly switch between screens. Click New to start a new configuration.</div>
+        </div>
+        <div class="quick-help small">
+          <div><b>Tip:</b> Save requires a server API key. Set it at the bottom of the form.</div>
+          <div><b>Preview:</b> Live clock and welcome text preview updates as you edit.</div>
+        </div>
+      </div>
     </section>
+
+    
 
     <section class="card">
       <h2>Preview</h2>
@@ -60,10 +71,21 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="edit">
       <h2>Edit Screen</h2>
+      <nav class="subnav">
+        <a href="#group-general">General</a>
+        <a href="#group-theme">Theme & Layout</a>
+        <a href="#group-news">News</a>
+        <a href="#group-slideshow">Slideshow</a>
+        <a href="#group-clock">Clock</a>
+        <a href="#group-web">Web Viewer</a>
+        <a href="#group-uploads">Uploads</a>
+      </nav>
       <form id="editForm">
-        <div class="row">
+        <section id="group-general" class="group">
+          <h3>General</h3>
+          <div class="row">
           <div>
             <label>Screen ID</label>
             <input id="screenId" type="text" required />
@@ -72,8 +94,8 @@
             <label>Timezone</label>
             <input id="timezone" type="text" placeholder="UTC" />
           </div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="row">
           <div>
             <label>Weather Location</label>
             <input id="weatherLocation" type="text" placeholder="London" />
@@ -82,8 +104,12 @@
             <label>Web Viewer URL</label>
             <input id="webViewerUrl" type="text" placeholder="https://example.com" />
           </div>
-        </div>
-        <div class="row">
+          </div>
+        </section>
+
+        <section id="group-theme" class="group">
+          <h3>Theme & Layout</h3>
+          <div class="row">
           <div>
             <label>Theme</label>
             <select id="theme">
@@ -100,8 +126,8 @@
               <option value="news">news</option>
             </select>
           </div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="row">
           <div>
             <label>Power Profile</label>
             <select id="powerProfile">
@@ -115,8 +141,12 @@
             <div><b>balanced:</b> fade/cut, medium duration, light Ken Burns</div>
             <div><b>visual:</b> fade/wipe, longer duration, Ken Burns enabled</div>
           </div>
-        </div>
-        <div class="row">
+          </div>
+        </section>
+
+        <section id="group-news" class="group">
+          <h3>News</h3>
+          <div class="row">
           <div>
             <label>News Category (Tagesschau)</label>
             <select id="newsCategory">
@@ -128,15 +158,19 @@
             <label>News Limit</label>
             <input id="newsLimit" type="number" placeholder="8" />
           </div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="row">
           <div>
             <label>News Rotation (ms)</label>
             <input id="newsRotationMs" type="number" placeholder="8000" />
           </div>
           <div></div>
-        </div>
-        <div class="row slideshow-effects">
+          </div>
+        </section>
+
+        <section id="group-slideshow" class="group">
+          <h3>Slideshow</h3>
+          <div class="row slideshow-effects">
           <div>
             <label>Slideshow Animations</label>
             <select id="slideshowAnimations" multiple>
@@ -153,8 +187,8 @@
               <label><input id="slideshowPreloadNext" type="checkbox" /> Preload next image</label>
             </div>
           </div>
-        </div>
-        <div class="row slideshow-only">
+          </div>
+          <div class="row slideshow-only">
           <div>
             <label>Welcome Text</label>
             <input id="welcomeText" type="text" placeholder="Herzlich Willkommen" />
@@ -166,8 +200,8 @@
               <button type="button" id="applyWelcomeColorBtn">Apply color to selected text</button>
             </div>
           </div>
-        </div>
-        <div class="row slideshow-only">
+          </div>
+          <div class="row slideshow-only">
           <div>
             <label>Bottom Widgets Background Color (slideshow)</label>
             <input id="bottomWidgetsBgColor" type="color" />
@@ -176,8 +210,12 @@
             <label>Bottom Widgets Background Image URL (slideshow)</label>
             <input id="bottomWidgetsBgImage" type="text" placeholder="https://..." />
           </div>
-        </div>
-        <div class="row">
+          </div>
+        </section>
+
+        <section id="group-clock" class="group">
+          <h3>Clock</h3>
+          <div class="row">
           <div>
             <label>Clock Type</label>
             <select id="clockType">
@@ -196,8 +234,12 @@
               <option value="flip">flip</option>
             </select>
           </div>
-        </div>
-        <div class="row">
+          </div>
+        </section>
+
+        <section id="group-web" class="group">
+          <h3>Web Viewer</h3>
+          <div class="row">
           <div>
             <label>Web Viewer Mode</label>
             <select id="webViewerMode">
@@ -209,8 +251,9 @@
             <label>Snapshot Refresh (ms)</label>
             <input id="snapshotRefreshMs" type="number" placeholder="300000" />
           </div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="small" style="margin-top:8px"><b>Auto Scroll</b></div>
+          <div class="row">
           <div>
             <label>Auto Scroll</label>
             <select id="autoScrollEnabled">
@@ -219,8 +262,8 @@
             </select>
           </div>
           <div></div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="row">
           <div>
             <label>Auto Scroll Duration (ms)</label>
             <input id="autoScrollMs" type="number" placeholder="30000" />
@@ -229,15 +272,17 @@
             <label>Auto Scroll Distance (%)</label>
             <input id="autoScrollDistancePct" type="number" placeholder="25" />
           </div>
-        </div>
-        <div class="row">
+          </div>
+          <div class="row">
           <div>
             <label>Auto Scroll Start Delay (ms)</label>
             <input id="autoScrollStartDelayMs" type="number" placeholder="0" />
           </div>
           <div></div>
-        </div>
-        <div class="row">
+          </div>
+
+          <div class="small" style="margin-top:8px"><b>Refresh & Rotation</b></div>
+          <div class="row">
           <div>
             <label>Content Refresh (ms)</label>
             <input id="contentMs" type="number" placeholder="30000" />
@@ -246,25 +291,32 @@
             <label>Rotate Interval (ms)</label>
             <input id="rotateMs" type="number" placeholder="8000" />
           </div>
-        </div>
-        <div>
+          </div>
+
+          <div class="small" style="margin-top:8px"><b>Content & Schedule</b></div>
+          <div>
           <label>Schedule (JSON array)</label>
           <textarea id="schedule" rows="4" placeholder='[]'></textarea>
-        </div>
-        <div>
+          </div>
+          <div>
           <label>Slides (uploaded image URLs, JSON array)</label>
           <textarea id="slides" rows="3" placeholder='[]'></textarea>
-        </div>
-        <div>
+          </div>
+        </section>
+
+        <section id="group-uploads" class="group">
+          <h3>Uploads & API</h3>
+          <div>
           <label>API Key (X-Api-Key)</label>
           <input id="apiKey" type="text" />
-        </div>
-        <div>
+          </div>
+          <div>
           <label>Upload slides</label>
           <input id="fileInput" type="file" accept="image/*" multiple />
           <button type="button" id="uploadBtn">Upload</button>
           <div class="small">Tip: Select multiple images to add them all at once. Uploaded files are served at /uploads/...</div>
-        </div>
+          </div>
+        </section>
         <div class="actions">
           <button type="submit">Save</button>
           <button type="button" id="refreshBtn" class="secondary">Force Refresh</button>
@@ -275,64 +327,84 @@
     <script>
       const $ = (sel) => document.querySelector(sel);
 
+      function fillForm(cfg, idFromList) {
+        $('#screenId').value = cfg.screenId || idFromList || '';
+        $('#timezone').value = cfg.timezone || '';
+        $('#weatherLocation').value = cfg.weatherLocation || '';
+        $('#webViewerUrl').value = cfg.webViewerUrl || '';
+        $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
+        $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
+        $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
+        $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
+        $('#theme').value = cfg.theme || 'dark';
+        $('#layout').value = cfg.layout || 'default';
+        $('#powerProfile').value = cfg.powerProfile || 'balanced';
+        $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
+        $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
+        $('#clockType').value = cfg.clockType || 'analog';
+        $('#clockStyle').value = cfg.clockStyle || 'classic';
+        $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
+        $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
+        (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
+        document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
+        document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
+        document.getElementById('newsCategory').value = cfg.newsCategory || 'wirtschaft';
+        document.getElementById('newsLimit').value = cfg.newsLimit ?? 8;
+        document.getElementById('newsRotationMs').value = cfg.newsRotationMs ?? 8000;
+        $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
+        $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
+        $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
+        $('#autoScrollStartDelayMs').value = cfg.autoScrollStartDelayMs ?? 0;
+        $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
+        $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
+        updatePreview();
+        toggleSlideshowOnly();
+      }
+
+      function populateScreenPicker(screens) {
+        const picker = document.getElementById('screenPicker');
+        if (!picker) return;
+        const cur = picker.value;
+        picker.innerHTML = '<option value="">– Select screen –</option>';
+        const ids = Object.keys(screens || {}).sort((a,b)=>a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        ids.forEach(id => {
+          const opt = document.createElement('option');
+          opt.value = id; opt.textContent = id;
+          picker.appendChild(opt);
+        });
+        if (cur && ids.includes(cur)) picker.value = cur;
+      }
+
       async function loadScreens() {
         const res = await fetch('/api/screens');
         const { screens } = await res.json();
-        const tbody = $('#screensTable tbody');
-        tbody.innerHTML = '';
-        Object.entries(screens || {}).forEach(([screenId, cfg]) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${screenId}</td>
-            <td>${cfg.timezone || ''}</td>
-            <td>${cfg.weatherLocation || ''}</td>
-            <td><a href="${cfg.webViewerUrl || ''}" target="_blank">${cfg.webViewerUrl || ''}</a></td>
-            <td>${cfg.updatedAt || ''}</td>
-            <td class="actions">
-              <button data-id="${screenId}" class="edit">Edit</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-        tbody.querySelectorAll('button.edit').forEach((btn) => {
-          btn.addEventListener('click', async () => {
-            const id = btn.getAttribute('data-id');
-            const cfg = await (await fetch(`/api/config/${encodeURIComponent(id)}`)).json();
-            $('#screenId').value = cfg.screenId || id;
-            $('#timezone').value = cfg.timezone || '';
-            $('#weatherLocation').value = cfg.weatherLocation || '';
-            $('#webViewerUrl').value = cfg.webViewerUrl || '';
-            $('#contentMs').value = cfg.refreshIntervals?.contentMs ?? 30000;
-            $('#rotateMs').value = cfg.refreshIntervals?.rotateMs ?? 8000;
-            $('#webViewerMode').value = cfg.webViewerMode || 'iframe';
-            $('#snapshotRefreshMs').value = cfg.snapshotRefreshMs ?? 300000;
-            $('#theme').value = cfg.theme || 'dark';
-            $('#layout').value = cfg.layout || 'default';
-            $('#powerProfile').value = cfg.powerProfile || 'balanced';
-            $('#welcomeText').value = cfg.welcomeText || 'Herzlich Willkommen';
-            $('#welcomeTextColor').value = cfg.welcomeTextColor || '#ffffff';
-            $('#clockType').value = cfg.clockType || 'analog';
-            $('#clockStyle').value = cfg.clockStyle || 'classic';
-            $('#bottomWidgetsBgColor').value = cfg.bottomWidgetsBgColor || '#000000';
-            $('#bottomWidgetsBgImage').value = cfg.bottomWidgetsBgImage || '';
-            (function setAnims(){ const el = document.getElementById('slideshowAnimations'); if (!el) return; const vals = (cfg.slideshowAnimations||['fade']).map(String); Array.from(el.options).forEach(o=>o.selected = vals.includes(o.value)); })();
-            document.getElementById('slideshowAnimationDurationMs').value = cfg.slideshowAnimationDurationMs ?? 900;
-            document.getElementById('slideshowPreloadNext').checked = !!cfg.slideshowPreloadNext;
-            document.getElementById('newsCategory').value = cfg.newsCategory || 'wirtschaft';
-            document.getElementById('newsLimit').value = cfg.newsLimit ?? 8;
-            document.getElementById('newsRotationMs').value = cfg.newsRotationMs ?? 8000;
-            $('#autoScrollEnabled').value = String(!!cfg.autoScrollEnabled);
-            $('#autoScrollMs').value = cfg.autoScrollMs ?? 30000;
-            $('#autoScrollDistancePct').value = cfg.autoScrollDistancePct ?? 25;
-            $('#autoScrollStartDelayMs').value = cfg.autoScrollStartDelayMs ?? 0;
-            $('#schedule').value = JSON.stringify(cfg.schedule || [], null, 2);
-            $('#slides').value = JSON.stringify(cfg.slides || [], null, 2);
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            updatePreview();
-            toggleSlideshowOnly();
-          });
-        });
+        populateScreenPicker(screens);
       }
+
+      // Screen picker behavior
+      document.getElementById('screenPicker')?.addEventListener('change', async (e) => {
+        const id = /** @type {HTMLSelectElement} */(e.target).value;
+        if (!id) return;
+        const cfg = await (await fetch(`/api/config/${encodeURIComponent(id)}`)).json();
+        fillForm(cfg, id);
+        // Keep the picker in sync with possibly edited screenId
+        const pickerEl = document.getElementById('screenPicker');
+        if ($('#screenId').value && pickerEl) {
+          /** @type {HTMLSelectElement} */ (pickerEl).value = $('#screenId').value;
+        }
+      });
+
+      document.getElementById('newScreenBtn')?.addEventListener('click', async () => {
+        const id = prompt('Enter a new screen ID');
+        if (!id) return;
+        const cfg = await (await fetch(`/api/config/${encodeURIComponent(id)}`)).json();
+        fillForm(cfg, id);
+        // update picker list if needed
+        try { await loadScreens(); } catch {}
+        const picker = /** @type {HTMLSelectElement} */(document.getElementById('screenPicker'));
+        if (picker) picker.value = id;
+        document.getElementById('screenId')?.focus();
+      });
 
       $('#editForm').addEventListener('submit', async (e) => {
         e.preventDefault();
