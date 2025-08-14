@@ -931,11 +931,12 @@
 
       function toggleSlideshowOnly() {
         const layoutVal = (document.getElementById('layout')?.value || 'default')
-        const isShow = layoutVal === 'slideshow'
-        // Effects apply to both slideshow and news (as both use slideshow component)
+        // Show welcome/bottom-widgets settings for slideshow and news
+        const isShowWelcome = layoutVal === 'slideshow' || layoutVal === 'news'
+        // Effects apply to both slideshow and news (both use slideshow component)
         const showEffects = layoutVal === 'slideshow' || layoutVal === 'news'
         document.querySelectorAll('.slideshow-only').forEach((el) => {
-          el.classList.toggle('hidden', !isShow)
+          el.classList.toggle('hidden', !isShowWelcome)
         })
         document.querySelectorAll('.slideshow-effects').forEach((el) => {
           el.classList.toggle('hidden', !showEffects)
