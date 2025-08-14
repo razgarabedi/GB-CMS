@@ -721,7 +721,7 @@
       $('#uploadBtn').addEventListener('click', async () => {
         const files = Array.from($('#fileInput').files || [])
         if (!files.length) return alert('Choose at least one image')
-        const apiKey = $('#apiKey').value.trim();
+        const apiKey = ($('#apiKeyTop')?.value || $('#apiKey')?.value || '').trim();
         const uploaded = []
         try {
           $('#uploadBtn').disabled = true
