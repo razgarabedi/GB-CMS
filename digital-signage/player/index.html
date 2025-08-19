@@ -8,9 +8,21 @@
     <style>
       html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
       body { background: #000; overflow: hidden; }
+      .pre-hide-cursor, .pre-hide-cursor * { cursor: none !important; }
     </style>
   </head>
   <body>
+    <script>
+      (function(){
+        try {
+          var params = new URLSearchParams(location.search);
+          if (params.get('cursor') === 'none' || params.get('hideCursor') === 'true') {
+            document.documentElement.classList.add('pre-hide-cursor');
+            document.body.classList.add('pre-hide-cursor');
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

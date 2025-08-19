@@ -5,6 +5,14 @@ html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
 body { background: #000; color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
 .kiosk { height: 100%; width: 100%; }
+.kiosk.hide-cursor, .kiosk.hide-cursor * { cursor: none !important; }
+.cursor-hide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  cursor: none !important;
+  background: transparent;
+}
 .grid {
   display: grid;
   grid-template-columns: 400px 1fr; /* left sidebar for weather */

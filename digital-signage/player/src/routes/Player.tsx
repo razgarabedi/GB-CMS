@@ -37,6 +37,7 @@ type Config = {
   autoScrollMs?: number
   autoScrollDistancePct?: number
   autoScrollStartDelayMs?: number
+  hideCursor?: boolean
 }
 
 // removed legacy hook
@@ -145,6 +146,11 @@ export default function Player() {
   const effective = getEffectiveConfig(config)
   const theme = effective?.theme || 'dark'
   const layout = effective?.layout || 'default'
+  // Allow URL override for quick kiosk tweaks: ?cursor=none or ?hideCursor=true
+  const search = typeof window !== 'undefined' ? window.location.search : ''
+  const params = useMemo(() => new URLSearchParams(search), [search])
+  const urlHideCursor = (params.get('cursor') === 'none') || (params.get('hideCursor') === 'true')
+  const hideCursor = Boolean(effective?.hideCursor) || urlHideCursor
   const clockType = effective?.clockType || 'analog'
   const clockStyle = (effective?.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
   const profile = effective?.powerProfile || 'balanced'
@@ -261,7 +267,7 @@ export default function Player() {
     ))
   }
   return (
-    <div className={`kiosk theme-${theme} power-${profile}`}>
+    <div className={`kiosk theme-${theme} power-${profile} ${hideCursor ? 'hide-cursor' : ''}`}>
       {layout === 'default' && (
         <div className="grid">
           <div className="cell weather"><WeatherWidget location={effective?.weatherLocation || 'London'} theme={theme} showAnimatedBg={!!effective?.weatherAnimatedBackground} /></div>
@@ -386,6 +392,7 @@ export default function Player() {
           <div className="small">Last successful load: {lastLoadedAt || 'never'}</div>
         </div>
       )}
+      {hideCursor && <div className="cursor-hide-overlay" aria-hidden />}
     </div>
   )
 }
