@@ -808,6 +808,58 @@
       })
 
       // Live preview
+      // Resolve a suitable base URL for the player preview that works in both dev and production
+      let __previewBase = null;
+      let __previewBaseResolving = null;
+      function isPrivateIp(host) {
+        return /^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+      }
+      function getQueryOverride() {
+        try { const u = new URL(window.location.href); return u.searchParams.get('playerBase') || null; } catch { return null; }
+      }
+      function guessPreviewCandidates() {
+        const loc = window.location;
+        const proto = loc.protocol;
+        const host = loc.hostname;
+        const cur = loc.port ? `${proto}//${host}:${loc.port}` : `${proto}//${host}`;
+        const override = getQueryOverride();
+        if (override) return [override, cur];
+        if (loc.port === '3000') {
+          // In local development (including LAN IPs), try Vite dev (:5173) first, then docker player (:8080)
+          return [`${proto}//${host}:5173`, `${proto}//${host}:8080`, cur];
+        }
+        if (loc.port === '8080' || loc.port === '5173') return [cur];
+        // Default to same-origin (works with Nginx or any reverse proxy setup)
+        return [cur];
+      }
+      function pingBase(base) {
+        const controller = new AbortController();
+        const u = `${base}/preview`;
+        const id = setTimeout(() => controller.abort(), 1200);
+        const sameOrigin = (() => { try { return new URL(base).origin === window.location.origin; } catch { return false; } })();
+        const opts = sameOrigin ? { signal: controller.signal } : { mode: 'no-cors', signal: controller.signal };
+        return fetch(u, opts)
+          .then((res) => sameOrigin ? !!res.ok : true, () => false)
+          .finally(() => clearTimeout(id));
+      }
+      async function resolvePreviewBase() {
+        const candidates = guessPreviewCandidates();
+        for (const c of candidates) {
+          try {
+            const ok = await pingBase(c);
+            if (ok) return c;
+          } catch {}
+        }
+        return candidates[0];
+      }
+      function getPreviewBase() {
+        if (__previewBase) return Promise.resolve(__previewBase);
+        if (__previewBaseResolving) return __previewBaseResolving;
+        __previewBaseResolving = resolvePreviewBase()
+          .then((b) => { __previewBase = b; return b; })
+          .finally(() => { __previewBaseResolving = null; });
+        return __previewBaseResolving;
+      }
       function clockPreviewAnalog(style, theme) {
         const box = document.getElementById('clockPreview');
         if (!box) return; box.innerHTML = '';
@@ -873,59 +925,52 @@
         // Update player preview with a live config (no save required)
         const ifr = document.getElementById('playerPreview');
         if (ifr) {
-          // Keep URL fixed to the preview route; we postMessage config below
-          const loc = window.location;
-          const proto = loc.protocol;
-          const host = loc.hostname;
-          const cur = loc.port ? `${proto}//${host}:${loc.port}` : `${proto}//${host}`;
-          let base = cur;
-          if (loc.port !== '5173' && loc.port !== '8080') {
-            base = `${proto}//${host}:5173`;
-          }
-          const desiredSrc = `${base}/preview`;
-          if ((/** @type {HTMLIFrameElement} */ (ifr)).src !== desiredSrc) {
-            /** @type {HTMLIFrameElement} */ (ifr).src = desiredSrc;
-          }
-          // Build a transient config from the current form values
-          const cfg = {
-            screenId: document.getElementById('screenId')?.value || 'preview',
-            timezone: document.getElementById('timezone')?.value || 'UTC',
-            weatherLocation: document.getElementById('weatherLocation')?.value || 'London',
-            weatherAnimatedBackground: (document.getElementById('weatherAnimatedBackground')?.value === 'true'),
-            webViewerUrl: document.getElementById('webViewerUrl')?.value || '',
-            webViewerMode: document.getElementById('webViewerMode')?.value || 'iframe',
-            snapshotRefreshMs: Number(document.getElementById('snapshotRefreshMs')?.value) || 300000,
-            theme: document.getElementById('theme')?.value || 'dark',
-            layout: document.getElementById('layout')?.value || 'default',
-            welcomeText: document.getElementById('welcomeText')?.value || 'Herzlich Willkommen',
-            welcomeTextColor: document.getElementById('welcomeTextColor')?.value || '#ffffff',
-            clockType: document.getElementById('clockType')?.value || 'analog',
-            clockStyle: document.getElementById('clockStyle')?.value || 'classic',
-            bottomWidgetsBgColor: document.getElementById('bottomWidgetsBgColor')?.value || '',
-            bottomWidgetsBgImage: document.getElementById('bottomWidgetsBgImage')?.value || '',
-            slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
-            slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
-            powerProfile: document.getElementById('powerProfile')?.value || 'balanced',
-            slideshowPreloadNext: !!document.getElementById('slideshowPreloadNext')?.checked,
-            newsCategory: document.getElementById('newsCategory')?.value || 'wirtschaft',
-            newsLimit: Number(document.getElementById('newsLimit')?.value) || 8,
-            newsRotationMs: Number(document.getElementById('newsRotationMs')?.value) || 8000,
-            refreshIntervals: {
-              contentMs: Number(document.getElementById('contentMs')?.value) || 30000,
-              rotateMs: Number(document.getElementById('rotateMs')?.value) || 8000,
-            },
-            autoScrollEnabled: (document.getElementById('autoScrollEnabled')?.value === 'true'),
-            autoScrollMs: Number(document.getElementById('autoScrollMs')?.value) || 30000,
-            autoScrollDistancePct: Number(document.getElementById('autoScrollDistancePct')?.value) || 25,
-            autoScrollStartDelayMs: Number(document.getElementById('autoScrollStartDelayMs')?.value) || 0,
-            schedule: JSON.parse(document.getElementById('schedule')?.value || '[]'),
-            slides: JSON.parse(document.getElementById('slides')?.value || '[]'),
-          };
-          // Post config now and again shortly after, to cover fresh iframe loads
-          const send = () => { try { (ifr.contentWindow || window).postMessage({ type: 'previewConfig', config: cfg }, '*') } catch {} };
-          send();
-          setTimeout(send, 100);
-          setTimeout(send, 300);
+          getPreviewBase().then((base) => {
+            const desiredSrc = `${base}/preview`;
+            if ((/** @type {HTMLIFrameElement} */ (ifr)).src !== desiredSrc) {
+              /** @type {HTMLIFrameElement} */ (ifr).src = desiredSrc;
+            }
+            // Build a transient config from the current form values
+            const cfg = {
+              screenId: document.getElementById('screenId')?.value || 'preview',
+              timezone: document.getElementById('timezone')?.value || 'UTC',
+              weatherLocation: document.getElementById('weatherLocation')?.value || 'London',
+              weatherAnimatedBackground: (document.getElementById('weatherAnimatedBackground')?.value === 'true'),
+              webViewerUrl: document.getElementById('webViewerUrl')?.value || '',
+              webViewerMode: document.getElementById('webViewerMode')?.value || 'iframe',
+              snapshotRefreshMs: Number(document.getElementById('snapshotRefreshMs')?.value) || 300000,
+              theme: document.getElementById('theme')?.value || 'dark',
+              layout: document.getElementById('layout')?.value || 'default',
+              welcomeText: document.getElementById('welcomeText')?.value || 'Herzlich Willkommen',
+              welcomeTextColor: document.getElementById('welcomeTextColor')?.value || '#ffffff',
+              clockType: document.getElementById('clockType')?.value || 'analog',
+              clockStyle: document.getElementById('clockStyle')?.value || 'classic',
+              bottomWidgetsBgColor: document.getElementById('bottomWidgetsBgColor')?.value || '',
+              bottomWidgetsBgImage: document.getElementById('bottomWidgetsBgImage')?.value || '',
+              slideshowAnimations: Array.from(document.getElementById('slideshowAnimations')?.selectedOptions || []).map(o=>o.value),
+              slideshowAnimationDurationMs: Number(document.getElementById('slideshowAnimationDurationMs')?.value) || 900,
+              powerProfile: document.getElementById('powerProfile')?.value || 'balanced',
+              slideshowPreloadNext: !!document.getElementById('slideshowPreloadNext')?.checked,
+              newsCategory: document.getElementById('newsCategory')?.value || 'wirtschaft',
+              newsLimit: Number(document.getElementById('newsLimit')?.value) || 8,
+              newsRotationMs: Number(document.getElementById('newsRotationMs')?.value) || 8000,
+              refreshIntervals: {
+                contentMs: Number(document.getElementById('contentMs')?.value) || 30000,
+                rotateMs: Number(document.getElementById('rotateMs')?.value) || 8000,
+              },
+              autoScrollEnabled: (document.getElementById('autoScrollEnabled')?.value === 'true'),
+              autoScrollMs: Number(document.getElementById('autoScrollMs')?.value) || 30000,
+              autoScrollDistancePct: Number(document.getElementById('autoScrollDistancePct')?.value) || 25,
+              autoScrollStartDelayMs: Number(document.getElementById('autoScrollStartDelayMs')?.value) || 0,
+              schedule: JSON.parse(document.getElementById('schedule')?.value || '[]'),
+              slides: JSON.parse(document.getElementById('slides')?.value || '[]'),
+            };
+            // Post config now and again shortly after, to cover fresh iframe loads
+            const send = () => { try { (ifr.contentWindow || window).postMessage({ type: 'previewConfig', config: cfg }, '*') } catch {} };
+            send();
+            setTimeout(send, 100);
+            setTimeout(send, 300);
+          });
         }
         // Fill example schedule snippet
         const ex = document.querySelector('pre.i18n[data-i18n="example.schedule"]');
