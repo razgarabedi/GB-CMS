@@ -79,7 +79,7 @@ export default function WeatherWidget({ location, theme = 'dark', showClock = fa
   useEffect(() => {
     if (!current) return
     const nextImage = photoFor(current)
-    const nextVideo = showAnimatedBg ? videoFor(current, computeApiBase()) : null
+    const nextVideo = showAnimatedBg ? videoFor(current) : null
     setPrevBgUrl(bgUrl)
     setPrevBgVideoUrl(bgVideoUrl)
     setBgUrl(nextImage)
@@ -265,7 +265,7 @@ function photoFor(cur: any): string {
 }
 
 // Optional looping background videos per weather condition
-function videoFor(cur: any, base: string): { primary: string | null; fallback: string | null } {
+function videoFor(cur: any): { primary: string | null; fallback: string | null } {
   const category = categoryFromCurrent(cur)
   // Prefer local assets from the player build for smoothness and reliability; fall back to CDN.
   // Place your local mp4 assets under /public/videos/weather/...
