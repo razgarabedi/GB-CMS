@@ -10,7 +10,7 @@ export default function Instructions() {
         <li><a href="#ubuntu">Ubuntu kiosk (24.04/25 GNOME/Wayland)</a></li>
         <li><a href="#autologin">Auto‑login (Ubuntu)</a></li>
         <li><a href="#systemd">Auto‑start service (systemd user)</a></li>
-        <li><a href="#mouse">Move mouse to corner (Wayland)</a></li>
+        <li><a href="#cursor">Hide cursor (Invisible theme)</a></li>
       </ul>
 
       <h2 id="win">Windows kiosk (Chromium/Chrome)</h2>
@@ -105,71 +105,56 @@ su - signage -c 'systemctl --user daemon-reload && systemctl --user enable --now
 sudo reboot`}</code>
       </pre>
       
-      <h2 id="mouse">Move mouse to bottom‑right on login (Wayland)</h2>
+      <h2 id="cursor">Hide cursor without moving it (Invisible theme, Wayland/Xorg)</h2>
       <pre style={{ whiteSpace: 'pre-wrap', background: '#111', padding: '1rem' }}>
-        <code>{`# Goal: when the 'signage' user logs in (Wayland), move the cursor to the
-# bottom‑right so it stays out of the way. Use ydotool (input emulation).
+        <code>{`# Goal: hide the pointer globally without synthesizing mouse events.
+# Works on GNOME/Wayland and Xorg by using an invisible cursor theme.
 
-# 1) Install ydotool
-sudo apt install -y ydotool
+# 1) Install tools (xcursorgen is in x11-apps on Ubuntu 25)
+sudo apt update
+sudo apt install -y x11-apps imagemagick
 
-# 2) Create a small script that moves the cursor far to the bottom‑right
-sudo -u signage mkdir -p /home/signage/bin
-sudo -u signage nano /home/signage/bin/move-cursor-bottom-right.sh
+# 2) Create the theme files
+sudo mkdir -p /usr/share/icons/Invisible/cursors
+sudo nano /usr/share/icons/Invisible/index.theme
+# Paste:
+[Icon Theme]
+Name=Invisible
+Comment=Invisible cursor theme to hide pointer
+Inherits=Adwaita
 
-# Paste the following, save and exit:
-# ---8<--- /home/signage/bin/move-cursor-bottom-right.sh
-#!/usr/bin/env bash
-set -euo pipefail
+# 3) Create a 1x1 transparent image (choose one method)
+cd /usr/share/icons/Invisible/cursors
+sudo convert -size 1x1 xc:none transparent.png || sudo magick -size 1x1 xc:none transparent.png || \
+  (printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=' | sudo base64 -d > transparent.png)
 
-# Wait for the Wayland session/runtime to be ready
-sleep 4
+# 4) Build an invisible left_ptr cursor
+sudo nano /usr/share/icons/Invisible/cursors/left_ptr.cursor.cfg
+# Paste:
+32 1 1 transparent.png
+sudo xcursorgen /usr/share/icons/Invisible/cursors/left_ptr.cursor.cfg /usr/share/icons/Invisible/cursors/left_ptr
 
-# Start ydotoold if it's not already running (no error if already running)
-if ! pgrep -u "$UID" -x ydotoold >/dev/null 2>&1; then
-  (ydotoold >/dev/null 2>&1 &) || true
-  sleep 0.5
-fi
+# 5) Symlink common cursor names to the invisible one
+for n in default arrow hand2 pointer text xterm ibeam crosshair watch wait move grabbing grab \
+col-resize row-resize n-resize s-resize e-resize w-resize ne-resize nw-resize se-resize sw-resize \
+not-allowed context-menu; do
+  sudo ln -sf left_ptr "/usr/share/icons/Invisible/cursors/$n"
+done
 
-# Move a very large relative delta so the pointer lands at bottom‑right
-# (works regardless of resolution or multi‑monitor bounds)
-ydotool mousemove 100000 100000 || true
-# ---8<---
-sudo -u signage chmod +x /home/signage/bin/move-cursor-bottom-right.sh
+# 6) Make it the system default (no D-Bus session needed)
+sudo update-alternatives --install /usr/share/icons/default/index.theme x-cursor-theme /usr/share/icons/Invisible/index.theme 100
+sudo update-alternatives --set x-cursor-theme /usr/share/icons/Invisible/index.theme
 
-# 3) Create a systemd user service to run the script at login
-sudo -u signage mkdir -p /home/signage/.config/systemd/user
-sudo -u signage nano /home/signage/.config/systemd/user/cursor-bottom-right.service
+# 7) Reboot to apply everywhere
+sudo reboot
 
-# Paste the following, save and exit:
-# ---8<--- /home/signage/.config/systemd/user/cursor-bottom-right.service
-[Unit]
-Description=Move mouse to bottom-right after login (Wayland)
-Wants=graphical-session.target
-After=graphical-session.target
-PartOf=graphical-session.target
+# Revert: restore the normal cursor later
+# Option A (system-wide):
+sudo update-alternatives --install /usr/share/icons/default/index.theme x-cursor-theme /usr/share/icons/Adwaita/index.theme 50
+sudo update-alternatives --set x-cursor-theme /usr/share/icons/Adwaita/index.theme
 
-[Service]
-Type=oneshot
-ExecStart=/home/signage/bin/move-cursor-bottom-right.sh
-RemainAfterExit=no
-
-[Install]
-WantedBy=graphical-session.target
-# ---8<---
-
-# 4) Enable the service for the signage user
-sudo systemctl --user --machine=signage@.host daemon-reload || true
-sudo systemctl --user --machine=signage@ daemon-reload || true
-sudo systemctl --user --machine=signage@.host enable --now cursor-bottom-right.service || \
-  sudo systemctl --user --machine=signage@ enable --now cursor-bottom-right.service
-su - signage -c 'systemctl --user daemon-reload && systemctl --user enable --now cursor-bottom-right.service'
-
-# Notes:
-# - This approach uses a large relative move; it’s compositor‑agnostic and
-#   avoids needing to know the screen resolution.
-# - If your distro ships a user unit for ydotoold, you can also enable it with:
-#   su - signage -c "systemctl --user enable --now ydotoold.service"`}</code>
+# Option B (per-user, from inside the desktop session):
+gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'`}</code>
       </pre>
       
     </div>

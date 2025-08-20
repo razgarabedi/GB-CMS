@@ -54,6 +54,83 @@ systemctl --user enable --now kiosk.service
 sudo raspi-config  # Display Options -> Screen Blanking -> Disable
 ```
 
+### Ubuntu 24.04/25 (GNOME/Wayland)
+
+1) Disable screen blank/lock (GNOME):
+```bash
+gsettings set org.gnome.desktop.session idle-delay 0
+gsettings set org.gnome.desktop.screensaver lock-enabled false
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'nothing'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'nothing'
+```
+
+2) Launch Chromium in kiosk mode. Add `?cursor=none` to your player URL (or set `hideCursor: true` in the screen config) to pre-hide the cursor at page load:
+```bash
+chromium \
+  --kiosk \
+  --start-fullscreen \
+  --no-first-run \
+  --no-default-browser-check \
+  --noerrdialogs \
+  --disable-infobars \
+  --disable-translate \
+  --disable-session-crashed-bubble \
+  --autoplay-policy=no-user-gesture-required \
+  --ozone-platform-hint=auto \
+  --app=http://localhost:8080/player/screen-1?cursor=none
+```
+
+3) Hide cursor without moving it (Wayland/Xorg): Invisible cursor theme
+
+Avoid synthesizing mouse movement. Create an "Invisible" cursor theme and select it as the system default so the pointer is hidden from login.
+
+```bash
+# Tools (Ubuntu 25: xcursorgen is in x11-apps)
+sudo apt update
+sudo apt install -y x11-apps imagemagick
+
+# Create theme skeleton
+sudo mkdir -p /usr/share/icons/Invisible/cursors
+sudo nano /usr/share/icons/Invisible/index.theme
+# Paste:
+[Icon Theme]
+Name=Invisible
+Comment=Invisible cursor theme to hide pointer
+Inherits=Adwaita
+
+# Create a 1x1 transparent PNG (use whichever is available)
+cd /usr/share/icons/Invisible/cursors
+sudo convert -size 1x1 xc:none transparent.png || sudo magick -size 1x1 xc:none transparent.png || \
+  (printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=' | sudo base64 -d > transparent.png)
+
+# Build an invisible left_ptr
+sudo nano /usr/share/icons/Invisible/cursors/left_ptr.cursor.cfg
+# Paste:
+32 1 1 transparent.png
+sudo xcursorgen /usr/share/icons/Invisible/cursors/left_ptr.cursor.cfg /usr/share/icons/Invisible/cursors/left_ptr
+
+# Symlink common cursor aliases
+for n in default arrow hand2 pointer text xterm ibeam crosshair watch wait move grabbing grab \
+col-resize row-resize n-resize s-resize e-resize w-resize ne-resize nw-resize se-resize sw-resize \
+not-allowed context-menu; do
+  sudo ln -sf left_ptr "/usr/share/icons/Invisible/cursors/$n"
+done
+
+# Set as system default (no D-Bus session needed)
+sudo update-alternatives --install /usr/share/icons/default/index.theme x-cursor-theme /usr/share/icons/Invisible/index.theme 100
+sudo update-alternatives --set x-cursor-theme /usr/share/icons/Invisible/index.theme
+
+# Reboot to apply everywhere
+sudo reboot
+```
+
+Revert to the normal cursor later:
+
+```bash
+sudo update-alternatives --install /usr/share/icons/default/index.theme x-cursor-theme /usr/share/icons/Adwaita/index.theme 50
+sudo update-alternatives --set x-cursor-theme /usr/share/icons/Adwaita/index.theme
+```
+
 ### Android TV
 
 Use a kiosk browser app that autostarts and keeps the screen awake. Two common options:
