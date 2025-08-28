@@ -158,6 +158,7 @@
               <option value="slideshow" class="i18n" data-i18n="opt.layout.slideshow">Slideshow</option>
               <option value="vertical-3" class="i18n" data-i18n="opt.layout.vertical3">Vertikal 3</option>
               <option value="news" class="i18n" data-i18n="opt.layout.news">News</option>
+              <option value="pv" class="i18n" data-i18n="opt.layout.pv">PV</option>
             </select>
           </div>
         </div>
@@ -391,6 +392,7 @@
           'opt.layout.slideshow': 'Slideshow',
           'opt.layout.vertical3': 'Vertikal 3',
           'opt.layout.news': 'News',
+          'opt.layout.pv': 'PV',
           'field.powerProfile': 'Leistungsprofil',
           'opt.profile.performance': 'Leistung',
           'opt.profile.balanced': 'Ausgewogen',
@@ -494,6 +496,7 @@
           'opt.layout.slideshow': 'slideshow',
           'opt.layout.vertical3': 'vertical-3',
           'opt.layout.news': 'news',
+          'opt.layout.pv': 'pv',
           'field.powerProfile': 'Power Profile',
           'opt.profile.performance': 'performance',
           'opt.profile.balanced': 'balanced',
@@ -991,10 +994,10 @@
 
       function toggleSlideshowOnly() {
         const layoutVal = (document.getElementById('layout')?.value || 'default')
-        // Show welcome/bottom-widgets settings for slideshow and news
-        const isShowWelcome = layoutVal === 'slideshow' || layoutVal === 'news'
-        // Effects apply to both slideshow and news (both use slideshow component)
-        const showEffects = layoutVal === 'slideshow' || layoutVal === 'news'
+        // Show welcome/bottom-widgets settings for slideshow, news and pv
+        const isShowWelcome = layoutVal === 'slideshow' || layoutVal === 'news' || layoutVal === 'pv'
+        // Effects apply to slideshow, news and pv (all use slideshow component)
+        const showEffects = layoutVal === 'slideshow' || layoutVal === 'news' || layoutVal === 'pv'
         document.querySelectorAll('.slideshow-only').forEach((el) => {
           el.classList.toggle('hidden', !isShowWelcome)
         })

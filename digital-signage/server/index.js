@@ -137,6 +137,21 @@ app.get('/api/forecast/:location', async (req, res) => {
   }
 });
 
+// Simple proxy for SolarWeb public display API to avoid CORS
+app.get('/api/pv/solarweb', async (req, res) => {
+  try {
+    const token = String(req.query.token || '').trim();
+    if (!token) return res.status(400).json({ error: 'token required' });
+    const url = new URL('https://www.solarweb.com/ActualData/GetCompareDataForPublicDisplay');
+    url.searchParams.set('PublicDisplayToken', token);
+    const r = await fetch(url);
+    const data = await r.json();
+    res.json(data || {});
+  } catch (err) {
+    res.status(500).json({ error: 'failed to fetch pv data' });
+  }
+});
+
 // Screens listing: GET /api/screens
 app.get('/api/screens', (req, res) => {
   const db = readDb();
@@ -155,7 +170,7 @@ function defaultConfig(screenId) {
     webViewerMode: 'iframe', // 'iframe' | 'snapshot'
     snapshotRefreshMs: 300000, // 5 minutes
     theme: 'dark', // 'dark' | 'light'
-    layout: 'default', // 'default' | 'slideshow' | 'vertical-3' | 'news'
+    layout: 'default', // 'default' | 'slideshow' | 'vertical-3' | 'news' | 'pv'
     welcomeText: 'Herzlich Willkommen',
     welcomeTextColor: '#ffffff',
     clockType: 'analog', // 'analog' | 'digital'

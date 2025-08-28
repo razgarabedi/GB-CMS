@@ -5,6 +5,8 @@ import WeatherWidget from '../components/WeatherWidget'
 import WebViewer from '../components/WebViewer'
 import Slideshow from '../components/Slideshow'
 import NewsWidget from '../components/NewsWidget'
+import PVFlowWidget from '../components/PVFlowWidget'
+import CompactWeather from '../components/CompactWeather'
 
 type RefreshIntervals = { contentMs: number; rotateMs: number }
 type Config = {
@@ -15,7 +17,7 @@ type Config = {
   webViewerMode?: 'iframe' | 'snapshot'
   snapshotRefreshMs?: number
   theme?: 'dark' | 'light'
-  layout?: 'default' | 'slideshow' | 'vertical-3' | 'news'
+  layout?: 'default' | 'slideshow' | 'vertical-3' | 'news' | 'pv' | 'PV'
   welcomeText?: string
   welcomeTextColor?: string
   clockType?: 'analog' | 'digital'
@@ -103,7 +105,7 @@ export default function Preview() {
   const mode = config.webViewerMode || 'iframe'
   const snapshotMs = config.snapshotRefreshMs ?? 300000
   const theme = config.theme || 'dark'
-  const layout = config.layout || 'default'
+  const layout = (((config.layout || 'default') as unknown as string)?.toLowerCase?.() || 'default') as 'default' | 'slideshow' | 'vertical-3' | 'news' | 'pv'
   const clockType = config.clockType || 'analog'
   const clockStyle = (config.clockStyle as any) || (clockType === 'digital' ? 'minimal' : 'classic')
   const profile = config.powerProfile || 'balanced'
@@ -220,6 +222,48 @@ export default function Preview() {
               backgroundColor: (config.bottomWidgetsBgColor || undefined),
             }}>
               <div className="bottom-clock">{renderClock(140)}</div>
+              <div className="bottom-welcome" style={{ color: config.welcomeTextColor || '#fff' }}>
+                {renderWelcomeText(config.welcomeText || 'Herzlich Willkommen', config.welcomeTextColor || '#fff')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layout === 'pv' && (
+        <div className="grid-news">
+          <div className="cell weather" style={{ display: 'grid', gridTemplateRows: '1.1fr 1.3fr 0.8fr', height: '100%' }}>
+            <div style={{ display: 'contents' }}>
+              <div style={{ gridRow: '1 / 2', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
+                <NewsWidget compact theme={theme} category={config.newsCategory as any || 'wirtschaft'} limit={Math.min(6, config.newsLimit || 6)} rotationMs={config.newsRotationMs || 8000} />
+              </div>
+              <div style={{ gridRow: '2 / 3', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
+                <PVFlowWidget theme={theme} token={String(import.meta.env.VITE_PV_TOKEN || '29fa1885-18ab-43c2-b3f8-b89a0f5cc839')} />
+              </div>
+              <div style={{ gridRow: '3 / 4', minHeight: 0, height: '100%', width: '100%', alignSelf: 'stretch', justifySelf: 'stretch' }}>
+                <CompactWeather location={config.weatherLocation || 'London'} theme={theme} />
+              </div>
+            </div>
+          </div>
+          <div className="cell viewer">
+            <div className="ratio-16x9">
+              <Slideshow
+                images={(config as any)?.slides || []}
+                intervalMs={config.refreshIntervals?.rotateMs || 8000}
+                animations={animList}
+                durationMs={animDur}
+                preloadNext={preloadNext}
+              />
+            </div>
+          </div>
+          <div className="cell bottom">
+            <div className="bottom-widgets" style={{
+              backgroundImage: (config.bottomWidgetsBgImage ? `url(${config.bottomWidgetsBgImage})` : undefined),
+              backgroundPosition: (config.bottomWidgetsBgImage ? 'right center' : undefined),
+              backgroundRepeat: (config.bottomWidgetsBgImage ? 'no-repeat' : undefined),
+              backgroundSize: (config.bottomWidgetsBgImage ? 'contain' : undefined),
+              backgroundColor: (config.bottomWidgetsBgColor || undefined),
+            }}>
               <div className="bottom-welcome" style={{ color: config.welcomeTextColor || '#fff' }}>
                 {renderWelcomeText(config.welcomeText || 'Herzlich Willkommen', config.welcomeTextColor || '#fff')}
               </div>

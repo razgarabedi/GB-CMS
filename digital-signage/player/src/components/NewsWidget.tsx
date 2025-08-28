@@ -5,6 +5,7 @@ export type NewsWidgetProps = {
   limit?: number
   theme?: 'dark' | 'light'
   rotationMs?: number
+  compact?: boolean
 }
 
 function computeApiBase(): string {
@@ -17,7 +18,7 @@ function computeApiBase(): string {
   return loc.origin
 }
 
-export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme = 'dark', rotationMs = 8000 }: NewsWidgetProps) {
+export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme = 'dark', rotationMs = 8000, compact = false }: NewsWidgetProps) {
   const [items, setItems] = useState<Array<{ title: string; link: string; pubDate?: string; description?: string; summary?: string; image?: string }>>([])
   const [error, setError] = useState<string | null>(null)
   const [index, setIndex] = useState(0)
@@ -70,7 +71,7 @@ export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme =
   const imageUrl = cur?.image ? `${computeApiBase()}/api/image?url=${encodeURIComponent(cur.image)}` : null
   return (
     <div style={{
-      padding: 12,
+      padding: compact ? 8 : 12,
       height: '100%',
       width: '100%',
       boxSizing: 'border-box',
@@ -92,14 +93,14 @@ export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme =
           />
         </>
       )}
-      <div style={{ fontWeight: 800, letterSpacing: .4, fontSize: '2.4vmin' }}>Aktuelle Nachrichten</div>
-      {error && <div style={{ color: '#f87171', fontSize: '2vmin' }}>{error}</div>}
-      {!items.length && !error && <div style={{ fontSize: '2vmin', color: sub }}>Keine Nachrichten</div>}
+      <div style={{ fontWeight: 800, letterSpacing: .4, fontSize: compact ? '1.9vmin' : '2.4vmin' }}>Aktuelle Nachrichten</div>
+      {error && <div style={{ color: '#f87171', fontSize: compact ? '1.7vmin' : '2vmin' }}>{error}</div>}
+      {!items.length && !error && <div style={{ fontSize: compact ? '1.7vmin' : '2vmin', color: sub }}>Keine Nachrichten</div>}
       {cur && (
         <div style={{ color: text, marginTop: 8, overflow: 'hidden', position: 'relative', zIndex: 2 }}>
-          <div style={{ fontSize: '2.2vmin', fontWeight: 800, textAlign: 'left' }}>{cur.title}</div>
-          {cur.pubDate && <div style={{ fontSize: '1.6vmin', color: sub, marginTop: 6 }}>{new Date(cur.pubDate).toLocaleString('de-DE')}</div>}
-          <div style={{ fontSize: '1.9vmin', color: sub, marginTop: 8, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
+          <div style={{ fontSize: compact ? '1.9vmin' : '2.2vmin', fontWeight: 800, textAlign: 'left' }}>{cur.title}</div>
+          {cur.pubDate && <div style={{ fontSize: compact ? '1.4vmin' : '1.6vmin', color: sub, marginTop: 6 }}>{new Date(cur.pubDate).toLocaleString('de-DE')}</div>}
+          <div style={{ fontSize: compact ? '1.6vmin' : '1.9vmin', color: sub, marginTop: 8, lineHeight: 1.22, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
             {(cur.summary || stripHtml(cur.description))}
           </div>
         </div>

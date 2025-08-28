@@ -138,6 +138,8 @@ body { background: #000; color: #fff; font-family: system-ui, -apple-system, Seg
 .grid-news .bottom { grid-area: bottom; background: var(--panel-weak); }
 .grid-news .bottom .bottom-widgets { grid-template-columns: 1fr; justify-items: center; }
 
+/* PV layout matches grid-news structure; no separate styles needed */
+
 @media (max-width: 768px) {
   .grid-news {
     grid-template-columns: 1fr;
