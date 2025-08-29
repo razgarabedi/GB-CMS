@@ -138,14 +138,32 @@ app.get('/api/forecast/:location', async (req, res) => {
 });
 
 // Simple proxy for SolarWeb public display API to avoid CORS
+// Very-light in-memory cache with short TTL to smooth out upstream fetch latency
+const __pvCache = new Map(); // key: token -> { ts: number, data: any }
 app.get('/api/pv/solarweb', async (req, res) => {
   try {
     const token = String(req.query.token || '').trim();
     if (!token) return res.status(400).json({ error: 'token required' });
+    // Prevent any intermediary caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    const cacheKey = token;
+    const now = Date.now();
+    const cached = __pvCache.get(cacheKey);
+    const TTL = 1500; // 1.5s TTL
+    if (cached && (now - cached.ts) < TTL) {
+      return res.json(cached.data || {});
+    }
+
     const url = new URL('https://www.solarweb.com/ActualData/GetCompareDataForPublicDisplay');
     url.searchParams.set('PublicDisplayToken', token);
-    const r = await fetch(url);
+    // Add an explicit cache buster just in case
+    url.searchParams.set('_', String(now));
+    const r = await fetch(url, { cache: 'no-store' });
     const data = await r.json();
+    __pvCache.set(cacheKey, { ts: now, data });
     res.json(data || {});
   } catch (err) {
     res.status(500).json({ error: 'failed to fetch pv data' });

@@ -37,13 +37,19 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
     return loc.origin
   }
 
+  const ctrlRef = useRef<AbortController | null>(null)
   useEffect(() => {
     let stop = false
     async function load() {
       try {
         setError(null)
+        // abort any in-flight request before starting a new one
+        try { ctrlRef.current?.abort() } catch {}
+        const ctrl = new AbortController()
+        ctrlRef.current = ctrl
         const base = computeApiBase()
-        const r = await fetch(`${base}/api/pv/solarweb?token=${encodeURIComponent(token)}`)
+        const url = `${base}/api/pv/solarweb?token=${encodeURIComponent(token)}&t=${Date.now()}`
+        const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' as RequestCache })
         const data = await r.json()
         if (!stop) setPv(data || null)
       } catch {
@@ -51,8 +57,8 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
       }
     }
     load()
-    const id = setInterval(load, 30 * 1000)
-    return () => { stop = true; clearInterval(id) }
+    const id = setInterval(load, 5 * 1000)
+    return () => { stop = true; clearInterval(id); try { ctrlRef.current?.abort() } catch {} }
   }, [token])
 
   // probe for optional custom icon images in /pv/*.png
@@ -214,7 +220,13 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
           ringBatt,
           colors,
           '🔋',
-          metrics.battDischarge > 0 || metrics.battCharge > 0 ? fmtKw(Math.max(metrics.battCharge, metrics.battDischarge)) : (metrics.battSoc != null ? `${Math.round(metrics.battSoc)} %` : '–'),
+          (() => {
+            const flow = Math.max(metrics.battCharge, metrics.battDischarge)
+            const soc = metrics.battSoc
+            const flowStr = flow > 0 ? `${fmtKw(flow)}` : ''
+            const socStr = soc != null ? `${Math.round(soc)}%` : ''
+            return [flowStr, socStr].filter(Boolean).join(' · ')
+          })(),
           iconAvailable.batt ? ICON_PATHS.batt : undefined
         )}
 
