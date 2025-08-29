@@ -59,6 +59,10 @@ export default function CompactWeather({ location, theme = 'dark' }: CompactWeat
   const windKmh: number | undefined = typeof current?.wind?.speedKmh === 'number' ? current.wind.speedKmh : (typeof current?.wind?.speed === 'number' ? Math.round(current.wind.speed * 3.6) : undefined)
   const dateStr = new Date(nowMs).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })
   const timeStr = new Date(nowMs).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  const todayDaily = Array.isArray(days) && days.length ? days[0] : null
+  const todayHi: number | undefined = typeof todayDaily?.temp?.max === 'number' ? Math.round(todayDaily.temp.max) : (typeof todayDaily?.temp?.day === 'number' ? Math.round(todayDaily.temp.day) : undefined)
+  const todayLo: number | undefined = typeof todayDaily?.temp?.min === 'number' ? Math.round(todayDaily.temp.min) : (typeof todayDaily?.temp?.night === 'number' ? Math.round(todayDaily.temp.night) : undefined)
+  const todayHumidity: number | undefined = typeof todayDaily?.humidity === 'number' ? Math.round(todayDaily.humidity) : (typeof current?.main?.humidity === 'number' ? Math.round(current.main.humidity) : undefined)
 
   // Update animated weather background when current changes
   useEffect(() => {
@@ -78,7 +82,7 @@ export default function CompactWeather({ location, theme = 'dark' }: CompactWeat
       position: 'relative',
       overflow: 'hidden',
       height: '100%', width: '100%', boxSizing: 'border-box',
-      padding: 10,
+      padding: 6,
       display: 'grid',
       gridTemplateRows: 'auto 1fr',
       gap: 8,
@@ -96,33 +100,59 @@ export default function CompactWeather({ location, theme = 'dark' }: CompactWeat
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}
         />
       )}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: isLight ? 'linear-gradient(135deg, #fafafaC0, #f1f5f980)' : 'linear-gradient(135deg, #0a0f1ab0, #0f172a90)' }} />
-      <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
-        {iconUrl && <img src={iconUrl} alt="" style={{ width: 44, height: 44, filter: isLight ? 'none' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))' }} />}
-        <div style={{ display: 'grid', lineHeight: 1 }}>
-          <div style={{ fontSize: '3.4vmin', fontWeight: 800, color: text }}>{isFinite(temp as any) ? `${temp}°` : '–'}</div>
-          <div style={{ fontSize: '1.6vmin', color: sub, textTransform: 'capitalize' }}>{desc}</div>
-          <div style={{ fontSize: '1.5vmin', color: sub, marginTop: 4 }}>
-            {dateStr} · {timeStr}{typeof windKmh === 'number' ? ` · Wind ${Math.round(windKmh)} km/h` : ''}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: isLight ? 'linear-gradient(135deg, #fafafaB5, #f1f5f975)' : 'linear-gradient(135deg, #0a0f1a9c, #0f172a80)' }} />
+      <div style={{ position: 'relative', zIndex: 2, paddingTop: 4 }}>
+        <div style={{ position: 'absolute', top: 2, right: 8, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: 999 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: accent, boxShadow: `0 0 10px ${accent}AA`, animation: 'cwPulse 2.8s ease-in-out infinite' }} />
+          <span style={{ fontSize: '1.6vmin', color: '#fff', fontWeight: 600 }}>{location}</span>
+        </div>
+        <div style={{ background: 'rgba(0,0,0,0.34)', borderRadius: 10, padding: 4, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', lineHeight: 1.05 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
+            {iconUrl && <img src={iconUrl} alt="" style={{ width: 40, height: 40, filter: isLight ? 'none' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))' }} />}
+            <div style={{ fontSize: '3.0vmin', fontWeight: 800, color: text }}>{isFinite(temp as any) ? `${temp}°` : '–'}</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.7vmin', color: sub, fontWeight: 600, marginBottom: 2 }}>{dateStr}</div>
+            <div style={{ fontSize: '3.2vmin', fontWeight: 800, color: text }}>{timeStr}</div>
+          </div>
+          <div></div>
+        </div>
+        <div style={{ display: 'grid', justifyItems: 'center', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: '1.4vmin', color: sub, textTransform: 'capitalize' }}>{desc}</div>
+          <div style={{ fontSize: '1.4vmin', color: sub }}>
+            {typeof windKmh === 'number' ? `Wind ${Math.round(windKmh)} km/h` : ''}
+            {typeof todayHi === 'number' ? ` · H ${todayHi}°` : ''}
+            {typeof todayLo === 'number' ? ` · L ${todayLo}°` : ''}
+            {typeof todayHumidity === 'number' ? ` · 💧 ${todayHumidity}%` : ''}
           </div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: accent, boxShadow: `0 0 10px ${accent}AA`, animation: 'cwPulse 2.8s ease-in-out infinite' }} />
-          <span style={{ fontSize: '1.5vmin', color: sub }}>{location}</span>
         </div>
       </div>
-      <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, minHeight: 0, alignItems: 'stretch' }}>
         {days.map((d: any, i: number) => (
           <div key={i} style={{
-            display: 'grid', gridTemplateRows: 'auto auto', justifyItems: 'center',
+            display: 'grid', gridTemplateRows: 'auto 1fr', justifyItems: 'stretch',
             padding: 6, borderRadius: 8,
-            background: isLight ? '#ffffff' : 'rgba(255,255,255,0.06)',
+            backgroundImage: `${isLight ? 'linear-gradient(0deg, rgba(255,255,255,0.28), rgba(255,255,255,0.28))' : 'linear-gradient(0deg, rgba(0,0,0,0.28), rgba(0,0,0,0.28))'}, url(${photoForIcon(d.weather?.[0]?.icon || '')})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             border: isLight ? '1px solid #e5e7eb' : '1px solid #243449',
           }}>
-            <div style={{ fontSize: '1.5vmin', color: sub }}>{formatDay(d.dt, 'de-DE')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <img src={`https://openweathermap.org/img/wn/${normalizeIcon(d.weather?.[0]?.icon || '')}.png`} alt="" style={{ width: 28, height: 28 }} />
-              <div style={{ fontSize: '1.6vmin', fontWeight: 700, color: text }}>{Math.round(d.temp?.day)}°</div>
+            <div style={{ fontSize: '1.5vmin', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.5)', textAlign: 'center' }}>{formatDay(d.dt, 'de-DE')}</div>
+            <div style={{ background: 'rgba(0,0,0,0.38)', borderRadius: 6, padding: 4, width: '100%', boxSizing: 'border-box', display: 'grid', gridTemplateRows: 'auto auto auto', alignItems: 'center', justifyItems: 'center', gap: 4, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <img src={`https://openweathermap.org/img/wn/${normalizeIcon(d.weather?.[0]?.icon || '')}.png`} alt="" style={{ width: 28, height: 28 }} />
+                <div style={{ fontSize: '1.6vmin', fontWeight: 700 }}>{typeof d.temp?.day === 'number' ? Math.round(d.temp.day) + '°' : '–'}</div>
+              </div>
+              {typeof d.humidity === 'number' && (
+                <div style={{ fontSize: '1.4vmin' }}>
+                  {`💧 ${Math.round(d.humidity)}%`}
+                </div>
+              )}
+              <div style={{ fontSize: '1.4vmin' }}>
+                {`H ${typeof d.temp?.max === 'number' ? Math.round(d.temp.max) + '°' : (typeof d.temp?.day === 'number' ? Math.round(d.temp.day) + '°' : '–')} · L ${typeof d.temp?.min === 'number' ? Math.round(d.temp.min) + '°' : (typeof d.temp?.night === 'number' ? Math.round(d.temp.night) + '°' : '–')}`}
+              </div>
             </div>
           </div>
         ))}
@@ -185,6 +215,35 @@ function localVideoFor(category: string): string | null {
   if (category === 'clear') return '/videos/weather/clear-1.mp4'
   if (category === 'mist') return '/videos/weather/mist-1.mp4'
   return null
+}
+
+// Deterministic static photo for daily tiles (terrain only)
+function photoForIcon(icon: string): string {
+  const id = (icon || '').slice(0, 2)
+  const CLEAR = [
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1920&auto=format&fit=crop',
+  ]
+  const CLOUDS = [
+    'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?q=80&w=1920&auto=format&fit=crop',
+  ]
+  const RAIN = [
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1920&auto=format&fit=crop',
+  ]
+  const THUNDER = [
+    'https://images.unsplash.com/photo-1504386106331-3e4e71712b38?q=80&w=1920&auto=format&fit=crop',
+  ]
+  const SNOW = [
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1920&auto=format&fit=crop',
+  ]
+  const MIST = [
+    'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1920&auto=format&fit=crop',
+  ]
+  if (id === '01') return CLEAR[0]
+  if (id === '02' || id === '03' || id === '04') return CLOUDS[0]
+  if (id === '09' || id === '10') return RAIN[0]
+  if (id === '11') return THUNDER[0]
+  if (id === '13') return SNOW[0]
+  return MIST[0]
 }
 
 

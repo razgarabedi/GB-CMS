@@ -69,7 +69,7 @@ async function fetchForecast(lat, lon, units = 'metric', lang = 'de') {
   url.searchParams.set('latitude', String(lat));
   url.searchParams.set('longitude', String(lon));
   url.searchParams.set('current_weather', 'true');
-  url.searchParams.set('daily', 'weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max');
+  url.searchParams.set('daily', 'weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,relative_humidity_2m_max,relative_humidity_2m_min');
   url.searchParams.set('timezone', 'auto');
   url.searchParams.set('language', lang);
   // units: Open-Meteo uses metric by default; for imperial we could convert client-side
@@ -113,10 +113,16 @@ async function getDaily(location, units = 'metric', lang = 'de') {
     const isDay = true;
     const { icon, description } = iconAndDescFromCode(code, isDay, lang);
     const dt = Math.floor(new Date(f.daily.time[i]).getTime() / 1000);
+    const rhMax = Array.isArray(f.daily.relative_humidity_2m_max) ? f.daily.relative_humidity_2m_max[i] : undefined;
+    const rhMin = Array.isArray(f.daily.relative_humidity_2m_min) ? f.daily.relative_humidity_2m_min[i] : undefined;
+    const humidity = typeof rhMax === 'number' && typeof rhMin === 'number'
+      ? Math.round((rhMax + rhMin) / 2)
+      : (typeof rhMax === 'number' ? Math.round(rhMax) : (typeof rhMin === 'number' ? Math.round(rhMin) : undefined));
     days.push({
       dt,
       temp: { day: f.daily.temperature_2m_max[i], night: f.daily.temperature_2m_min[i] },
       precipProbability: Array.isArray(f.daily.precipitation_probability_max) ? f.daily.precipitation_probability_max[i] : undefined,
+      humidity,
       weather: [{ description, icon }],
     });
   }
