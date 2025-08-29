@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export type PVFlowWidgetProps = {
   token: string
@@ -17,6 +17,15 @@ type PvData = {
 export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProps) {
   const [pv, setPv] = useState<PvData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  type IconKey = 'sun' | 'load' | 'grid' | 'batt' | 'inv'
+  const ICON_PATHS: Record<IconKey, string> = {
+    sun: '/pv/sun.png',
+    load: '/pv/load.png',
+    grid: '/pv/grid.png',
+    batt: '/pv/batt.png',
+    inv: '/pv/inv.png',
+  }
+  const [iconAvailable, setIconAvailable] = useState<Record<IconKey, boolean>>({ sun: false, load: false, grid: false, batt: false, inv: false })
 
   function computeApiBase(): string {
     const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -45,6 +54,16 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
     const id = setInterval(load, 30 * 1000)
     return () => { stop = true; clearInterval(id) }
   }, [token])
+
+  // probe for optional custom icon images in /pv/*.png
+  useEffect(() => {
+    (['sun', 'load', 'grid', 'batt', 'inv'] as IconKey[]).forEach((key) => {
+      const img = new Image()
+      img.onload = () => setIconAvailable(prev => ({ ...prev, [key]: true }))
+      img.onerror = () => setIconAvailable(prev => ({ ...prev, [key]: false }))
+      img.src = ICON_PATHS[key]
+    })
+  }, [])
 
   const colors = theme === 'light'
     ? { text: '#111', sub: '#334155', panel: '#fff', grid: '#e5e7eb' }
@@ -97,9 +116,20 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
     const len = Math.sqrt(dx*dx + dy*dy)
     const ux = dx / len
     const uy = dy / len
-    const start = { x: a.x + ux * 46, y: a.y + uy * 46 }
-    const end = { x: b.x - ux * 46, y: b.y - uy * 46 }
+    const inset = 30
+    const start = { x: a.x + ux * inset, y: a.y + uy * inset }
+    const end = { x: b.x - ux * inset, y: b.y - uy * inset }
     return `M ${start.x} ${start.y} L ${end.x} ${end.y}`
+  }
+
+  function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(max, n)) }
+
+  const DOT_DURATION_S = 2.2
+  function flowDotRadius(watts: number, maxW: number) {
+    const ratio = clamp(watts / Math.max(1, maxW), 0, 1)
+    const minR = 2.6
+    const maxR = 6.2
+    return minR + (maxR - minR) * ratio
   }
 
   const ringSun = ring(metrics.pPv, metrics.maxW, '#f59e0b')
@@ -126,65 +156,152 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
           </filter>
         </defs>
 
-        {/* connective flows */}
-        {/* Sun -> Inverter (always towards inverter) */}
-        <path d={flowPath(nodes.sun, nodes.inv)} stroke="#f59e0b" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
+        {/* base connective lines (always visible) */}
+        <path id="path-sun-inv" d={flowPath(nodes.sun, nodes.inv)} stroke={colors.grid} strokeWidth="2" fill="none" opacity="0.65" />
+        <path id="path-inv-load" d={flowPath(nodes.inv, nodes.load)} stroke={colors.grid} strokeWidth="2" fill="none" opacity="0.65" />
+        <path id="path-grid-inv" d={flowPath(nodes.grid, nodes.inv)} stroke={colors.grid} strokeWidth="2" fill="none" opacity="0.65" />
+        <path id="path-inv-batt" d={flowPath(nodes.inv, nodes.batt)} stroke={colors.grid} strokeWidth="2" fill="none" opacity="0.65" />
 
-        {/* Inverter <-> Load (always from inverter to load) */}
-        <path d={flowPath(nodes.inv, nodes.load)} stroke="#38bdf8" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
-
-        {/* Grid flow direction depends on import/export */}
+        {/* moving dots to indicate flow direction and magnitude */}
+        {/* Sun -> Inverter */}
+        {metrics.pPv > 1 && (
+          <DotsAlongPath d={flowPath(nodes.sun, nodes.inv)} color="#f59e0b" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.pPv, metrics.maxW)} />
+        )}
+        {/* Inverter -> Load */}
+        {metrics.pLoad > 1 && (
+          <DotsAlongPath d={flowPath(nodes.inv, nodes.load)} color="#38bdf8" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.pLoad, metrics.maxW)} />
+        )}
+        {/* Grid import/export */}
         {gridFlowIn && (
-          <path d={flowPath(nodes.grid, nodes.inv)} stroke="#94a3b8" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
+          <DotsAlongPath d={flowPath(nodes.grid, nodes.inv)} color="#94a3b8" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.gridImport, metrics.maxW)} />
         )}
         {gridFlowOut && (
-          <path d={flowPath(nodes.inv, nodes.grid)} stroke="#94a3b8" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
+          <DotsAlongPath d={flowPath(nodes.inv, nodes.grid)} color="#94a3b8" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.gridExport, metrics.maxW)} />
         )}
-
-        {/* Battery flow depends on charge/discharge */}
+        {/* Battery charge/discharge */}
         {battFlowIn && (
-          <path d={flowPath(nodes.inv, nodes.batt)} stroke="#10b981" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
+          <DotsAlongPath d={flowPath(nodes.inv, nodes.batt)} color="#10b981" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.battCharge, metrics.maxW)} />
         )}
         {battFlowOut && (
-          <path d={flowPath(nodes.batt, nodes.inv)} stroke="#10b981" strokeWidth="6" fill="none" strokeDasharray="6 12" className="dash flow-forward" />
+          <DotsAlongPath d={flowPath(nodes.batt, nodes.inv)} color="#10b981" dur={DOT_DURATION_S} radius={flowDotRadius(metrics.battDischarge, metrics.maxW)} />
         )}
 
         {/* central inverter panel */}
         <g filter="url(#softShadow)">
           <circle cx={nodes.inv.x} cy={nodes.inv.y} r={42} fill={colors.panel} stroke={colors.grid} strokeWidth="2" />
-          <text x={nodes.inv.x} y={nodes.inv.y + 5} textAnchor="middle" fontSize="14" fill={colors.sub}>PV</text>
+          {iconAvailable.inv ? (() => {
+            const invIconSize = Math.min(42 * 1.05, 48)
+            const ix = nodes.inv.x - invIconSize / 2
+            const iy = nodes.inv.y - invIconSize / 2
+            return (
+              <image href={ICON_PATHS.inv} x={ix} y={iy} width={invIconSize} height={invIconSize} preserveAspectRatio="xMidYMid slice" />
+            )
+          })() : (
+            <text x={nodes.inv.x} y={nodes.inv.y + 5} textAnchor="middle" fontSize="14" fill={colors.sub}>PV</text>
+          )}
         </g>
 
         {/* node: sun */}
-        {renderNode(nodes.sun.x, nodes.sun.y, ringSun, colors, '☀️', fmtKw(metrics.pPv))}
+        {renderNode(nodes.sun.x, nodes.sun.y, ringSun, colors, '☀️', fmtKw(metrics.pPv), iconAvailable.sun ? ICON_PATHS.sun : undefined)}
         {/* node: load */}
-        {renderNode(nodes.load.x, nodes.load.y, ringLoad, colors, '🔌', fmtKw(metrics.pLoad))}
+        {renderNode(nodes.load.x, nodes.load.y, ringLoad, colors, '🔌', fmtKw(metrics.pLoad), iconAvailable.load ? ICON_PATHS.load : undefined)}
         {/* node: grid */}
-        {renderNode(nodes.grid.x, nodes.grid.y, ringGrid, colors, '⚡', fmtKw(Math.max(metrics.gridImport, metrics.gridExport)))}
+        {renderNode(nodes.grid.x, nodes.grid.y, ringGrid, colors, '⚡', fmtKw(Math.max(metrics.gridImport, metrics.gridExport)), iconAvailable.grid ? ICON_PATHS.grid : undefined)}
         {/* node: battery */}
-        {renderNode(nodes.batt.x, nodes.batt.y, ringBatt, colors, '🔋', metrics.battDischarge > 0 || metrics.battCharge > 0 ? fmtKw(Math.max(metrics.battCharge, metrics.battDischarge)) : (metrics.battSoc != null ? `${Math.round(metrics.battSoc)} %` : '–'))}
+        {renderNode(
+          nodes.batt.x,
+          nodes.batt.y,
+          ringBatt,
+          colors,
+          '🔋',
+          metrics.battDischarge > 0 || metrics.battCharge > 0 ? fmtKw(Math.max(metrics.battCharge, metrics.battDischarge)) : (metrics.battSoc != null ? `${Math.round(metrics.battSoc)} %` : '–'),
+          iconAvailable.batt ? ICON_PATHS.batt : undefined
+        )}
 
         {/* title */}
-        <text x={size/2} y={32} textAnchor="middle" fontSize="16" fill={colors.sub} style={{ letterSpacing: 1.2 }}>AKTUELLE LEISTUNG</text>
+        <text x={size/2} y={32} textAnchor="middle" fontSize="16" fill={colors.sub} style={{ letterSpacing: 1.2 }}>PV ANLAGE AKTUELLE LEISTUNG</text>
       </svg>
-      <style>{`
-        .pv-flow .dash { animation: flowDash 1400ms linear infinite; }
-        @keyframes flowDash { to { stroke-dashoffset: -36; } }
-      `}</style>
+      <style>{``}</style>
       {error && <div style={{ position: 'absolute', bottom: 8, left: 8, color: '#f87171', fontSize: 14 }}>{error}</div>}
     </div>
   )
 }
 
-function renderNode(x: number, y: number, ring: { radius: number; c: number; dash: string; color: string }, colors: any, icon: string, label: string) {
+function renderNode(
+  x: number,
+  y: number,
+  ring: { radius: number; c: number; dash: string; color: string },
+  colors: any,
+  icon: string,
+  label: string,
+  iconUrl?: string
+) {
   const r = ring.radius
   return (
     <g transform={`translate(${x}, ${y})`} filter="url(#softShadow)">
       <circle cx={0} cy={0} r={r + 18} fill="transparent" />
-      <circle cx={0} cy={0} r={r} fill="#0a0f1a80" stroke={colors.grid} strokeWidth={2} />
+      <circle cx={0} cy={0} r={r} fill={colors.panel} stroke={colors.grid} strokeWidth={2} />
       <circle cx={0} cy={0} r={r} fill="transparent" stroke={ring.color} strokeWidth={8} strokeDasharray={ring.dash} strokeLinecap="round" transform="rotate(-90)" />
-      <text x={0} y={6} textAnchor="middle" fontSize="24" fill={colors.text}>{icon}</text>
-      <text x={0} y={r + 24} textAnchor="middle" fontSize="14" fill={colors.sub}>{label}</text>
+      {iconUrl ? (() => {
+        const iconSize = Math.min(r * 1.2, 56)
+        const x = -iconSize / 2
+        const y = -iconSize / 2
+        return <image href={iconUrl} x={x} y={y} width={iconSize} height={iconSize} preserveAspectRatio="xMidYMid slice" />
+      })() : (
+        <text x={0} y={6} textAnchor="middle" fontSize="24" fill={colors.text}>{icon}</text>
+      )}
+      {(() => {
+        const outline = (colors.text || '').toLowerCase() === '#111' ? '#fff' : '#000'
+        return (
+          <text
+            x={0}
+            y={r + 28}
+            textAnchor="middle"
+            fontSize="15"
+            fill={colors.text}
+            stroke={outline}
+            strokeWidth={2}
+            strokeOpacity={0.2}
+            paintOrder="stroke"
+            style={{ fontWeight: 500, letterSpacing: 0.3 }}
+          >
+            {label}
+          </text>
+        )
+      })()}
+    </g>
+  )
+}
+
+function DotsAlongPath({ d, color, dur, count = 4, radius = 3 }: { d: string; color: string; dur: number; count?: number; radius?: number }) {
+  const hiddenPathId = useMemo(() => `p-${Math.random().toString(36).slice(2)}`, [])
+  const pathRef = useRef<SVGPathElement | null>(null)
+  const [dotCount, setDotCount] = useState<number>(count)
+
+  useEffect(() => {
+    const el = pathRef.current
+    if (!el) return
+    try {
+      const length = el.getTotalLength()
+      const targetSpacingPx = 48 // desired pixel spacing between dots, consistent across paths
+      const computed = Math.max(2, Math.round(length / targetSpacingPx))
+      setDotCount(computed)
+    } catch {
+      // noop: fall back to provided count
+      setDotCount(count)
+    }
+  }, [d, count])
+
+  return (
+    <g pointerEvents="none">
+      <path ref={pathRef} id={hiddenPathId} d={d} fill="none" stroke="none" />
+      {Array.from({ length: dotCount }).map((_, i) => (
+        <circle key={i} r={radius} fill={color} opacity={0.95} filter="url(#softShadow)">
+          <animateMotion dur={`${dur}s`} repeatCount="indefinite" begin={`${(dur / dotCount) * i}s`}>
+            <mpath href={`#${hiddenPathId}`} />
+          </animateMotion>
+        </circle>
+      ))}
     </g>
   )
 }
