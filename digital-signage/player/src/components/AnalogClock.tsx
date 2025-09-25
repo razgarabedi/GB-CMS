@@ -6,7 +6,7 @@ import type { AnalogClockProps } from '../types/ComponentInterfaces'
  * AnalogClock renders a clock with smooth second hand using requestAnimationFrame.
  * The hands are rotated with CSS transform for smooth animations.
  */
-export default function AnalogClock({ timezone, size = 300, theme }: AnalogClockProps) {
+export default function AnalogClock({ timezone, size = 300, customTheme }: AnalogClockProps) {
   const [now, setNow] = useState(() => new Date())
   const [msFraction, setMsFraction] = useState(0)
   const rafRef = useRef<number | null>(null)
@@ -25,12 +25,12 @@ export default function AnalogClock({ timezone, size = 300, theme }: AnalogClock
 
   const { hourDeg, minuteDeg, secondDeg } = computeHandAngles(now, timezone, msFraction)
   const t = {
-    background: theme?.background ?? '#000',
-    tick: theme?.tick ?? '#444',
-    hourHand: theme?.hourHand ?? '#fff',
-    minuteHand: theme?.minuteHand ?? '#ddd',
-    secondHand: theme?.secondHand ?? '#e33',
-    center: theme?.center ?? '#fff',
+    background: customTheme?.background ?? '#000',
+    tick: customTheme?.tick ?? '#444',
+    hourHand: customTheme?.hourHand ?? '#fff',
+    minuteHand: customTheme?.minuteHand ?? '#ddd',
+    secondHand: customTheme?.secondHand ?? '#e33',
+    center: customTheme?.center ?? '#fff',
   }
 
   const sizePx = `${size}px`

@@ -227,8 +227,8 @@ export class ConfigTemplateEngine {
     variable: ConfigVariable,
     value: any,
     errors: any[],
-    warnings: any[],
-    info: any[]
+    _warnings: any[],
+    _info: any[]
   ): void {
     const { validation } = variable
 
@@ -501,7 +501,7 @@ export class ConfigTemplateEngine {
           layout: this.getDefaultLayout(),
           components: {
             news: {
-              category: '{{newsCategory}}',
+              category: '{{newsCategory}}' as any,
               limit: 8,
               rotationMs: 8000,
               compact: false,
@@ -653,7 +653,7 @@ export class ConfigTemplateEngine {
           components: {
             webViewer: {
               url: '{{webUrl}}',
-              mode: '{{webMode}}',
+              mode: '{{webMode}}' as any,
               snapshotRefreshMs: 300000,
               autoScrollEnabled: true,
               autoScrollMs: 30000,

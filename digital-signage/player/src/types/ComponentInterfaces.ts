@@ -141,7 +141,7 @@ export interface AnalogClockProps extends BaseTheme {
   /** Size in pixels */
   size?: number
   /** Custom theme colors */
-  theme?: {
+  customTheme?: {
     background?: string
     tick?: string
     hourHand?: string

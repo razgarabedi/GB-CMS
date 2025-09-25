@@ -82,6 +82,15 @@ export default function ComponentLibrary({
     })
   }
 
+  // Handle component drag end
+  const handleDragEnd = () => {
+    setDragState({
+      isDragging: false,
+      component: null,
+      dragOffset: null
+    })
+  }
+
   // Handle component click
   const handleComponentClick = (component: ComponentDefinition) => {
     setSelectedComponent(component)
@@ -179,6 +188,7 @@ export default function ComponentLibrary({
                   className={`component-item ${selectedComponent?.type === component.type ? 'selected' : ''} ${!component.available ? 'disabled' : ''}`}
                   draggable={isDragMode && component.available}
                   onDragStart={(e) => handleDragStart(e, component)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => component.available && handleComponentClick(component)}
                   style={{
                     display: 'flex',
@@ -196,8 +206,9 @@ export default function ComponentLibrary({
                     borderRadius: '6px',
                     cursor: component.available && isDragMode ? 'grab' : 'pointer',
                     transition: 'all 0.2s ease',
-                    opacity: component.available ? 1 : 0.5,
-                    position: 'relative'
+                    opacity: component.available ? (dragState.isDragging && dragState.component?.type === component.type ? 0.5 : 1) : 0.5,
+                    position: 'relative',
+                    transform: dragState.isDragging && dragState.component?.type === component.type ? 'scale(0.95)' : 'scale(1)'
                   }}
                   onMouseEnter={(e) => {
                     if (component.available) {

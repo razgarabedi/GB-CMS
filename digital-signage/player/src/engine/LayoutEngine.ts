@@ -54,7 +54,9 @@ export class LayoutEngine {
    */
   setCurrentLayout(layout: LayoutConfig): void {
     this.state.currentLayout = { ...layout }
-    this.validateLayout()
+    if (this.config.validation.validateOnChange) {
+      this.validateLayout()
+    }
     this.emit('layout-loaded', { layout })
   }
 
@@ -62,6 +64,16 @@ export class LayoutEngine {
    * Add component to layout
    */
   addComponent(component: LayoutComponent): void {
+    // Check max components limit
+    if (this.config.maxComponents && this.state.currentLayout.components.length >= this.config.maxComponents) {
+      this.addError({
+        type: 'invalid',
+        message: `Maximum number of components (${this.config.maxComponents}) reached`,
+        severity: 'error'
+      })
+      return
+    }
+
     // Validate component position
     if (!this.isValidPosition(component.position)) {
       this.addError({
@@ -118,6 +130,16 @@ export class LayoutEngine {
    * Move component to new position
    */
   moveComponent(componentId: string, position: GridPosition): void {
+    if (!this.config.dragDrop.movable) {
+      this.addError({
+        type: 'invalid',
+        message: 'Component movement is disabled',
+        componentId,
+        severity: 'error'
+      })
+      return
+    }
+
     const component = this.state.currentLayout.components.find(c => c.id === componentId)
     if (component) {
       // Validate new position
@@ -152,6 +174,16 @@ export class LayoutEngine {
    * Resize component
    */
   resizeComponent(componentId: string, position: GridPosition): void {
+    if (!this.config.dragDrop.resizable) {
+      this.addError({
+        type: 'invalid',
+        message: 'Component resizing is disabled',
+        componentId,
+        severity: 'error'
+      })
+      return
+    }
+
     const component = this.state.currentLayout.components.find(c => c.id === componentId)
     if (component) {
       // Validate new size
@@ -242,8 +274,28 @@ export class LayoutEngine {
       }
     }
 
+    // Check grid constraints
+    const { grid } = this.state.currentLayout
+    const { gridConstraints } = this.config
+    
+    if (grid.cols < gridConstraints.minCols || grid.cols > gridConstraints.maxCols) {
+      errors.push({
+        type: 'invalid',
+        message: `Grid columns (${grid.cols}) must be between ${gridConstraints.minCols} and ${gridConstraints.maxCols}`,
+        severity: 'error'
+      })
+    }
+    
+    if (grid.rows < gridConstraints.minRows || grid.rows > gridConstraints.maxRows) {
+      errors.push({
+        type: 'invalid',
+        message: `Grid rows (${grid.rows}) must be between ${gridConstraints.minRows} and ${gridConstraints.maxRows}`,
+        severity: 'error'
+      })
+    }
+
     this.state.errors = errors
-    if (errors.length > 0) {
+    if (errors.length > 0 && this.config.validation.showErrors) {
       this.emit('validation-error', { errors })
     }
 
@@ -291,6 +343,13 @@ export class LayoutEngine {
   }
 
   /**
+   * Get current engine configuration
+   */
+  getConfig(): LayoutEngineConfig {
+    return { ...this.config }
+  }
+
+  /**
    * Register event handler
    */
   on(event: LayoutEngineEventType, handler: LayoutEngineEventHandler): void {
@@ -317,7 +376,9 @@ export class LayoutEngine {
    * Enable/disable drag mode
    */
   setDragMode(enabled: boolean): void {
-    this.state.isDragMode = enabled
+    if (this.config.dragDrop.enabled) {
+      this.state.isDragMode = enabled
+    }
   }
 
   /**
@@ -368,6 +429,7 @@ export class LayoutEngine {
    */
   private isValidPosition(position: GridPosition): boolean {
     const { grid } = this.state.currentLayout
+    const { gridConstraints } = this.config
     
     return (
       position.x >= 1 &&
@@ -375,7 +437,11 @@ export class LayoutEngine {
       position.w > 0 &&
       position.h > 0 &&
       position.x + position.w <= grid.cols + 1 &&
-      position.y + position.h <= grid.rows + 1
+      position.y + position.h <= grid.rows + 1 &&
+      grid.cols >= gridConstraints.minCols &&
+      grid.cols <= gridConstraints.maxCols &&
+      grid.rows >= gridConstraints.minRows &&
+      grid.rows <= gridConstraints.maxRows
     )
   }
 
