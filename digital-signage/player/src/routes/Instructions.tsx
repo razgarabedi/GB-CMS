@@ -6,6 +6,9 @@ export default function Instructions() {
 
       <h2>Quick links</h2>
       <ul>
+        <li><a href="/admin" style={{ color: '#4ade80', fontWeight: 'bold' }}>🚀 New Advanced Admin Interface</a></li>
+        <li><a href="/preview">Preview Mode</a></li>
+        <li><a href="/editor">Layout Editor</a></li>
         <li><a href="#win">Windows kiosk</a></li>
         <li><a href="#ubuntu">Ubuntu kiosk (24.04/25 GNOME/Wayland)</a></li>
         <li><a href="#autologin">Auto‑login (Ubuntu)</a></li>
