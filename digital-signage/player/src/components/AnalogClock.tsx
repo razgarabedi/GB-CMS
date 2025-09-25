@@ -1,21 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { computeHandAngles } from './clockUtils'
-
-export type AnalogClockProps = {
-  /** IANA timezone like 'UTC', 'Europe/Berlin' */
-  timezone: string
-  /** Size in CSS pixels of the clock face width/height */
-  size?: number
-  /** Theme colors */
-  theme?: {
-    background?: string
-    tick?: string
-    hourHand?: string
-    minuteHand?: string
-    secondHand?: string
-    center?: string
-  }
-}
+import type { AnalogClockProps } from '../types/ComponentInterfaces'
 
 /**
  * AnalogClock renders a clock with smooth second hand using requestAnimationFrame.

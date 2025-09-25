@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react'
-
-export type NewsWidgetProps = {
-  category?: 'wirtschaft' | 'top'
-  limit?: number
-  theme?: 'dark' | 'light'
-  rotationMs?: number
-  compact?: boolean
-}
+import type { NewsWidgetProps } from '../types/ComponentInterfaces'
 
 function computeApiBase(): string {
   const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -18,7 +11,16 @@ function computeApiBase(): string {
   return loc.origin
 }
 
-export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme = 'dark', rotationMs = 8000, compact = false }: NewsWidgetProps) {
+export default function NewsWidget({ 
+  category = 'wirtschaft', 
+  limit = 6, 
+  theme = 'dark', 
+  rotationMs = 8000, 
+  compact = false,
+  onError,
+  onDataUpdate,
+  refreshIntervalMs = 600000 // 10 minutes default
+}: NewsWidgetProps) {
   const [items, setItems] = useState<Array<{ title: string; link: string; pubDate?: string; description?: string; summary?: string; image?: string }>>([])
   const [error, setError] = useState<string | null>(null)
   const [index, setIndex] = useState(0)
@@ -34,15 +36,24 @@ export default function NewsWidget({ category = 'wirtschaft', limit = 6, theme =
         u.searchParams.set('limit', String(limit))
         const r = await fetch(u)
         const data = await r.json()
-        if (!stop) setItems(Array.isArray(data?.items) ? data.items : [])
-      } catch {
-        if (!stop) setError('news unavailable')
+        if (!stop) {
+          const items = Array.isArray(data?.items) ? data.items : []
+          setItems(items)
+          // Notify parent of data update
+          onDataUpdate?.(items)
+        }
+      } catch (error) {
+        if (!stop) {
+          const errorMsg = 'news unavailable'
+          setError(errorMsg)
+          onError?.(error instanceof Error ? error : new Error(errorMsg))
+        }
       }
     }
     load()
-    const id = setInterval(load, 10 * 60 * 1000)
+    const id = setInterval(load, refreshIntervalMs)
     return () => { stop = true; clearInterval(id) }
-  }, [category, limit])
+  }, [category, limit, refreshIntervalMs, onError, onDataUpdate])
 
   // rotate through items
   useEffect(() => {

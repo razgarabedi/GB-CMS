@@ -5,11 +5,15 @@ import './index.css'
 import Player from './routes/Player'
 import Preview from './routes/Preview'
 import Instructions from './routes/Instructions'
+import DynamicPlayer from './routes/DynamicPlayer'
 
 const router = createBrowserRouter([
   { path: '/', element: <Instructions /> },
   { path: '/player/:screenId', element: <Player /> },
   { path: '/preview', element: <Preview /> },
+  { path: '/dynamic/:screenId', element: <DynamicPlayer /> },
+  { path: '/dynamic/:screenId/edit', element: <DynamicPlayer showEditor={true} /> },
+  { path: '/editor', element: <DynamicPlayer showEditor={true} /> },
 ])
 
 createRoot(document.getElementById('root')!).render(

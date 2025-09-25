@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sanitizeTimeZone } from './clockUtils'
-
-export type DigitalClockProps = {
-  timezone: string
-  type?: 'minimal' | 'neon' | 'flip'
-  size?: number // height in px
-  color?: string
-}
+import type { DigitalClockProps } from '../types/ComponentInterfaces'
 
 function formatT(time: Date, tz: string) {
   const safe = sanitizeTimeZone(tz)

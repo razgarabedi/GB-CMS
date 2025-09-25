@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-
-export type PVFlowWidgetProps = {
-  token: string
-  theme?: 'dark' | 'light'
-}
+import type { PVFlowWidgetProps } from '../types/ComponentInterfaces'
 
 type PvData = {
   IsOnline?: boolean
@@ -14,7 +10,13 @@ type PvData = {
   SOC?: number
 }
 
-export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProps) {
+export default function PVFlowWidget({ 
+  token, 
+  theme = 'dark',
+  onError,
+  onDataUpdate,
+  refreshIntervalMs = 5000 // 5 seconds default
+}: PVFlowWidgetProps) {
   const [pv, setPv] = useState<PvData | null>(null)
   const [error, setError] = useState<string | null>(null)
   type IconKey = 'sun' | 'load' | 'grid' | 'batt' | 'inv'
@@ -51,15 +53,23 @@ export default function PVFlowWidget({ token, theme = 'dark' }: PVFlowWidgetProp
         const url = `${base}/api/pv/solarweb?token=${encodeURIComponent(token)}&t=${Date.now()}`
         const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' as RequestCache })
         const data = await r.json()
-        if (!stop) setPv(data || null)
-      } catch {
-        if (!stop) setError('PV data unavailable')
+        if (!stop) {
+          setPv(data || null)
+          // Notify parent of data update
+          onDataUpdate?.(data)
+        }
+      } catch (error) {
+        if (!stop) {
+          const errorMsg = 'PV data unavailable'
+          setError(errorMsg)
+          onError?.(error instanceof Error ? error : new Error(errorMsg))
+        }
       }
     }
     load()
-    const id = setInterval(load, 5 * 1000)
+    const id = setInterval(load, refreshIntervalMs)
     return () => { stop = true; clearInterval(id); try { ctrlRef.current?.abort() } catch {} }
-  }, [token])
+  }, [token, refreshIntervalMs, onError, onDataUpdate])
 
   // probe for optional custom icon images in /pv/*.png
   useEffect(() => {

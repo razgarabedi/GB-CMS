@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
+import type { CompactWeatherProps } from '../types/ComponentInterfaces'
 
-export type CompactWeatherProps = {
-  location: string
-  theme?: 'dark' | 'light'
-}
-
-export default function CompactWeather({ location, theme = 'dark' }: CompactWeatherProps) {
+export default function CompactWeather({ 
+  location, 
+  theme = 'dark',
+  onError,
+  onDataUpdate,
+  refreshIntervalMs = 600000 // 10 minutes default
+}: CompactWeatherProps) {
   const [current, setCurrent] = useState<any>(null)
   const [forecast, setForecast] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
@@ -35,15 +37,24 @@ export default function CompactWeather({ location, theme = 'dark' }: CompactWeat
         ])
         const cur = await r1.json()
         const fc = await r2.json()
-        if (!stop) { setCurrent(cur); setForecast(fc) }
-      } catch {
-        if (!stop) setError('weather unavailable')
+        if (!stop) { 
+          setCurrent(cur)
+          setForecast(fc)
+          // Notify parent of data update
+          onDataUpdate?.({ current: cur, forecast: fc })
+        }
+      } catch (error) {
+        if (!stop) {
+          const errorMsg = 'weather unavailable'
+          setError(errorMsg)
+          onError?.(error instanceof Error ? error : new Error(errorMsg))
+        }
       }
     }
     load()
-    const id = setInterval(load, 10 * 60 * 1000)
+    const id = setInterval(load, refreshIntervalMs)
     return () => { stop = true; clearInterval(id) }
-  }, [location])
+  }, [location, refreshIntervalMs, onError, onDataUpdate])
 
   // tick every 30s to refresh time display without seconds
   useEffect(() => {

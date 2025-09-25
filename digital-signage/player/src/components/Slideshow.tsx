@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { SlideshowProps } from '../types/ComponentInterfaces'
 
 function computeApiBase(): string {
   const env = import.meta.env.VITE_SERVER_URL as string | undefined
@@ -21,18 +22,24 @@ function resolveUrl(url: string): string {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
-type Anim = 'fade' | 'cut' | 'wipe'
-export default function Slideshow({ images, intervalMs = 8000, animations = ['fade'] as Anim[], durationMs = 900, preloadNext = true }: { images: string[]; intervalMs?: number; animations?: Anim[]; durationMs?: number; preloadNext?: boolean }) {
+export default function Slideshow({ 
+  images, 
+  intervalMs = 8000, 
+  animations = ['fade'], 
+  durationMs = 900, 
+  preloadNext = true,
+  onError
+}: SlideshowProps) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)
-  const [currentAnim, setCurrentAnim] = useState<Anim>('fade')
+  const [currentAnim, setCurrentAnim] = useState<'fade' | 'cut' | 'wipe'>('fade')
   const fadeMs = Math.max(150, durationMs)
 
   // Advance slides
   useEffect(() => {
     if (!images?.length) return
     const pickAnim = () => {
-      const list = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
+      const list = (Array.isArray(animations) && animations.length ? animations : ['fade']) as ('fade' | 'cut' | 'wipe')[]
       return list[Math.floor(Math.random() * list.length)]
     }
     const id = setInterval(() => {
@@ -59,8 +66,8 @@ export default function Slideshow({ images, intervalMs = 8000, animations = ['fa
   }, [prevI])
 
   // Compute animations selection unconditionally to keep hook order stable
-  const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as Anim[]
-  const chosen: Anim = (anims.includes(currentAnim) ? currentAnim : anims[0])
+  const anims = (Array.isArray(animations) && animations.length ? animations : ['fade']) as ('fade' | 'cut' | 'wipe')[]
+  const chosen: 'fade' | 'cut' | 'wipe' = (anims.includes(currentAnim) ? currentAnim : anims[0])
 
   if (!images?.length) return <div style={{ color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>Keine Bilder</div>
 

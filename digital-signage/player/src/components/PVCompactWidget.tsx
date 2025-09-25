@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react'
-
-export type PVCompactWidgetProps = {
-  location: string
-  theme?: 'dark' | 'light'
-  /** PublicDisplayToken from SolarWeb */
-  token: string
-}
+import type { PVCompactWidgetProps } from '../types/ComponentInterfaces'
 
 type PvData = {
   IsOnline?: boolean
@@ -18,7 +12,14 @@ type PvData = {
   P_PV?: number
 }
 
-export default function PVCompactWidget({ location, theme = 'dark', token }: PVCompactWidgetProps) {
+export default function PVCompactWidget({ 
+  location, 
+  theme = 'dark', 
+  token,
+  onError,
+  onDataUpdate,
+  refreshIntervalMs = 30000 // 30 seconds default
+}: PVCompactWidgetProps) {
   const [pv, setPv] = useState<PvData | null>(null)
   const [weather, setWeather] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
@@ -49,15 +50,21 @@ export default function PVCompactWidget({ location, theme = 'dark', token }: PVC
         if (!stop) {
           setPv(pvJson || null)
           setWeather(wJson || null)
+          // Notify parent of data update
+          onDataUpdate?.({ pv: pvJson, weather: wJson })
         }
       } catch (e) {
-        if (!stop) setError('PV/Weather unavailable')
+        if (!stop) {
+          const errorMsg = 'PV/Weather unavailable'
+          setError(errorMsg)
+          onError?.(e instanceof Error ? e : new Error(errorMsg))
+        }
       }
     }
     load()
-    const id = setInterval(load, 30 * 1000)
+    const id = setInterval(load, refreshIntervalMs)
     return () => { stop = true; clearInterval(id) }
-  }, [location, token])
+  }, [location, token, refreshIntervalMs, onError, onDataUpdate])
 
   const text = theme === 'light' ? '#111' : '#fff'
   const sub = theme === 'light' ? '#333' : '#cbd5e1'

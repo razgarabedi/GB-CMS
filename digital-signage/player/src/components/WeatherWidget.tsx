@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-
-export type WeatherWidgetProps = {
-  location: string
-  theme?: 'dark' | 'light'
-  showClock?: boolean
-  showAnimatedBg?: boolean
-}
+import type { WeatherWidgetProps } from '../types/ComponentInterfaces'
 
 /**
  * WeatherWidget fetches weather data from the server's cached proxy endpoint.
  * Shows a simple icon, temperature, and short description. Handles loading state.
  */
-export default function WeatherWidget({ location, theme = 'dark', showClock = false, showAnimatedBg = false }: WeatherWidgetProps) {
+export default function WeatherWidget({ 
+  location, 
+  theme = 'dark', 
+  showClock = false, 
+  showAnimatedBg = false,
+  onError,
+  onDataUpdate,
+  refreshIntervalMs = 600000 // 10 minutes default
+}: WeatherWidgetProps) {
   const [current, setCurrent] = useState<any>(null)
   const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -58,15 +60,22 @@ export default function WeatherWidget({ location, theme = 'dark', showClock = fa
           // pick a fresh animation variant each successful load
           const variants = ['weather-anim-fade', 'weather-anim-slide', 'weather-anim-zoom', 'weather-anim-rise', 'weather-anim-tilt']
           setAnimVariant(variants[Math.floor(Math.random() * variants.length)])
+          // Notify parent of data update
+          onDataUpdate?.({ current: cur, forecast: fc })
+        }
+      } catch (error) {
+        if (mounted) {
+          console.error('WeatherWidget: Failed to load weather data', error)
+          onError?.(error instanceof Error ? error : new Error('Failed to load weather data'))
         }
       } finally {
         if (mounted) setLoading(false)
       }
     }
     load()
-    const id = setInterval(load, 10 * 60 * 1000)
+    const id = setInterval(load, refreshIntervalMs)
     return () => { mounted = false; clearInterval(id) }
-  }, [location])
+  }, [location, refreshIntervalMs, onDataUpdate])
 
   // live clock updater when showClock is enabled
   useEffect(() => {
