@@ -291,8 +291,8 @@
     │ ┌─────────────────┬─────────────────────────────────────┐   │
     │ │ Component       │ Layout Canvas                       │   │
     │ │ Library         │ ┌─────────────────────────────────┐ │   │
-    │ │ - Weather       │ │ Drag & Drop Area                 │ │   │
-    │ │ - Clock         │ │ with Grid Guidelines             │ │   │
+    │ │ - Weather       │ │ Drag & Drop Area                │ │   │
+    │ │ - Clock         │ │ with Grid Guidelines            │ │   │
     │ │ - Slideshow     │ │                                 │ │   │
     │ │ - News          │ │                                 │ │   │
     │ │ - Web Viewer    │ │                                 │ │   │
