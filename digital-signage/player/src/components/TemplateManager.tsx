@@ -6,17 +6,15 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { 
-  TemplateManager, 
+import type { 
+  TemplateManager as TemplateManagerType, 
   UITemplate, 
-  TemplateCategory,
-  CanvasComponent,
-  CanvasZone
+  TemplateCategory
 } from '../types/UITypes';
 
 interface TemplateManagerProps {
-  manager: TemplateManager;
-  onManagerChange: (manager: TemplateManager) => void;
+  manager: TemplateManagerType;
+  onManagerChange: (manager: TemplateManagerType) => void;
   onTemplateSelect: (template: UITemplate) => void;
   onTemplateCreate: (template: Partial<UITemplate>) => void;
   onTemplateSave: (template: UITemplate) => void;
@@ -32,7 +30,7 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   onManagerChange,
   onTemplateSelect,
   onTemplateCreate,
-  onTemplateSave,
+  onTemplateSave: _onTemplateSave,
   onTemplateDelete,
   onTemplateExport,
   onTemplateImport,

@@ -3,7 +3,7 @@
  * Central registry for managing plugin lifecycle, state, and instances
  */
 
-import type { NodeJS } from 'node:timers';
+// NodeJS types are available globally in Node.js environment
 
 import type {
   PluginManifest,
@@ -12,11 +12,11 @@ import type {
   PluginInstance,
   PluginContext,
   PluginAPI,
-  PluginEvent,
+  // PluginEvent,
   PluginHealth,
   PluginMetrics,
-  PluginError,
-  PluginWarning,
+  // PluginError,
+  // PluginWarning,
   PluginEventEmitter,
   PluginInstallResult,
   PluginUninstallResult,
@@ -30,15 +30,15 @@ import type {
   PluginAnalytics,
   ValidationResult,
   TestResult,
-  TestCoverage,
+  // TestCoverage,
   TestError,
   UsageAnalytics,
   PerformanceAnalytics,
   ErrorAnalytics,
   FeedbackAnalytics,
-  UsageTrend,
-  PerformanceTrend,
-  ErrorTrend,
+  // UsageTrend,
+  // PerformanceTrend,
+  // ErrorTrend,
   SystemInfo,
   SystemMetrics,
   LogEntry
@@ -51,8 +51,8 @@ export class PluginRegistry implements IPluginRegistry {
   public events: PluginEventEmitter
 
   private eventListeners: Map<string, Set<(data?: any) => void>> = new Map()
-  private healthCheckInterval: NodeJS.Timeout | null = null
-  private metricsInterval: NodeJS.Timeout | null = null
+  private healthCheckInterval: ReturnType<typeof setInterval> | null = null
+  private metricsInterval: ReturnType<typeof setInterval> | null = null
 
   constructor() {
     this.events = this.createEventEmitter()
@@ -729,7 +729,7 @@ export class PluginRegistry implements IPluginRegistry {
     // Check plugin lifecycle
     if (plugin.lifecycle.healthCheck) {
       try {
-        const healthResult = await plugin.lifecycle.healthCheck()
+        // const _healthResult = await plugin.lifecycle.healthCheck()
         checks.push({
           name: 'Lifecycle Health Check',
           status: 'pass',
@@ -792,7 +792,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Collect plugin metrics
    */
-  private async collectPluginMetrics(plugin: PluginManifest): Promise<PluginMetrics> {
+  private async collectPluginMetrics(_plugin: PluginManifest): Promise<PluginMetrics> {
     return {
       performance: {
         loadTime: 0,
@@ -886,21 +886,21 @@ export class PluginRegistry implements IPluginRegistry {
    */
   private createDataAPI(): any {
     return {
-      get: async (key: string) => {
+      get: async (_key: string) => {
         // Implementation for data retrieval
         return null
       },
-      set: async (key: string, value: any) => {
+      set: async (_key: string, _value: any) => {
         // Implementation for data storage
       },
-      delete: async (key: string) => {
+      delete: async (_key: string) => {
         // Implementation for data deletion
       },
-      query: async (filter: any) => {
+      query: async (_filter: any) => {
         // Implementation for data querying
         return []
       },
-      subscribe: (key: string, callback: (value: any) => void) => {
+      subscribe: (_key: string, _callback: (value: any) => void) => {
         // Implementation for data subscription
         return () => {}
       }
@@ -912,16 +912,16 @@ export class PluginRegistry implements IPluginRegistry {
    */
   private createUIAPI(): any {
     return {
-      showNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => {
+      showNotification: (_message: string, _type?: 'info' | 'success' | 'warning' | 'error') => {
         // Implementation for notifications
       },
-      showModal: (component: any, props?: any) => {
+      showModal: (_component: any, _props?: any) => {
         // Implementation for modals
       },
       hideModal: () => {
         // Implementation for modal hiding
       },
-      navigate: (path: string) => {
+      navigate: (_path: string) => {
         // Implementation for navigation
       },
       refresh: () => {
@@ -1065,7 +1065,7 @@ export class PluginRegistry implements IPluginRegistry {
    */
   private createUtilityAPI(): any {
     return {
-      formatDate: (date: Date, format?: string) => {
+      formatDate: (date: Date, _format?: string) => {
         return date.toISOString()
       },
       formatNumber: (number: number, options?: Intl.NumberFormatOptions) => {
@@ -1078,7 +1078,7 @@ export class PluginRegistry implements IPluginRegistry {
         }).format(amount)
       },
       debounce: <T extends (...args: any[]) => any>(func: T, delay: number): T => {
-        let timeoutId: NodeJS.Timeout
+        let timeoutId: ReturnType<typeof setTimeout>
         return ((...args: any[]) => {
           clearTimeout(timeoutId)
           timeoutId = setTimeout(() => func(...args), delay)
@@ -1157,7 +1157,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Validate metadata
    */
-  private validateMetadata(metadata: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateMetadata(metadata: any, errors: any[], warnings: any[], _info: any[]): void {
     if (!metadata.id) {
       errors.push({
         path: 'metadata.id',
@@ -1189,7 +1189,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Validate configuration
    */
-  private validateConfiguration(config: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateConfiguration(config: any, errors: any[], warnings: any[], _info: any[]): void {
     if (!config.entry) {
       errors.push({
         path: 'config.entry',
@@ -1212,42 +1212,42 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Validate capabilities
    */
-  private validateCapabilities(capabilities: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateCapabilities(_capabilities: any, _errors: any[], _warnings: any[], _info: any[]): void {
     // Implementation for capability validation
   }
 
   /**
    * Validate dependencies
    */
-  private validateDependencies(dependencies: any[], errors: any[], warnings: any[], info: any[]): void {
+  private validateDependencies(_dependencies: any[], _errors: any[], _warnings: any[], _info: any[]): void {
     // Implementation for dependency validation
   }
 
   /**
    * Validate permissions
    */
-  private validatePermissions(permissions: any[], errors: any[], warnings: any[], info: any[]): void {
+  private validatePermissions(_permissions: any[], _errors: any[], _warnings: any[], _info: any[]): void {
     // Implementation for permission validation
   }
 
   /**
    * Validate security
    */
-  private validateSecurity(security: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateSecurity(_security: any, _errors: any[], _warnings: any[], _info: any[]): void {
     // Implementation for security validation
   }
 
   /**
    * Test component
    */
-  private async testComponent(component: any): Promise<void> {
+  private async testComponent(_component: any): Promise<void> {
     // Implementation for component testing
   }
 
   /**
    * Test service
    */
-  private async testService(service: any): Promise<void> {
+  private async testService(_service: any): Promise<void> {
     // Implementation for service testing
   }
 
@@ -1329,7 +1329,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Calculate usage analytics
    */
-  private calculateUsageAnalytics(pluginId: string): UsageAnalytics {
+  private calculateUsageAnalytics(_pluginId: string): UsageAnalytics {
     // Implementation for usage analytics calculation
     return {
       installations: 0,
@@ -1344,7 +1344,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Calculate performance analytics
    */
-  private calculatePerformanceAnalytics(pluginId: string): PerformanceAnalytics {
+  private calculatePerformanceAnalytics(_pluginId: string): PerformanceAnalytics {
     // Implementation for performance analytics calculation
     return {
       averageLoadTime: 0,
@@ -1359,7 +1359,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Calculate error analytics
    */
-  private calculateErrorAnalytics(pluginId: string): ErrorAnalytics {
+  private calculateErrorAnalytics(_pluginId: string): ErrorAnalytics {
     // Implementation for error analytics calculation
     return {
       totalErrors: 0,
@@ -1372,7 +1372,7 @@ export class PluginRegistry implements IPluginRegistry {
   /**
    * Calculate feedback analytics
    */
-  private calculateFeedbackAnalytics(pluginId: string): FeedbackAnalytics {
+  private calculateFeedbackAnalytics(_pluginId: string): FeedbackAnalytics {
     // Implementation for feedback analytics calculation
     return {
       totalReviews: 0,

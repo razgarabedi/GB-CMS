@@ -3,10 +3,10 @@
  * Complete layout editing interface with drag-and-drop functionality
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import LayoutCanvas from './LayoutCanvas'
-import ComponentLibrary from './ComponentLibrary'
-import type { LayoutConfig, LayoutComponent, GridPosition, ComponentDefinition } from '../types/LayoutTypes'
+// import ComponentLibrary from './ComponentLibrary'
+import type { LayoutConfig, GridPosition, ComponentDefinition } from '../types/LayoutTypes'
 
 interface LayoutEditorProps {
   /** Initial layout configuration */
@@ -45,7 +45,7 @@ export default function LayoutEditor({
   const [isEditing, setIsEditing] = useState(false)
   const [isDragMode, setIsDragMode] = useState(false)
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
-  const [selectedLibraryComponent, setSelectedLibraryComponent] = useState<ComponentDefinition | null>(null)
+  // const [selectedLibraryComponent, setSelectedLibraryComponent] = useState<ComponentDefinition | null>(null)
   const [showGrid, setShowGrid] = useState(true)
   const [errors, _setErrors] = useState<string[]>([])
 
@@ -63,30 +63,30 @@ export default function LayoutEditor({
   }, [onLayoutChange])
 
   // Handle component selection from library
-  const handleLibraryComponentSelect = useCallback((component: ComponentDefinition) => {
-    setSelectedLibraryComponent(component)
-    
-    // If in drag mode, we could start a drag operation here
-    // For now, we'll just select the component
-  }, [])
+  // const _handleLibraryComponentSelect = useCallback((component: ComponentDefinition) => {
+  //   setSelectedLibraryComponent(component)
+  //   
+  //   // If in drag mode, we could start a drag operation here
+  //   // For now, we'll just select the component
+  // }, [])
 
   // Handle adding component to layout
-  const handleAddComponent = useCallback((component: ComponentDefinition, position?: GridPosition) => {
-    const newComponent: LayoutComponent = {
-      id: `${component.type}_${Date.now()}`,
-      type: component.type,
-      position: position || component.defaultPosition,
-      config: { ...component.defaultConfig },
-      visible: true
-    }
+  // const handleAddComponent = useCallback((component: ComponentDefinition, position?: GridPosition) => {
+  //   const newComponent: LayoutComponent = {
+  //     id: `${component.type}_${Date.now()}`,
+  //     type: component.type,
+  //     position: position || component.defaultPosition,
+  //     config: { ...component.defaultConfig },
+  //     visible: true
+  //   }
 
-    const newLayout = {
-      ...currentLayout,
-      components: [...currentLayout.components, newComponent]
-    }
+  //   const newLayout = {
+  //     ...currentLayout,
+  //     components: [...currentLayout.components, newComponent]
+  //   }
 
-    handleLayoutChange(newLayout)
-  }, [currentLayout, handleLayoutChange])
+  //   handleLayoutChange(newLayout)
+  // }, [currentLayout, handleLayoutChange])
 
   // Handle component move
   const handleComponentMove = useCallback((componentId: string, position: GridPosition) => {
@@ -118,29 +118,29 @@ export default function LayoutEditor({
   }, [])
 
   // Handle canvas click (add component at position)
-  const _handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (selectedLibraryComponent && isEditing) {
-      // Calculate grid position from click coordinates
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      
-      // Convert to grid coordinates (simplified)
-      const cellWidth = rect.width / currentLayout.grid.cols
-      const cellHeight = rect.height / currentLayout.grid.rows
-      const gridX = Math.floor(x / cellWidth) + 1
-      const gridY = Math.floor(y / cellHeight) + 1
-      
-      const position: GridPosition = {
-        x: Math.max(1, Math.min(currentLayout.grid.cols, gridX)),
-        y: Math.max(1, Math.min(currentLayout.grid.rows, gridY)),
-        w: selectedLibraryComponent.defaultPosition.w,
-        h: selectedLibraryComponent.defaultPosition.h
-      }
+  // const _handleCanvasClick = useCallback((e: React.MouseEvent) => {
+  //   if (selectedLibraryComponent && isEditing) {
+  //     // Calculate grid position from click coordinates
+  //     const rect = e.currentTarget.getBoundingClientRect()
+  //     const x = e.clientX - rect.left
+  //     const y = e.clientY - rect.top
+  //     
+  //     // Convert to grid coordinates (simplified)
+  //     const cellWidth = rect.width / currentLayout.grid.cols
+  //     const cellHeight = rect.height / currentLayout.grid.rows
+  //     const gridX = Math.floor(x / cellWidth) + 1
+  //     const gridY = Math.floor(y / cellHeight) + 1
+  //     
+  //     const position: GridPosition = {
+  //       x: Math.max(1, Math.min(currentLayout.grid.cols, gridX)),
+  //       y: Math.max(1, Math.min(currentLayout.grid.rows, gridY)),
+  //       w: selectedLibraryComponent.defaultPosition.w,
+  //       h: selectedLibraryComponent.defaultPosition.h
+  //     }
 
-      handleAddComponent(selectedLibraryComponent, position)
-    }
-  }, [selectedLibraryComponent, isEditing, currentLayout.grid, handleAddComponent])
+  //     handleAddComponent(selectedLibraryComponent, position)
+  //   }
+  // }, [selectedLibraryComponent, isEditing, currentLayout.grid, handleAddComponent])
 
   // Handle save layout
   const handleSaveLayout = useCallback(() => {
@@ -324,13 +324,11 @@ export default function LayoutEditor({
         }}
       >
         {/* Component Library */}
-        <ComponentLibrary
-          components={availableComponents}
-          visible={isEditing}
-          onComponentSelect={handleLibraryComponentSelect}
-          theme={theme}
-          isDragMode={isDragMode}
-        />
+        {/* ComponentLibrary temporarily disabled */}
+        <div style={{ width: '300px', background: '#1f2937', padding: '16px' }}>
+          <h3 style={{ color: '#f9fafb', margin: '0 0 16px 0' }}>Component Library</h3>
+          <p style={{ color: '#9ca3af' }}>Component library temporarily disabled</p>
+        </div>
 
         {/* Layout Canvas */}
         <div

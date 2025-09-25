@@ -3,11 +3,11 @@
  * Handles configuration versioning and migration between different schema versions
  */
 
-import type { ScreenConfig, ConfigMigration, ConfigVersion } from '../types/ConfigTypes'
+import type { ScreenConfig, ConfigMigration } from '../types/ConfigTypes'
 
 export class ConfigMigrationEngine {
   private migrations: Map<string, ConfigMigration> = new Map()
-  private versionHistory: ConfigVersion[] = []
+  // private _versionHistory: ConfigVersion[] = []
 
   constructor() {
     this.initializeMigrations()

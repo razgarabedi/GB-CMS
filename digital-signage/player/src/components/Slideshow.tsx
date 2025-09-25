@@ -28,7 +28,7 @@ export default function Slideshow({
   animations = ['fade'], 
   durationMs = 900, 
   preloadNext = true,
-  onError
+  onError: _onError
 }: SlideshowProps) {
   const [i, setI] = useState(0)
   const [prevI, setPrevI] = useState<number | null>(null)

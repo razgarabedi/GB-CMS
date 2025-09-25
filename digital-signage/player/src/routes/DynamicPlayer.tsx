@@ -3,7 +3,7 @@
  * Uses the layout engine to render components dynamically based on layout configuration
  */
 
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { LayoutEngine } from '../engine/LayoutEngine'
 import { LayoutManager } from '../engine/LayoutManager'
@@ -14,12 +14,12 @@ import type { ComponentCategory } from '../types/ComponentInterfaces'
 // Import all available components
 import WeatherWidget from '../components/WeatherWidget'
 import DigitalClock from '../components/DigitalClock'
-import AnalogClock from '../components/AnalogClock'
+// import AnalogClock from '../components/AnalogClock'
 import NewsWidget from '../components/NewsWidget'
 import Slideshow from '../components/Slideshow'
 import WebViewer from '../components/WebViewer'
 import PVFlowWidget from '../components/PVFlowWidget'
-import CompactWeather from '../components/CompactWeather'
+// import CompactWeather from '../components/CompactWeather'
 
 interface DynamicPlayerProps {
   /** Whether to show the layout editor */

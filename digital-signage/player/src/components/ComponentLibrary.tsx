@@ -6,8 +6,8 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { 
-  ComponentLibrary, 
+import type { 
+  ComponentLibrary as ComponentLibraryType, 
   ComponentLibraryItem, 
   ComponentCategory,
   UIIcon,
@@ -15,8 +15,8 @@ import {
 } from '../types/UITypes';
 
 interface ComponentLibraryProps {
-  library: ComponentLibrary;
-  onLibraryChange: (library: ComponentLibrary) => void;
+  library: ComponentLibraryType;
+  onLibraryChange: (library: ComponentLibraryType) => void;
   onDragStart: (item: DragItem) => void;
   onDragEnd: () => void;
   className?: string;

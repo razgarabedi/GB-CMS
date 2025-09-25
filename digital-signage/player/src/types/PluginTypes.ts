@@ -3,7 +3,7 @@
  * Comprehensive plugin system with security, validation, and management
  */
 
-import type { ReactNode } from 'react'
+// import type { ReactNode } from 'react'
 
 // ============================================================================
 // CORE PLUGIN TYPES
@@ -1360,6 +1360,10 @@ export interface StoreAnalytics {
   views: number
   downloads: number
   installations: number
+  uninstalls: number
+  activations: number
+  deactivations: number
+  updates: number
   ratings: number
   reviews: number
   revenue: number

@@ -8,19 +8,12 @@ import type {
   TemplateManager,
   TemplateListOptions,
   TemplateSearchOptions,
-  ConfigValidationResult,
   TestResult,
   TemplateExport,
   TemplateAnalytics,
-  TemplateMarketplace,
-  ConditionalLogic,
-  EventHandler,
-  DataTransformation,
-  ValidationRule,
-  BusinessRule,
-  CustomFunction
+  TemplateMarketplace
 } from '../types/TemplateTypes'
-import type { ScreenConfig } from '../types/ConfigTypes'
+import type { ScreenConfig, ConfigValidationResult } from '../types/ConfigTypes'
 import { ConfigurationValidator } from './ConfigValidator'
 
 export class AdvancedTemplateEngine implements TemplateManager {
@@ -53,7 +46,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
     // Validate template
     const validation = await this.validateTemplate(template)
     if (!validation.valid) {
-      throw new Error(`Template validation failed: ${validation.errors.map(e => e.message).join(', ')}`)
+      throw new Error(`Template validation failed: ${validation.errors.map((e: any) => e.message).join(', ')}`)
     }
 
     // Update metadata
@@ -279,7 +272,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
     // Validate template before publishing
     const validation = await this.validateTemplate(template)
     if (!validation.valid) {
-      throw new Error(`Template validation failed: ${validation.errors.map(e => e.message).join(', ')}`)
+      throw new Error(`Template validation failed: ${validation.errors.map((e: any) => e.message).join(', ')}`)
     }
 
     // Update template metadata
@@ -858,7 +851,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Validate metadata
    */
-  private validateMetadata(metadata: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateMetadata(metadata: any, errors: any[], warnings: any[], _info: any[]): void {
     if (!metadata.id) {
       errors.push({
         path: 'metadata.id',
@@ -890,7 +883,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Validate component
    */
-  private validateComponent(component: any, index: number, errors: any[], warnings: any[], info: any[]): void {
+  private validateComponent(component: any, index: number, errors: any[], _warnings: any[], _info: any[]): void {
     const basePath = `components[${index}]`
 
     if (!component.id) {
@@ -924,7 +917,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Validate logic
    */
-  private validateLogic(logic: any, errors: any[], warnings: any[], info: any[]): void {
+  private validateLogic(logic: any, errors: any[], _warnings: any[], _info: any[]): void {
     // Validate conditionals
     if (logic.conditionals) {
       logic.conditionals.forEach((conditional: any, index: number) => {
@@ -957,7 +950,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Validate dependency
    */
-  private validateDependency(dependency: any, index: number, errors: any[], warnings: any[], info: any[]): void {
+  private validateDependency(dependency: any, index: number, errors: any[], warnings: any[], _info: any[]): void {
     const basePath = `dependencies[${index}]`
 
     if (!dependency.id) {
@@ -1029,7 +1022,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Format value
    */
-  private formatValue(formatFunction: string, value: any, parameters: any): any {
+  private formatValue(_formatFunction: string, value: any, _parameters: any): any {
     // Implement formatting logic
     return value
   }
@@ -1037,7 +1030,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Validate value
    */
-  private validateValue(validateFunction: string, value: any, parameters: any): any {
+  private validateValue(_validateFunction: string, value: any, _parameters: any): any {
     // Implement validation logic
     return value
   }
@@ -1045,7 +1038,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Transform value
    */
-  private transformValue(transformFunction: string, value: any, parameters: any): any {
+  private transformValue(_transformFunction: string, value: any, _parameters: any): any {
     // Implement transformation logic
     return value
   }
@@ -1097,7 +1090,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
     const merged = { ...config }
 
     // Apply conditional overrides
-    for (const [conditionalId, conditionalResult] of Object.entries(conditionals)) {
+    for (const [_conditionalId, conditionalResult] of Object.entries(conditionals)) {
       this.deepMerge(merged, conditionalResult)
     }
 
@@ -1127,7 +1120,7 @@ export class AdvancedTemplateEngine implements TemplateManager {
   /**
    * Test component
    */
-  private async testComponent(component: any, testConfig: any): Promise<void> {
+  private async testComponent(_component: any, _testConfig: any): Promise<void> {
     // Implement component testing logic
     // This would test if the component can be loaded and configured properly
   }

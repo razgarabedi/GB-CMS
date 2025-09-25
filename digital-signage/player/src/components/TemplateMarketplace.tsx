@@ -3,8 +3,8 @@
  * Browse, search, and install templates from the marketplace
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
-import type { AdvancedTemplate, TemplateMarketplace, TemplateReview } from '../types/TemplateTypes'
+import { useState, useEffect, useCallback } from 'react'
+import type { AdvancedTemplate, TemplateMarketplace } from '../types/TemplateTypes'
 
 interface TemplateMarketplaceProps {
   /** Available templates */

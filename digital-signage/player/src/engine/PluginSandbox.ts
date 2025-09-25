@@ -439,7 +439,7 @@ export class PluginSandbox implements IPluginSandbox {
   /**
    * Update sandbox metrics
    */
-  private updateSandboxMetrics(sandboxId: string, duration: number, memory: number, isError: boolean): void {
+  private updateSandboxMetrics(sandboxId: string, _duration: number, memory: number, isError: boolean): void {
     const metrics = this.sandboxMetrics.get(sandboxId) || {
       uptime: 0,
       memory: 0,

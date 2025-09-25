@@ -6,20 +6,18 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { 
-  PropertiesPanel, 
+import type { 
+  PropertiesPanel as PropertiesPanelType, 
   PropertyField, 
-  PropertyFieldType,
-  PropertyGroup,
+  // PropertyGroup,
   ValidationResult,
   ValidationError,
-  ValidationWarning,
-  UIIcon
+  ValidationWarning
 } from '../types/UITypes';
 
 interface PropertiesPanelProps {
-  panel: PropertiesPanel;
-  onPanelChange: (panel: PropertiesPanel) => void;
+  panel: PropertiesPanelType;
+  onPanelChange: (panel: PropertiesPanelType) => void;
   onFieldChange: (fieldId: string, value: any) => void;
   onValidation: (fieldId: string, result: ValidationResult) => void;
   className?: string;
@@ -27,7 +25,7 @@ interface PropertiesPanelProps {
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   panel,
-  onPanelChange,
+  onPanelChange: _onPanelChange,
   onFieldChange,
   onValidation,
   className = ''

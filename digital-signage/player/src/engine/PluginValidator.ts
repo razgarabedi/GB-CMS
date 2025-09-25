@@ -46,13 +46,22 @@ export class PluginValidator implements IPluginValidator {
     this.validateCapabilities(manifest.capabilities, errors, warnings, info)
 
     // Validate dependencies
-    this.validateDependencies(manifest.dependencies, errors, warnings, info)
+    const depResult = await this.validateDependencies(manifest.dependencies)
+    errors.push(...depResult.errors)
+    warnings.push(...depResult.warnings)
+    info.push(...depResult.info)
 
     // Validate permissions
-    this.validatePermissions(manifest.permissions, errors, warnings, info)
+    const permResult = await this.validatePermissions(manifest.permissions)
+    errors.push(...permResult.errors)
+    warnings.push(...permResult.warnings)
+    info.push(...permResult.info)
 
     // Validate security
-    this.validateSecurity(manifest.security, errors, warnings, info)
+    const secResult = await this.validateSecurity(manifest.security)
+    errors.push(...secResult.errors)
+    warnings.push(...secResult.warnings)
+    info.push(...secResult.info)
 
     // Validate lifecycle
     this.validateLifecycle(manifest.lifecycle, errors, warnings, info)
@@ -666,7 +675,7 @@ export class PluginValidator implements IPluginValidator {
   /**
    * Validate configuration
    */
-  private validateConfiguration(config: any, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateConfiguration(config: any, errors: ValidationError[], warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     if (!config.entry) {
       errors.push({
         path: 'config.entry',
@@ -689,21 +698,21 @@ export class PluginValidator implements IPluginValidator {
   /**
    * Validate capabilities
    */
-  private validateCapabilities(capabilities: any, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateCapabilities(_capabilities: any, _errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     // Implementation for capability validation
   }
 
   /**
    * Validate lifecycle
    */
-  private validateLifecycle(lifecycle: any, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateLifecycle(_lifecycle: any, _errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     // Implementation for lifecycle validation
   }
 
   /**
    * Validate author
    */
-  private validateAuthor(author: any, path: string, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateAuthor(author: any, path: string, errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     if (!author.id) {
       errors.push({
         path: `${path}.id`,
@@ -735,7 +744,7 @@ export class PluginValidator implements IPluginValidator {
   /**
    * Validate JSON schema
    */
-  private validateJSONSchema(schema: any, path: string, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateJSONSchema(schema: any, path: string, errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     if (!schema.type) {
       errors.push({
         path: `${path}.type`,
@@ -749,14 +758,14 @@ export class PluginValidator implements IPluginValidator {
   /**
    * Validate props against schema
    */
-  private validatePropsAgainstSchema(props: any, schema: any, path: string, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validatePropsAgainstSchema(_props: any, _schema: any, _path: string, _errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     // Implementation for props validation against schema
   }
 
   /**
    * Validate code signing
    */
-  private validateCodeSigning(codeSigning: any, path: string, errors: ValidationError[], warnings: ValidationWarning[], info: ValidationInfo[]): void {
+  private validateCodeSigning(codeSigning: any, path: string, errors: ValidationError[], _warnings: ValidationWarning[], _info: ValidationInfo[]): void {
     if (!codeSigning.certificate) {
       errors.push({
         path: `${path}.certificate`,

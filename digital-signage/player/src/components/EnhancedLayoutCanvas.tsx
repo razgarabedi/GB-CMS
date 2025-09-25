@@ -6,23 +6,20 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  LayoutCanvas, 
+import type { 
+  LayoutCanvas as LayoutCanvasType, 
   CanvasComponent, 
-  CanvasZone, 
   UIPosition, 
   UISize, 
-  UIBounds,
-  DragState,
-  DragItem,
-  DropTarget,
-  CanvasSelection,
-  CanvasEvent
+  UIBounds, 
+  DragState, 
+  DragItem, 
+  CanvasSelection
 } from '../types/UITypes';
 
 interface EnhancedLayoutCanvasProps {
-  canvas: LayoutCanvas;
-  onCanvasChange: (canvas: LayoutCanvas) => void;
+  canvas: LayoutCanvasType;
+  onCanvasChange: (canvas: LayoutCanvasType) => void;
   onComponentSelect: (componentId: string | null) => void;
   onComponentMove: (componentId: string, position: UIPosition) => void;
   onComponentResize: (componentId: string, size: UISize) => void;
@@ -38,10 +35,10 @@ interface EnhancedLayoutCanvasProps {
 
 export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
   canvas,
-  onCanvasChange,
+  onCanvasChange: _onCanvasChange,
   onComponentSelect,
-  onComponentMove,
-  onComponentResize,
+  onComponentMove: _onComponentMove,
+  onComponentResize: _onComponentResize,
   onComponentDelete,
   onComponentDuplicate,
   onDrop,
@@ -65,12 +62,12 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
     bounds: { x: 0, y: 0, width: 0, height: 0 },
     isMultiSelect: false
   });
-  const [isResizing, setIsResizing] = useState<string | null>(null);
-  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [_isResizing, _setIsResizing] = useState<string | null>(null);
+  const [_resizeHandle, _setResizeHandle] = useState<string | null>(null);
 
   // Grid calculations
-  const gridSize = canvas.grid.cellSize * zoom;
-  const gridGap = canvas.grid.gap * zoom;
+  // const _gridSize = canvas.grid.cellSize * zoom;
+  // const _gridGap = canvas.grid.gap * zoom;
 
   // Convert screen coordinates to canvas coordinates
   const screenToCanvas = useCallback((screenPos: UIPosition): UIPosition => {
@@ -111,33 +108,33 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
   }, [canvasToScreen, zoom]);
 
   // Check if position is within bounds
-  const isWithinBounds = useCallback((position: UIPosition, bounds: UIBounds): boolean => {
-    return position.x >= bounds.x && 
-           position.x <= bounds.x + bounds.width &&
-           position.y >= bounds.y && 
-           position.y <= bounds.y + bounds.height;
-  }, []);
+  // const _isWithinBounds = useCallback((position: UIPosition, bounds: UIBounds): boolean => {
+  //   return position.x >= bounds.x && 
+  //          position.x <= bounds.x + bounds.width &&
+  //          position.y >= bounds.y && 
+  //          position.y <= bounds.y + bounds.height;
+  // }, []);
 
   // Find component at position
-  const findComponentAt = useCallback((position: UIPosition): CanvasComponent | null => {
-    const canvasPos = screenToCanvas(position);
-    for (let i = canvas.components.length - 1; i >= 0; i--) {
-      const component = canvas.components[i];
-      if (!component.visible) continue;
-      
-      const bounds = {
-        x: component.position.x,
-        y: component.position.y,
-        width: component.size.width,
-        height: component.size.height
-      };
-      
-      if (isWithinBounds(canvasPos, bounds)) {
-        return component;
-      }
-    }
-    return null;
-  }, [canvas.components, screenToCanvas, isWithinBounds]);
+  // const _findComponentAt = useCallback((position: UIPosition): CanvasComponent | null => {
+  //   const canvasPos = screenToCanvas(position);
+  //   for (let i = canvas.components.length - 1; i >= 0; i--) {
+  //     const component = canvas.components[i];
+  //     if (!component.visible) continue;
+  //     
+  //     const bounds = {
+  //       x: component.position.x,
+  //       y: component.position.y,
+  //       width: component.size.width,
+  //       height: component.size.height
+  //     };
+  //     
+  //     if (isWithinBounds(canvasPos, bounds)) {
+  //       return component;
+  //     }
+  //   }
+  //   return null;
+  // }, [canvas.components, screenToCanvas, isWithinBounds]);
 
   // Handle mouse down on component
   const handleComponentMouseDown = useCallback((e: React.MouseEvent, component: CanvasComponent) => {
@@ -192,8 +189,8 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     
-    const position = screenToCanvas({ x: e.clientX, y: e.clientY });
-    const snappedPosition = snapToGridPosition(position);
+    // const position = screenToCanvas({ x: e.clientX, y: e.clientY });
+    // const _snappedPosition = snapToGridPosition(position);
     
     setDragState(prev => ({
       ...prev,
@@ -209,9 +206,9 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
     if (!dragState.dragItem) return;
     
     const position = screenToCanvas({ x: e.clientX, y: e.clientY });
-    const snappedPosition = snapToGridPosition(position);
+    const _snappedPosition = snapToGridPosition(position);
     
-    onDrop(dragState.dragItem, snappedPosition);
+    onDrop(dragState.dragItem, _snappedPosition);
     
     setDragState({
       isDragging: false,
@@ -236,15 +233,15 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
   }, []);
 
   // Handle component move
-  const handleComponentMove = useCallback((componentId: string, newPosition: UIPosition) => {
-    const snappedPosition = snapToGridPosition(newPosition);
-    onComponentMove(componentId, snappedPosition);
-  }, [snapToGridPosition, onComponentMove]);
+  // const _handleComponentMove = useCallback((componentId: string, newPosition: UIPosition) => {
+  //   const snappedPosition = snapToGridPosition(newPosition);
+  //   onComponentMove(componentId, snappedPosition);
+  // }, [snapToGridPosition, onComponentMove]);
 
   // Handle component resize
-  const handleComponentResize = useCallback((componentId: string, newSize: UISize) => {
-    onComponentResize(componentId, newSize);
-  }, [onComponentResize]);
+  // const _handleComponentResize = useCallback((componentId: string, newSize: UISize) => {
+  //   onComponentResize(componentId, newSize);
+  // }, [onComponentResize]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -403,32 +400,32 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
                   className="absolute top-0 left-0 w-2 h-2 bg-blue-500 cursor-nw-resize"
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    setIsResizing(component.id);
-                    setResizeHandle('nw');
+                    _setIsResizing(component.id);
+                    _setResizeHandle('nw');
                   }}
                 />
                 <div
                   className="absolute top-0 right-0 w-2 h-2 bg-blue-500 cursor-ne-resize"
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    setIsResizing(component.id);
-                    setResizeHandle('ne');
+                    _setIsResizing(component.id);
+                    _setResizeHandle('ne');
                   }}
                 />
                 <div
                   className="absolute bottom-0 left-0 w-2 h-2 bg-blue-500 cursor-sw-resize"
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    setIsResizing(component.id);
-                    setResizeHandle('sw');
+                    _setIsResizing(component.id);
+                    _setResizeHandle('sw');
                   }}
                 />
                 <div
                   className="absolute bottom-0 right-0 w-2 h-2 bg-blue-500 cursor-se-resize"
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    setIsResizing(component.id);
-                    setResizeHandle('se');
+                    _setIsResizing(component.id);
+                    _setResizeHandle('se');
                   }}
                 />
               </>
@@ -443,8 +440,8 @@ export const EnhancedLayoutCanvas: React.FC<EnhancedLayoutCanvasProps> = ({
     if (!dragState.isDragging || !dragState.dragItem) return null;
     
     const position = screenToCanvas(dragState.position);
-    const snappedPosition = snapToGridPosition(position);
-    const screenPos = canvasToScreen(snappedPosition);
+    const _snappedPosition = snapToGridPosition(position);
+    const screenPos = canvasToScreen(_snappedPosition);
     
     return (
       <div

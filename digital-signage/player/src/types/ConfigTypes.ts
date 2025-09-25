@@ -3,7 +3,7 @@
  * Enhanced configuration system with validation, versioning, and inheritance
  */
 
-import type { ComponentCategory } from './ComponentInterfaces'
+// import type { ComponentCategory } from './ComponentInterfaces'
 import type { LayoutConfig } from './LayoutTypes'
 
 // ============================================================================

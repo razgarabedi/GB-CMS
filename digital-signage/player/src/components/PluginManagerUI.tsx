@@ -6,16 +6,16 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { 
-  PluginManagerUI, 
+import type { 
+  PluginManagerUI as PluginManagerUIType, 
   PluginUI, 
   PluginStatus,
   ComponentCategory
 } from '../types/UITypes';
 
 interface PluginManagerUIProps {
-  manager: PluginManagerUI;
-  onManagerChange: (manager: PluginManagerUI) => void;
+  manager: PluginManagerUIType;
+  onManagerChange: (manager: PluginManagerUIType) => void;
   onPluginInstall: (pluginId: string) => void;
   onPluginUninstall: (pluginId: string) => void;
   onPluginEnable: (pluginId: string) => void;

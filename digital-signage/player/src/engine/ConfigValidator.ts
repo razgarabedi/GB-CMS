@@ -67,8 +67,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateBaseConfig(
     config: ScreenConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     // Required fields
     if (!config.id) {
@@ -136,7 +136,7 @@ export class ConfigurationValidator implements ConfigValidator {
 
     // Version validation
     if (config.version && !this.isValidVersion(config.version)) {
-      warnings.push({
+      _warnings.push({
         path: 'version',
         message: 'Version format should follow semantic versioning',
         code: 'INVALID_VERSION_FORMAT',
@@ -152,37 +152,37 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateComponentConfigs(
     components: any,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     // Weather configuration
     if (components.weather) {
-      this.validateWeatherConfig(components.weather, errors, warnings, info)
+      this.validateWeatherConfig(components.weather, errors, _warnings, _info)
     }
 
     // Clock configuration
     if (components.clock) {
-      this.validateClockConfig(components.clock, errors, warnings, info)
+      this.validateClockConfig(components.clock, errors, _warnings, _info)
     }
 
     // News configuration
     if (components.news) {
-      this.validateNewsConfig(components.news, errors, warnings, info)
+      this.validateNewsConfig(components.news, errors, _warnings, _info)
     }
 
     // Slideshow configuration
     if (components.slideshow) {
-      this.validateSlideshowConfig(components.slideshow, errors, warnings, info)
+      this.validateSlideshowConfig(components.slideshow, errors, _warnings, _info)
     }
 
     // Web viewer configuration
     if (components.webViewer) {
-      this.validateWebViewerConfig(components.webViewer, errors, warnings, info)
+      this.validateWebViewerConfig(components.webViewer, errors, _warnings, _info)
     }
 
     // PV configuration
     if (components.pv) {
-      this.validatePVConfig(components.pv, errors, warnings, info)
+      this.validatePVConfig(components.pv, errors, _warnings, _info)
     }
   }
 
@@ -192,8 +192,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateWeatherConfig(
     config: WeatherConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!config.location) {
       errors.push({
@@ -205,7 +205,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.refreshIntervalMs && config.refreshIntervalMs < 60000) {
-      warnings.push({
+      _warnings.push({
         path: 'components.weather.refreshIntervalMs',
         message: 'Weather refresh interval is very short',
         code: 'SHORT_REFRESH_INTERVAL',
@@ -231,8 +231,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateClockConfig(
     config: ClockConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!config.type || !['analog', 'digital'].includes(config.type)) {
       errors.push({
@@ -256,7 +256,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.size && (config.size < 10 || config.size > 1000)) {
-      warnings.push({
+      _warnings.push({
         path: 'components.clock.size',
         message: 'Clock size should be between 10 and 1000 pixels',
         code: 'INVALID_SIZE',
@@ -281,8 +281,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateNewsConfig(
     config: NewsConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!config.category || !['wirtschaft', 'top', 'sport', 'politik'].includes(config.category)) {
       errors.push({
@@ -295,7 +295,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.limit && (config.limit < 1 || config.limit > 50)) {
-      warnings.push({
+      _warnings.push({
         path: 'components.news.limit',
         message: 'News limit should be between 1 and 50',
         code: 'INVALID_LIMIT',
@@ -304,7 +304,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.rotationMs && config.rotationMs < 1000) {
-      warnings.push({
+      _warnings.push({
         path: 'components.news.rotationMs',
         message: 'News rotation interval is very short',
         code: 'SHORT_ROTATION_INTERVAL',
@@ -329,8 +329,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateSlideshowConfig(
     config: SlideshowConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!Array.isArray(config.images)) {
       errors.push({
@@ -340,7 +340,7 @@ export class ConfigurationValidator implements ConfigValidator {
         severity: 'error'
       })
     } else if (config.images.length === 0) {
-      warnings.push({
+      _warnings.push({
         path: 'components.slideshow.images',
         message: 'No images configured for slideshow',
         code: 'EMPTY_IMAGES',
@@ -361,7 +361,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.intervalMs && config.intervalMs < 1000) {
-      warnings.push({
+      _warnings.push({
         path: 'components.slideshow.intervalMs',
         message: 'Slideshow interval is very short',
         code: 'SHORT_INTERVAL',
@@ -386,7 +386,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.durationMs && (config.durationMs < 100 || config.durationMs > 10000)) {
-      warnings.push({
+      _warnings.push({
         path: 'components.slideshow.durationMs',
         message: 'Animation duration should be between 100ms and 10000ms',
         code: 'INVALID_DURATION',
@@ -401,8 +401,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateWebViewerConfig(
     config: WebViewerConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!config.url) {
       errors.push({
@@ -430,7 +430,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.snapshotRefreshMs && config.snapshotRefreshMs < 30000) {
-      warnings.push({
+      _warnings.push({
         path: 'components.webViewer.snapshotRefreshMs',
         message: 'Snapshot refresh interval is very short',
         code: 'SHORT_REFRESH_INTERVAL',
@@ -455,8 +455,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validatePVConfig(
     config: PVConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!config.token) {
       errors.push({
@@ -477,7 +477,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (config.refreshIntervalMs && config.refreshIntervalMs < 30000) {
-      warnings.push({
+      _warnings.push({
         path: 'components.pv.refreshIntervalMs',
         message: 'PV refresh interval is very short',
         code: 'SHORT_REFRESH_INTERVAL',
@@ -493,8 +493,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateGlobalSettings(
     settings: GlobalSettings,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (settings.welcomeTextColor && !this.isValidColor(settings.welcomeTextColor)) {
       errors.push({
@@ -525,7 +525,7 @@ export class ConfigurationValidator implements ConfigValidator {
 
     if (settings.refreshIntervals) {
       if (settings.refreshIntervals.contentMs && settings.refreshIntervals.contentMs < 10000) {
-        warnings.push({
+        _warnings.push({
           path: 'global.refreshIntervals.contentMs',
           message: 'Content refresh interval is very short',
           code: 'SHORT_REFRESH_INTERVAL',
@@ -535,7 +535,7 @@ export class ConfigurationValidator implements ConfigValidator {
       }
 
       if (settings.refreshIntervals.rotateMs && settings.refreshIntervals.rotateMs < 1000) {
-        warnings.push({
+        _warnings.push({
           path: 'global.refreshIntervals.rotateMs',
           message: 'Rotation interval is very short',
           code: 'SHORT_ROTATION_INTERVAL',
@@ -552,12 +552,12 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateScheduleConfig(
     schedule: ScheduleConfig,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (schedule.rules && Array.isArray(schedule.rules)) {
       schedule.rules.forEach((rule, index) => {
-        this.validateScheduleRule(rule, index, errors, warnings, info)
+        this.validateScheduleRule(rule, index, errors, _warnings, _info)
       })
     }
   }
@@ -569,8 +569,8 @@ export class ConfigurationValidator implements ConfigValidator {
     rule: any,
     index: number,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     const basePath = `schedule.rules[${index}]`
 
@@ -633,7 +633,7 @@ export class ConfigurationValidator implements ConfigValidator {
     }
 
     if (rule.priority && (rule.priority < 0 || rule.priority > 1000)) {
-      warnings.push({
+      _warnings.push({
         path: `${basePath}.priority`,
         message: 'Priority should be between 0 and 1000',
         code: 'INVALID_PRIORITY',
@@ -648,8 +648,8 @@ export class ConfigurationValidator implements ConfigValidator {
   private validateLayoutConfig(
     layout: any,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     if (!layout.id) {
       errors.push({
@@ -691,7 +691,7 @@ export class ConfigurationValidator implements ConfigValidator {
 
     if (layout.components && Array.isArray(layout.components)) {
       layout.components.forEach((component: any, index: number) => {
-        this.validateLayoutComponent(component, index, errors, warnings, info)
+        this.validateLayoutComponent(component, index, errors, _warnings, _info)
       })
     }
   }
@@ -703,8 +703,8 @@ export class ConfigurationValidator implements ConfigValidator {
     component: any,
     index: number,
     errors: ConfigValidationError[],
-    warnings: ConfigValidationError[],
-    info: ConfigValidationError[]
+    _warnings: ConfigValidationError[],
+    _info: ConfigValidationError[]
   ): void {
     const basePath = `layout.components[${index}]`
 

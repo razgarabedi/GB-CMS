@@ -447,7 +447,7 @@ export class PluginManager implements IPluginManager {
   /**
    * Convert store plugin to manifest
    */
-  private async convertStorePluginToManifest(storePlugin: any): Promise<PluginManifest> {
+  private async convertStorePluginToManifest(_storePlugin: any): Promise<PluginManifest> {
     // Implementation for converting store plugin to manifest
     throw new Error('Not implemented')
   }

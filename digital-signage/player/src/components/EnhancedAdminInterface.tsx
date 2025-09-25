@@ -10,7 +10,7 @@ import type {
   AdminInterface, 
   AdminTab,
   ComponentLibrary as ComponentLibraryType,
-  LayoutCanvas as LayoutCanvasType,
+  // LayoutCanvas as LayoutCanvasType,
   PropertiesPanel as PropertiesPanelType,
   TemplateManager as TemplateManagerType,
   PluginManagerUI as PluginManagerUIType,

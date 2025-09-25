@@ -3,8 +3,8 @@
  * Visual interface for creating and editing advanced templates
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
-import type { AdvancedTemplate, TemplateComponent, TemplateVariable, ConditionalLogic } from '../types/TemplateTypes'
+import { useState, useEffect, useCallback } from 'react'
+import type { AdvancedTemplate, TemplateComponent, TemplateVariable } from '../types/TemplateTypes'
 
 interface TemplateBuilderProps {
   /** Initial template */
@@ -31,8 +31,8 @@ interface BuilderState {
 
 export default function TemplateBuilder({
   initialTemplate,
-  availableComponents = [],
-  onTemplateChange,
+  availableComponents: _availableComponents = [],
+  onTemplateChange: _onTemplateChange,
   onTemplateSave,
   theme = 'dark',
   visible = true
@@ -106,8 +106,8 @@ export default function TemplateBuilder({
   const handleTemplateChange = useCallback((updates: Partial<AdvancedTemplate>) => {
     setTemplate(prev => ({ ...prev, ...updates, metadata: { ...prev.metadata, updatedAt: new Date().toISOString() } }))
     setIsDirty(true)
-    onTemplateChange?.(template)
-  }, [template, onTemplateChange])
+    _onTemplateChange?.(template)
+  }, [template, _onTemplateChange])
 
   // Handle component addition
   const handleAddComponent = useCallback((componentType: string) => {
@@ -406,7 +406,7 @@ export default function TemplateBuilder({
 function DesignTab({
   template,
   builderState,
-  onTemplateChange,
+  onTemplateChange: _onTemplateChange,
   onAddComponent,
   onSelectComponent,
   onUpdateComponent,
@@ -801,7 +801,7 @@ function VariablesTab({
   )
 }
 
-function LogicTab({ template, onTemplateChange, theme }: { template: AdvancedTemplate; onTemplateChange: (updates: Partial<AdvancedTemplate>) => void; theme: string }) {
+function LogicTab({ template: _template, onTemplateChange: _onTemplateChange, theme }: { template: AdvancedTemplate; onTemplateChange: (updates: Partial<AdvancedTemplate>) => void; theme: string }) {
   return (
     <div className="logic-tab" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: theme === 'light' ? '#111827' : '#f9fafb' }}>
@@ -815,7 +815,7 @@ function LogicTab({ template, onTemplateChange, theme }: { template: AdvancedTem
   )
 }
 
-function PreviewTab({ template, theme }: { template: AdvancedTemplate; theme: string }) {
+function PreviewTab({ template: _template, theme }: { template: AdvancedTemplate; theme: string }) {
   return (
     <div className="preview-tab" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: theme === 'light' ? '#111827' : '#f9fafb' }}>

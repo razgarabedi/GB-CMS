@@ -3,7 +3,7 @@
  * Interface for managing plugins, installation, and configuration
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { PluginManifest, PluginState } from '../types/PluginTypes'
 
 interface PluginManagerProps {
@@ -556,7 +556,7 @@ function PluginCard({
               >
                 Uninstall
               </button>
-              {status === 'active' ? (
+              {status === 'installed' ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -645,7 +645,7 @@ function PluginDetails({
 }) {
   const status = pluginState?.status || 'unknown'
   const health = pluginState?.health
-  const metrics = pluginState?.metrics
+  // const _metrics = pluginState?.metrics
 
   return (
     <div style={{ padding: '24px' }}>
@@ -755,7 +755,7 @@ function PluginDetails({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {status === 'installed' ? (
             <>
-              {status === 'active' ? (
+              {status === 'installed' ? (
                 <button
                   onClick={onDeactivate}
                   style={{
