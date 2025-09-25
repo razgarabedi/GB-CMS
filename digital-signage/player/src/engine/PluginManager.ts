@@ -308,7 +308,7 @@ export class PluginManager implements IPluginManager {
   /**
    * Create plugin from template
    */
-  async createPluginFromTemplate(templateId: string, config: any): Promise<PluginManifest> {
+  async createPluginFromTemplate(_templateId: string, _config: any): Promise<PluginManifest> {
     // Implementation for creating plugin from template
     throw new Error('Not implemented')
   }
@@ -333,7 +333,7 @@ export class PluginManager implements IPluginManager {
   /**
    * Package plugin for distribution
    */
-  async packagePlugin(pluginId: string): Promise<any> {
+  async packagePlugin(_pluginId: string): Promise<any> {
     // Implementation for plugin packaging
     throw new Error('Not implemented')
   }
@@ -341,7 +341,7 @@ export class PluginManager implements IPluginManager {
   /**
    * Publish plugin to store
    */
-  async publishPluginToStore(pluginId: string, storeConfig: any): Promise<any> {
+  async publishPluginToStore(_pluginId: string, _storeConfig: any): Promise<any> {
     // Implementation for plugin publishing
     throw new Error('Not implemented')
   }

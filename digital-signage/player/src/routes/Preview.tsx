@@ -127,7 +127,7 @@ export default function Preview() {
       return <DigitalClock timezone={config.timezone || 'UTC'} type={digitalType} size={Math.max(24, Math.round(size * 0.45))} color={color} />
     }
     const t = buildAnalogTheme(clockStyle, theme)
-    return <AnalogClock timezone={config.timezone || 'UTC'} size={size} theme={t} />
+    return <AnalogClock timezone={config.timezone || 'UTC'} size={size} customTheme={t} />
   }
 
   function renderWelcomeText(input: string, defaultColor: string) {

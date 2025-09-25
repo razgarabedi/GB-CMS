@@ -3,6 +3,8 @@
  * Central registry for managing plugin lifecycle, state, and instances
  */
 
+import type { NodeJS } from 'node:timers';
+
 import type {
   PluginManifest,
   PluginRegistry as IPluginRegistry,

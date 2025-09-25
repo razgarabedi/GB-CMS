@@ -175,7 +175,7 @@ export default function Player() {
       return <DigitalClock timezone={effective?.timezone || 'UTC'} type={digitalType} size={Math.max(24, Math.round(size * 0.45))} color={color} />
     }
     const t = buildAnalogTheme(clockStyle, theme)
-    return <AnalogClock timezone={effective?.timezone || 'UTC'} size={size} theme={t} />
+    return <AnalogClock timezone={effective?.timezone || 'UTC'} size={size} customTheme={t} />
   }
 
   function buildAnalogTheme(style: string, uiTheme: 'dark' | 'light') {

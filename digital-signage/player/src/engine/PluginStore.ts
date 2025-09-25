@@ -265,7 +265,9 @@ export class PluginStore implements IPluginStore {
         rating: 4.6,
         downloads: 8930,
         price: {
-          type: 'free'
+          type: 'free',
+          amount: 0,
+          currency: 'USD'
         },
         preview: {
           images: ['https://example.com/social-preview.jpg'],
@@ -324,7 +326,9 @@ export class PluginStore implements IPluginStore {
         rating: 4.3,
         downloads: 5670,
         price: {
-          type: 'free'
+          type: 'free',
+          amount: 0,
+          currency: 'USD'
         },
         preview: {
           images: ['https://example.com/ticker-preview.jpg'],
