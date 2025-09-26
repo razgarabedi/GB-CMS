@@ -15,6 +15,15 @@ This project is a complete signage solution consisting of two main parts:
 - Drag-and-drop interactions
 - Internationalization with German/English support
 
+## Rendering Engine
+The player application uses Three.js to provide a lightweight and performant rendering engine for displaying signage layouts. This ensures smooth and efficient rendering of complex layouts.
+
+## Real-time Updates
+Real-time updates are facilitated using Socket.IO, allowing the player to receive content and layout updates from the server efficiently. This ensures that the displayed content is always up-to-date.
+
+## Performance Optimization
+The player is optimized for continuous playback on various hardware using react-performance. This includes optimizations for rendering efficiency and resource management to ensure smooth operation across different devices.
+
 ## Setup Instructions
 
 ### Prerequisites
