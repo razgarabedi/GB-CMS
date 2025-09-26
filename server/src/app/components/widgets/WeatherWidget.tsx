@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useCurrentTime } from '../../hooks/useHydration';
 
 interface WeatherWidgetProps {
   location?: string;
@@ -15,22 +16,13 @@ export default function WeatherWidget({
   showAnimatedBg = false,
   theme = 'dark'
 }: WeatherWidgetProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { value: currentTime, isHydrated } = useCurrentTime(showClock ? 1000 : 0);
   const [weather] = useState({
     temperature: 22,
     condition: 'Partly Cloudy',
     humidity: 65,
     windSpeed: 12
   });
-
-  useEffect(() => {
-    if (showClock) {
-      const timer = setInterval(() => {
-        setCurrentTime(new Date());
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [showClock]);
 
   return (
     <div className={`weather-widget ${theme} ${showAnimatedBg ? 'animated-bg' : ''} h-full w-full relative overflow-hidden rounded-lg`}>
@@ -54,16 +46,16 @@ export default function WeatherWidget({
           {showClock && (
             <div className="text-right">
               <div className="text-lg font-mono text-white">
-                {currentTime.toLocaleTimeString('en-US', { 
+                {isHydrated && currentTime ? currentTime.toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
-                })}
+                }) : '--:--'}
               </div>
               <div className="text-xs text-slate-300">
-                {currentTime.toLocaleDateString('en-US', { 
+                {isHydrated && currentTime ? currentTime.toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric' 
-                })}
+                }) : '-- --'}
               </div>
             </div>
           )}

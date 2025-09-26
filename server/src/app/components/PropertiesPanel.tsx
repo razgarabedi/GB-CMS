@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DefaultWidgetProps } from './widgets';
+import VisualPropertyEditor from './VisualPropertyEditor';
 
 interface LayoutItem {
   i: string;
@@ -25,6 +26,7 @@ export default function PropertiesPanel({
   onLayoutChange 
 }: PropertiesPanelProps) {
   const [widgetProps, setWidgetProps] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState('properties');
 
   const selectedWidgetData = layout.find(item => item.i === selectedWidget);
 
@@ -354,65 +356,109 @@ export default function PropertiesPanel({
     }
   };
 
+  const tabs = [
+    { id: 'properties', name: 'Properties', icon: '⚙️' },
+    { id: 'visual', name: 'Visual Editor', icon: '🎨' }
+  ];
+
   return (
-    <div className="h-full bg-slate-800/50 p-2 sm:p-4 overflow-y-auto">
-      <h3 className="text-base sm:text-lg font-semibold text-white mb-4">Properties</h3>
-      
-      {selectedWidget && selectedWidgetData ? (
-        <div className="space-y-6">
-          {/* Widget Info */}
-          <div className="card">
-            <div className="p-4">
-              <h4 className="font-medium text-white mb-3 flex items-center space-x-2">
-                <span>📐</span>
-                <span>{selectedWidgetData.component} Widget</span>
-              </h4>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Width</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={selectedWidgetData.w}
-                    onChange={(e) => updateWidgetDimensions('w', parseInt(e.target.value))}
-                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+    <div className="h-full bg-slate-800/50 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-slate-700">
+        <h3 className="text-lg font-semibold text-white mb-4">Properties</h3>
+        
+        {/* Tabs */}
+        <div className="flex space-x-1 bg-slate-700/50 p-1 rounded-lg">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-slate-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-600/50'
+              }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {selectedWidget && selectedWidgetData ? (
+          activeTab === 'properties' ? (
+            <div className="p-4 space-y-6">
+              {/* Widget Info */}
+              <div className="card">
+                <div className="p-4">
+                  <h4 className="font-medium text-white mb-3 flex items-center space-x-2">
+                    <span>📐</span>
+                    <span>{selectedWidgetData.component} Widget</span>
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Width</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={selectedWidgetData.w}
+                        onChange={(e) => updateWidgetDimensions('w', parseInt(e.target.value))}
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Height</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={selectedWidgetData.h}
+                        onChange={(e) => updateWidgetDimensions('h', parseInt(e.target.value))}
+                        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Height</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    value={selectedWidgetData.h}
-                    onChange={(e) => updateWidgetDimensions('h', parseInt(e.target.value))}
-                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              </div>
+
+              {/* Widget-specific Properties */}
+              <div className="card">
+                <div className="p-4">
+                  <h4 className="font-medium text-white mb-3 flex items-center space-x-2">
+                    <span>⚙️</span>
+                    <span>Widget Settings</span>
+                  </h4>
+                  {renderPropertyForm()}
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Widget-specific Properties */}
-          <div className="card">
-            <div className="p-4">
-              <h4 className="font-medium text-white mb-3 flex items-center space-x-2">
-                <span>⚙️</span>
-                <span>Widget Settings</span>
-              </h4>
-              {renderPropertyForm()}
+          ) : (
+            <VisualPropertyEditor
+              selectedWidget={selectedWidget}
+              widgetProps={widgetProps}
+              onPropertyChange={updateWidgetProperty}
+              onStyleChange={(styles) => {
+                Object.entries(styles).forEach(([key, value]) => {
+                  updateWidgetProperty(key, value);
+                });
+              }}
+            />
+          )
+        ) : (
+          <div className="p-4 flex items-center justify-center h-full">
+            <div className="text-center text-slate-400">
+              <div className="text-4xl mb-4">⚙️</div>
+              <div className="text-lg font-medium mb-2">No Widget Selected</div>
+              <div className="text-sm">Click on a widget to edit its properties</div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="text-center text-slate-400 py-8">
-          <div className="text-4xl mb-4">⚙️</div>
-          <div className="text-lg font-medium mb-2">No Widget Selected</div>
-          <div className="text-sm">Click on a widget to edit its properties</div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

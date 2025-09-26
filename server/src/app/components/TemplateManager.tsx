@@ -43,7 +43,13 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
   const [activeTab, setActiveTab] = useState<'my-templates' | 'public' | 'import-export'>('my-templates');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'rating' | 'downloads'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const categories = [
     { id: 'all', name: 'All Categories', icon: '📁' },
@@ -52,7 +58,19 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
     { id: 'corporate', name: 'Corporate', icon: '🏢' },
     { id: 'education', name: 'Education', icon: '🎓' },
     { id: 'healthcare', name: 'Healthcare', icon: '🏥' },
+    { id: 'restaurant', name: 'Restaurant', icon: '🍽️' },
+    { id: 'transportation', name: 'Transportation', icon: '🚌' },
+    { id: 'entertainment', name: 'Entertainment', icon: '🎬' },
+    { id: 'sports', name: 'Sports', icon: '⚽' },
+    { id: 'weather', name: 'Weather', icon: '🌤️' },
+    { id: 'news', name: 'News', icon: '📰' },
     { id: 'custom', name: 'Custom', icon: '🔧' }
+  ];
+
+  const popularTags = [
+    'weather', 'clock', 'news', 'slideshow', 'dashboard', 'kpi', 'analytics',
+    'corporate', 'retail', 'restaurant', 'education', 'healthcare', 'modern',
+    'minimal', 'colorful', 'dark', 'light', 'responsive', 'animated'
   ];
 
   useEffect(() => {
@@ -232,29 +250,78 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
     event.target.value = '';
   };
 
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredTemplates = templates
+    .filter(template => {
+      const matchesSearch = searchQuery === '' || 
+        template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        template.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        template.author.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+      
+      const matchesTags = selectedTags.length === 0 || 
+        selectedTags.some(tag => template.tags.some(templateTag => 
+          templateTag.toLowerCase().includes(tag.toLowerCase())
+        ));
+      
+      return matchesSearch && matchesCategory && matchesTags;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        case 'rating':
+          comparison = a.rating - b.rating;
+          break;
+        case 'downloads':
+          comparison = a.downloads - b.downloads;
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   const renderTemplateCard = (template: Template) => (
-    <div key={template.id} className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden hover:border-slate-600 transition-colors">
-      {/* Thumbnail */}
-      <div className="h-24 bg-slate-900 flex items-center justify-center overflow-hidden">
+    <div key={template.id} className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden hover:border-slate-600 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 group">
+      {/* Thumbnail with Preview Overlay */}
+      <div className="h-32 bg-slate-900 flex items-center justify-center overflow-hidden relative">
         {template.thumbnail ? (
           <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover" />
         ) : (
-          <div className="text-slate-500 text-2xl">📄</div>
+          <div className="text-slate-500 text-3xl">📄</div>
         )}
+        
+        {/* Preview Overlay */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <button
+            onClick={() => setPreviewTemplate(template)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+          >
+            👁️ Preview
+          </button>
+        </div>
+        
+        {/* Widget Count Badge */}
+        <div className="absolute top-2 right-2 bg-slate-800/90 text-slate-300 px-2 py-1 rounded-full text-xs font-medium">
+          {template.layout.length} widgets
+        </div>
       </div>
       
       {/* Content */}
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h4 className="font-medium text-white text-sm truncate">{template.name}</h4>
+          <h4 className="font-medium text-white text-sm truncate group-hover:text-blue-300 transition-colors">
+            {template.name}
+          </h4>
           <div className="flex items-center space-x-1 text-xs text-slate-400">
             <span>⭐</span>
             <span>{template.rating.toFixed(1)}</span>
@@ -266,8 +333,16 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
         </p>
         
         <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
-          <span>{categories.find(c => c.id === template.category)?.icon} {template.category}</span>
-          <span>{template.layout.length} widgets</span>
+          <div className="flex items-center space-x-2">
+            <span>{categories.find(c => c.id === template.category)?.icon} {template.category}</span>
+            <span>•</span>
+            <span>by {template.author}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span>📥 {template.downloads}</span>
+            <span>•</span>
+            <span>{new Date(template.updatedAt).toLocaleDateString()}</span>
+          </div>
         </div>
         
         {/* Tags */}
@@ -290,9 +365,16 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
         <div className="flex space-x-2">
           <button
             onClick={() => loadTemplate(template)}
-            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors font-medium"
           >
             Load
+          </button>
+          <button
+            onClick={() => setPreviewTemplate(template)}
+            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+            title="Preview Template"
+          >
+            👁️
           </button>
           <button
             onClick={() => exportTemplate(template)}
@@ -437,35 +519,217 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
             </div>
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex space-x-4">
-            <div className="flex-1">
+          {/* Enhanced Search and Filter Controls */}
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search templates..."
+                className="w-full px-4 py-3 pl-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Search templates by name, description, tags, or author..."
               />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                🔍
+              </div>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.icon} {category.name}
-                </option>
-              ))}
-            </select>
+
+            {/* Filter Controls */}
+            <div className="flex flex-wrap gap-3">
+              {/* Category Filter */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.icon} {category.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Sort Controls */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="date">Sort by Date</option>
+                <option value="name">Sort by Name</option>
+                <option value="rating">Sort by Rating</option>
+                <option value="downloads">Sort by Downloads</option>
+              </select>
+
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as any)}
+                className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+
+              {/* View Mode Toggle */}
+              <div className="flex bg-slate-700 rounded-md p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    viewMode === 'grid' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ⊞
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${
+                    viewMode === 'list' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ☰
+                </button>
+              </div>
+
+              {/* Advanced Filters Toggle */}
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  showAdvancedFilters
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                🔧 Advanced
+              </button>
+
+              {/* Clear Filters */}
+              {(searchQuery || selectedCategory !== 'all' || selectedTags.length > 0) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                    setSelectedTags([]);
+                  }}
+                  className="px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Advanced Filters */}
+            {showAdvancedFilters && (
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                <h4 className="text-sm font-medium text-white mb-3">Tag Filters</h4>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        if (selectedTags.includes(tag)) {
+                          setSelectedTags(selectedTags.filter(t => t !== tag));
+                        } else {
+                          setSelectedTags([...selectedTags, tag]);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedTags.includes(tag)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Templates Grid */}
+          {/* Results Count */}
+          <div className="flex items-center justify-between text-sm text-slate-400">
+            <span>
+              {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} found
+            </span>
+            <span>
+              Showing {viewMode === 'grid' ? 'grid' : 'list'} view
+            </span>
+          </div>
+
+          {/* Templates Display */}
           {filteredTemplates.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTemplates.map(renderTemplateCard)}
-            </div>
+            viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredTemplates.map(renderTemplateCard)}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredTemplates.map(template => (
+                  <div key={template.id} className="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      {/* Thumbnail */}
+                      <div className="w-16 h-12 bg-slate-900 rounded flex items-center justify-center overflow-hidden shrink-0">
+                        {template.thumbnail ? (
+                          <img src={template.thumbnail} alt={template.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="text-slate-500 text-lg">📄</div>
+                        )}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-1">
+                          <h4 className="font-medium text-white text-sm truncate">{template.name}</h4>
+                          <div className="flex items-center space-x-1 text-xs text-slate-400">
+                            <span>⭐</span>
+                            <span>{template.rating.toFixed(1)}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-400 mb-2 line-clamp-1">{template.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-slate-500">
+                          <span>{categories.find(c => c.id === template.category)?.icon} {template.category}</span>
+                          <span>by {template.author}</span>
+                          <span>{template.layout.length} widgets</span>
+                          <span>📥 {template.downloads}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex space-x-2 shrink-0">
+                        <button
+                          onClick={() => loadTemplate(template)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => setPreviewTemplate(template)}
+                          className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+                          title="Preview"
+                        >
+                          👁️
+                        </button>
+                        <button
+                          onClick={() => exportTemplate(template)}
+                          className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+                          title="Export"
+                        >
+                          📤
+                        </button>
+                        <button
+                          onClick={() => deleteTemplate(template.id)}
+                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : (
             <div className="text-center text-slate-400 py-12">
               <div className="text-4xl mb-4">📄</div>
@@ -549,6 +813,152 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
                 <div className="text-xs text-slate-400 text-center">
                   Individual templates can be exported from the template cards above
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Preview Modal */}
+      {previewTemplate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+              <div>
+                <h3 className="text-xl font-semibold text-white">{previewTemplate.name}</h3>
+                <p className="text-sm text-slate-400 mt-1">{previewTemplate.description}</p>
+              </div>
+              <button
+                onClick={() => setPreviewTemplate(null)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Template Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-300 mb-2">Template Details</h4>
+                    <div className="bg-slate-900/50 p-4 rounded-lg space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Category:</span>
+                        <span className="text-white">
+                          {categories.find(c => c.id === previewTemplate.category)?.icon} {previewTemplate.category}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Author:</span>
+                        <span className="text-white">{previewTemplate.author}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Widgets:</span>
+                        <span className="text-white">{previewTemplate.layout.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Downloads:</span>
+                        <span className="text-white">{previewTemplate.downloads}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Rating:</span>
+                        <span className="text-white">⭐ {previewTemplate.rating.toFixed(1)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Created:</span>
+                        <span className="text-white">{new Date(previewTemplate.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Updated:</span>
+                        <span className="text-white">{new Date(previewTemplate.updatedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  {previewTemplate.tags.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-300 mb-2">Tags</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {previewTemplate.tags.map((tag, index) => (
+                          <span key={index} className="px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-xs">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Widget List */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-300 mb-2">Widgets in Template</h4>
+                    <div className="space-y-2">
+                      {previewTemplate.layout.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white text-xs font-medium">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="text-white text-sm font-medium">{item.component}</div>
+                              <div className="text-slate-400 text-xs">
+                                {item.w}×{item.h} at ({item.x}, {item.y})
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template Preview */}
+                <div>
+                  <h4 className="text-sm font-medium text-slate-300 mb-2">Preview</h4>
+                  <div className="bg-slate-900/50 p-4 rounded-lg">
+                    {previewTemplate.thumbnail ? (
+                      <img 
+                        src={previewTemplate.thumbnail} 
+                        alt={previewTemplate.name} 
+                        className="w-full h-auto rounded border border-slate-700"
+                      />
+                    ) : (
+                      <div className="aspect-video bg-slate-800 rounded flex items-center justify-center text-slate-500">
+                        <div className="text-center">
+                          <div className="text-4xl mb-2">📄</div>
+                          <div className="text-sm">No preview available</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-6 border-t border-slate-700">
+              <div className="text-sm text-slate-400">
+                Template ID: {previewTemplate.id}
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setPreviewTemplate(null)}
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    loadTemplate(previewTemplate);
+                    setPreviewTemplate(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  Load Template
+                </button>
               </div>
             </div>
           </div>

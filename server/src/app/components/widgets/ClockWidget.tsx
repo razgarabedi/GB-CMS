@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCurrentTime } from '../../hooks/useHydration';
 
 interface ClockWidgetProps {
   timezone?: string;
@@ -15,16 +15,17 @@ export default function ClockWidget({
   size = 'medium',
   type = 'digital'
 }: ClockWidgetProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { value: currentTime, isHydrated } = useCurrentTime(1000);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const sizeClasses = {
+    small: 'text-lg',
+    medium: 'text-2xl',
+    large: 'text-4xl'
+  };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | null) => {
+    if (!date) return '--:--:--';
+    
     if (format === '12-hour') {
       return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
@@ -42,16 +43,25 @@ export default function ClockWidget({
     }
   };
 
-  const sizeClasses = {
-    small: 'text-lg',
-    medium: 'text-2xl',
-    large: 'text-4xl'
-  };
+  // Show loading state during hydration
+  if (!isHydrated || !currentTime) {
+    return (
+      <div className="clock-widget h-full w-full flex flex-col items-center justify-center bg-slate-800 rounded-lg">
+        <div className={`font-mono font-bold text-white ${sizeClasses[size]} mb-2`}>
+          --:--:--
+        </div>
+        <div className="text-sm text-slate-400 text-center">
+          <div>{timezone}</div>
+          <div>Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (type === 'analog') {
-    const hours = currentTime.getHours() % 12;
-    const minutes = currentTime.getMinutes();
-    const seconds = currentTime.getSeconds();
+    const hours = currentTime!.getHours() % 12;
+    const minutes = currentTime!.getMinutes();
+    const seconds = currentTime!.getSeconds();
     
     const hourAngle = (hours * 30) + (minutes * 0.5);
     const minuteAngle = minutes * 6;
@@ -125,7 +135,7 @@ export default function ClockWidget({
         
         <div className="text-center text-slate-300">
           <div className="text-sm font-medium">{timezone}</div>
-          <div className="text-xs">{currentTime.toLocaleDateString()}</div>
+          <div className="text-xs">{currentTime!.toLocaleDateString()}</div>
         </div>
       </div>
     );
@@ -138,7 +148,7 @@ export default function ClockWidget({
       </div>
       <div className="text-sm text-slate-400 text-center">
         <div>{timezone}</div>
-        <div>{currentTime.toLocaleDateString('en-US', { 
+        <div>{currentTime!.toLocaleDateString('en-US', { 
           weekday: 'long',
           year: 'numeric',
           month: 'long',

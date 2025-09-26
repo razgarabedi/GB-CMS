@@ -7,11 +7,22 @@ import PropertiesPanel from './components/PropertiesPanel';
 import TemplateManager from './components/TemplateManager';
 import PluginManager from './components/PluginManager';
 import PreviewSystem from './components/PreviewSystem';
+import HelpManager from './components/HelpManager';
+
+interface LayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  component?: string;
+  props?: Record<string, any>;
+}
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('canvas');
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
-  const [layout, setLayout] = useState([
+  const [layout, setLayout] = useState<LayoutItem[]>([
     { i: 'a', x: 0, y: 0, w: 2, h: 2, component: 'Weather' },
     { i: 'b', x: 2, y: 0, w: 2, h: 2, component: 'Clock' },
     { i: 'c', x: 4, y: 0, w: 2, h: 2, component: 'News' }
@@ -32,7 +43,10 @@ export default function Home() {
       case 'canvas':
         return (
           <div className="flex flex-col lg:flex-row h-full">
-            <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-slate-700 lg:h-full overflow-y-auto">
+            <div 
+              className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-slate-700 lg:h-full overflow-y-auto"
+              data-tour="component-library"
+            >
               <ComponentLibrary 
                 onWidgetAdd={(componentName) => {
                   const newWidget = {
@@ -47,16 +61,22 @@ export default function Home() {
                 }}
               />
             </div>
-            <div className="flex-1 p-3 lg:p-6 min-h-0">
-              <LayoutCanvas 
+            <div 
+              className="flex-1 p-3 lg:p-6 min-h-0"
+              data-tour="layout-canvas"
+            >
+              <LayoutCanvas
                 layout={layout}
                 onLayoutChange={setLayout}
                 selectedWidget={selectedWidget}
                 onWidgetSelect={setSelectedWidget}
               />
             </div>
-            <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-700 lg:h-full overflow-y-auto">
-              <PropertiesPanel 
+            <div 
+              className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-700 lg:h-full overflow-y-auto"
+              data-tour="properties-panel"
+            >
+              <PropertiesPanel
                 selectedWidget={selectedWidget}
                 layout={layout}
                 onLayoutChange={setLayout}
@@ -134,26 +154,27 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 space-y-2 sm:space-y-0">
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">GB-CMS</h1>
-            <span className="text-xs sm:text-sm text-slate-400 hidden sm:inline">Digital Signage Server</span>
+    <HelpManager>
+      <div className="flex flex-col h-screen">
+        {/* Header */}
+        <header className="border-b border-slate-700 bg-slate-800">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 space-y-2 sm:space-y-0">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">GB-CMS</h1>
+              <span className="text-xs sm:text-sm text-slate-400 hidden sm:inline">Digital Signage Server</span>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
+              <button className="btn btn-outline flex-1 sm:flex-none">
+                <span className="hidden sm:inline">🔄 Refresh</span>
+                <span className="sm:hidden">🔄</span>
+              </button>
+              <button className="btn btn-primary flex-1 sm:flex-none">
+                <span className="hidden sm:inline">💾 Save</span>
+                <span className="sm:hidden">💾</span>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
-            <button className="btn btn-outline flex-1 sm:flex-none">
-              <span className="hidden sm:inline">🔄 Refresh</span>
-              <span className="sm:hidden">🔄</span>
-            </button>
-            <button className="btn btn-primary flex-1 sm:flex-none">
-              <span className="hidden sm:inline">💾 Save</span>
-              <span className="sm:hidden">💾</span>
-            </button>
-          </div>
-        </div>
-      </header>
+        </header>
 
       {/* Tab Navigation */}
       <nav className="border-b border-slate-700 bg-slate-800/50">
@@ -166,6 +187,9 @@ export default function Home() {
                 className={`tab-button ${
                   activeTab === tab.id ? 'tab-button-active' : ''
                 }`}
+                data-tour={tab.id === 'preview' ? 'preview-tab' : 
+                          tab.id === 'templates' ? 'templates-tab' : 
+                          tab.id === 'plugins' ? 'plugins-tab' : undefined}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.name}
@@ -187,6 +211,7 @@ export default function Home() {
           <span>{layout.length} widgets on canvas</span>
         </div>
       </footer>
-    </div>
+      </div>
+    </HelpManager>
   );
 }

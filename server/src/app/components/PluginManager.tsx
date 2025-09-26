@@ -44,6 +44,12 @@ export default function PluginManager({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
+  const [showInstallationSteps, setShowInstallationSteps] = useState(false);
+  const [installingPlugin, setInstallingPlugin] = useState<Plugin | null>(null);
+  const [installationStep, setInstallationStep] = useState(0);
+  const [pluginConfig, setPluginConfig] = useState<Record<string, any>>({});
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [configuringPlugin, setConfiguringPlugin] = useState<Plugin | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Categories', icon: '📦' },
@@ -181,12 +187,29 @@ export default function PluginManager({
   };
 
   const installPlugin = async (plugin: Plugin) => {
-    setPlugins(prev => prev.map(p => 
-      p.id === plugin.id ? { ...p, isLoading: true } : p
-    ));
+    setInstallingPlugin(plugin);
+    setShowInstallationSteps(true);
+    setInstallationStep(0);
 
-    // Simulate installation delay
+    // Step 1: Download plugin
+    setInstallationStep(1);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Step 2: Validate dependencies
+    setInstallationStep(2);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Step 3: Install dependencies
+    setInstallationStep(3);
     await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Step 4: Configure plugin
+    setInstallationStep(4);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Step 5: Finalize installation
+    setInstallationStep(5);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const installedPlugin = { ...plugin, isInstalled: true, isEnabled: true, isLoading: false };
     
@@ -200,7 +223,11 @@ export default function PluginManager({
     saveInstalledPlugins(updatedInstalled);
 
     onPluginInstall(installedPlugin);
-    alert(`Plugin "${plugin.name}" installed successfully!`);
+    
+    // Close installation steps
+    setShowInstallationSteps(false);
+    setInstallingPlugin(null);
+    setInstallationStep(0);
   };
 
   const uninstallPlugin = (pluginId: string) => {
@@ -233,6 +260,65 @@ export default function PluginManager({
 
     onPluginToggle(pluginId, enabled);
   };
+
+  const configurePlugin = (plugin: Plugin) => {
+    setConfiguringPlugin(plugin);
+    setShowConfigModal(true);
+    // Load existing configuration
+    const config = localStorage.getItem(`gb-cms-plugin-config-${plugin.id}`);
+    if (config) {
+      setPluginConfig(JSON.parse(config));
+    } else {
+      setPluginConfig({});
+    }
+  };
+
+  const savePluginConfig = () => {
+    if (configuringPlugin) {
+      localStorage.setItem(`gb-cms-plugin-config-${configuringPlugin.id}`, JSON.stringify(pluginConfig));
+      setShowConfigModal(false);
+      setConfiguringPlugin(null);
+      setPluginConfig({});
+    }
+  };
+
+  const getInstallationSteps = () => [
+    {
+      id: 1,
+      title: 'Downloading Plugin',
+      description: 'Downloading plugin files and verifying integrity...',
+      icon: '📥',
+      status: installationStep >= 1 ? 'completed' : installationStep === 0 ? 'current' : 'pending'
+    },
+    {
+      id: 2,
+      title: 'Validating Dependencies',
+      description: 'Checking system requirements and dependencies...',
+      icon: '🔍',
+      status: installationStep >= 2 ? 'completed' : installationStep === 1 ? 'current' : 'pending'
+    },
+    {
+      id: 3,
+      title: 'Installing Dependencies',
+      description: 'Installing required packages and libraries...',
+      icon: '📦',
+      status: installationStep >= 3 ? 'completed' : installationStep === 2 ? 'current' : 'pending'
+    },
+    {
+      id: 4,
+      title: 'Configuring Plugin',
+      description: 'Setting up plugin configuration and permissions...',
+      icon: '⚙️',
+      status: installationStep >= 4 ? 'completed' : installationStep === 3 ? 'current' : 'pending'
+    },
+    {
+      id: 5,
+      title: 'Finalizing Installation',
+      description: 'Completing installation and enabling plugin...',
+      icon: '✅',
+      status: installationStep >= 5 ? 'completed' : installationStep === 4 ? 'current' : 'pending'
+    }
+  ];
 
   const filteredPlugins = plugins.filter(plugin => {
     const matchesSearch = plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -298,13 +384,20 @@ export default function PluginManager({
             <>
               <button
                 onClick={() => togglePlugin(plugin.id, !plugin.isEnabled)}
-                className={`flex-1 px-3 py-2 text-white text-sm rounded transition-colors ${
+                className={`px-3 py-2 text-white text-sm rounded transition-colors ${
                   plugin.isEnabled 
                     ? 'bg-orange-600 hover:bg-orange-700' 
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
-                {plugin.isEnabled ? '⏸️ Disable' : '▶️ Enable'}
+                {plugin.isEnabled ? '⏸️' : '▶️'}
+              </button>
+              <button
+                onClick={() => configurePlugin(plugin)}
+                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded transition-colors"
+                title="Configure Plugin"
+              >
+                ⚙️
               </button>
               <button
                 onClick={() => uninstallPlugin(plugin.id)}
@@ -407,49 +500,196 @@ export default function PluginManager({
 
       {activeTab === 'develop' && (
         <div className="space-y-6">
+          {/* Quick Start Guide */}
           <div className="card">
             <div className="p-6">
               <h4 className="font-medium text-white mb-4 flex items-center space-x-2">
-                <span>🔧</span>
-                <span>Plugin Development</span>
+                <span>🚀</span>
+                <span>Quick Start Guide</span>
               </h4>
               
               <div className="space-y-4">
                 <div className="bg-slate-900 p-4 rounded-lg">
-                  <h5 className="font-medium text-white mb-2">Quick Start</h5>
-                  <div className="text-sm text-slate-300 space-y-2">
-                    <p>1. Create a new plugin using our CLI tool:</p>
-                    <code className="block bg-slate-800 p-2 rounded text-green-400">
-                      npx gb-cms-cli create-plugin my-awesome-plugin
-                    </code>
-                    <p>2. Develop your plugin using our SDK</p>
-                    <p>3. Test locally and publish to the marketplace</p>
+                  <h5 className="font-medium text-white mb-3">Step-by-Step Plugin Creation</h5>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">1</div>
+                      <div>
+                        <p className="text-sm text-slate-300 font-medium">Install the GB-CMS CLI tool</p>
+                        <code className="block bg-slate-800 p-2 rounded text-green-400 mt-1 text-xs">
+                          npm install -g @gb-cms/cli
+                        </code>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">2</div>
+                      <div>
+                        <p className="text-sm text-slate-300 font-medium">Create a new plugin project</p>
+                        <code className="block bg-slate-800 p-2 rounded text-green-400 mt-1 text-xs">
+                          gb-cms create-plugin my-awesome-plugin
+                        </code>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">3</div>
+                      <div>
+                        <p className="text-sm text-slate-300 font-medium">Develop your plugin using the SDK</p>
+                        <code className="block bg-slate-800 p-2 rounded text-green-400 mt-1 text-xs">
+                          cd my-awesome-plugin && npm run dev
+                        </code>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">4</div>
+                      <div>
+                        <p className="text-sm text-slate-300 font-medium">Test and publish to marketplace</p>
+                        <code className="block bg-slate-800 p-2 rounded text-green-400 mt-1 text-xs">
+                          gb-cms publish --version 1.0.0
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Development Resources */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card">
+              <div className="p-6">
+                <h4 className="font-medium text-white mb-4 flex items-center space-x-2">
+                  <span>📚</span>
+                  <span>Documentation</span>
+                </h4>
+                <div className="space-y-3">
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Plugin API Reference</div>
+                    <div className="text-xs text-slate-400">Complete API documentation and examples</div>
+                  </button>
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Widget Development Guide</div>
+                    <div className="text-xs text-slate-400">How to create custom widgets</div>
+                  </button>
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Data Source Integration</div>
+                    <div className="text-xs text-slate-400">Connect to external data sources</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="p-6">
+                <h4 className="font-medium text-white mb-4 flex items-center space-x-2">
+                  <span>🛠️</span>
+                  <span>Development Tools</span>
+                </h4>
+                <div className="space-y-3">
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Plugin Generator</div>
+                    <div className="text-xs text-slate-400">Interactive plugin scaffolding tool</div>
+                  </button>
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Local Testing Environment</div>
+                    <div className="text-xs text-slate-400">Test plugins in isolated environment</div>
+                  </button>
+                  <button className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
+                    <div className="font-medium text-white text-sm">Debug Console</div>
+                    <div className="text-xs text-slate-400">Debug and monitor plugin behavior</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sample Plugin Code */}
+          <div className="card">
+            <div className="p-6">
+              <h4 className="font-medium text-white mb-4 flex items-center space-x-2">
+                <span>💻</span>
+                <span>Sample Plugin Code</span>
+              </h4>
+              
+              <div className="bg-slate-900 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-medium text-white text-sm">Basic Widget Plugin</h5>
+                  <button className="text-xs text-blue-400 hover:text-blue-300">Copy Code</button>
+                </div>
+                <pre className="text-xs text-slate-300 overflow-x-auto">
+{`// my-widget-plugin.js
+import { registerWidget } from '@gb-cms/sdk';
+
+const MyWidget = ({ title, content, color }) => {
+  return (
+    <div style={{ 
+      padding: '20px', 
+      backgroundColor: color || '#1e293b',
+      borderRadius: '8px' 
+    }}>
+      <h3>{title}</h3>
+      <p>{content}</p>
+    </div>
+  );
+};
+
+registerWidget({
+  id: 'my-widget',
+  name: 'My Custom Widget',
+  component: MyWidget,
+  defaultProps: {
+    title: 'Hello World',
+    content: 'This is my custom widget!',
+    color: '#3b82f6'
+  },
+  propertySchema: [
+    { key: 'title', type: 'string', label: 'Title' },
+    { key: 'content', type: 'text', label: 'Content' },
+    { key: 'color', type: 'color', label: 'Background Color' }
+  ]
+});`}
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          {/* Publishing Guide */}
+          <div className="card">
+            <div className="p-6">
+              <h4 className="font-medium text-white mb-4 flex items-center space-x-2">
+                <span>📤</span>
+                <span>Publishing Your Plugin</span>
+              </h4>
+              
+              <div className="space-y-4">
+                <div className="bg-slate-900 p-4 rounded-lg">
+                  <h5 className="font-medium text-white mb-2">Before Publishing Checklist</h5>
+                  <div className="space-y-2 text-sm text-slate-300">
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded" />
+                      <span>Plugin has been thoroughly tested</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded" />
+                      <span>Documentation is complete and accurate</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded" />
+                      <span>Plugin follows security best practices</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input type="checkbox" className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded" />
+                      <span>Version number is updated</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
-                    <div className="text-lg mb-1">📚</div>
-                    <div className="font-medium text-white text-sm">Documentation</div>
-                    <div className="text-xs text-slate-400">Plugin development guide</div>
+                <div className="flex space-x-3">
+                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm">
+                    📤 Publish Plugin
                   </button>
-                  
-                  <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
-                    <div className="text-lg mb-1">🎯</div>
-                    <div className="font-medium text-white text-sm">Examples</div>
-                    <div className="text-xs text-slate-400">Sample plugin code</div>
-                  </button>
-                  
-                  <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
-                    <div className="text-lg mb-1">🛠️</div>
-                    <div className="font-medium text-white text-sm">SDK Reference</div>
-                    <div className="text-xs text-slate-400">API documentation</div>
-                  </button>
-                  
-                  <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-lg text-left transition-colors">
-                    <div className="text-lg mb-1">📤</div>
-                    <div className="font-medium text-white text-sm">Publish</div>
-                    <div className="text-xs text-slate-400">Submit to marketplace</div>
+                  <button className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md transition-colors text-sm">
+                    📋 Review Guidelines
                   </button>
                 </div>
               </div>
@@ -579,6 +819,226 @@ export default function PluginManager({
                     </>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Installation Steps Modal */}
+      {showInstallationSteps && installingPlugin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg max-w-2xl w-full">
+            <div className="p-6 border-b border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">Installing Plugin</h3>
+                  <p className="text-slate-400 mt-1">{installingPlugin.name} v{installingPlugin.version}</p>
+                </div>
+                <div className="text-3xl">{installingPlugin.icon}</div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                {getInstallationSteps().map((step, index) => (
+                  <div key={step.id} className="flex items-start space-x-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      step.status === 'completed' ? 'bg-green-600 text-white' :
+                      step.status === 'current' ? 'bg-blue-600 text-white' :
+                      'bg-slate-700 text-slate-400'
+                    }`}>
+                      {step.status === 'completed' ? '✓' : step.id}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{step.icon}</span>
+                        <h4 className={`font-medium ${
+                          step.status === 'current' ? 'text-blue-400' : 'text-white'
+                        }`}>
+                          {step.title}
+                        </h4>
+                        {step.status === 'current' && (
+                          <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-400 mt-1">{step.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-400">
+                    Step {installationStep} of 5
+                  </div>
+                  <div className="w-32 bg-slate-700 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${(installationStep / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plugin Configuration Modal */}
+      {showConfigModal && configuringPlugin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center text-2xl">
+                    {configuringPlugin.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">{configuringPlugin.name} Configuration</h3>
+                    <p className="text-slate-400">Configure plugin settings and preferences</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConfigModal(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* API Configuration */}
+              <div>
+                <h4 className="font-medium text-white mb-3">API Configuration</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">API Endpoint</label>
+                    <input
+                      type="url"
+                      value={pluginConfig.apiEndpoint || ''}
+                      onChange={(e) => setPluginConfig({...pluginConfig, apiEndpoint: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://api.example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">API Key</label>
+                    <input
+                      type="password"
+                      value={pluginConfig.apiKey || ''}
+                      onChange={(e) => setPluginConfig({...pluginConfig, apiKey: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter your API key"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Display Settings */}
+              <div>
+                <h4 className="font-medium text-white mb-3">Display Settings</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Refresh Interval (seconds)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="3600"
+                      value={pluginConfig.refreshInterval || 30}
+                      onChange={(e) => setPluginConfig({...pluginConfig, refreshInterval: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="showDebugInfo"
+                      checked={pluginConfig.showDebugInfo || false}
+                      onChange={(e) => setPluginConfig({...pluginConfig, showDebugInfo: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="showDebugInfo" className="text-sm text-slate-300">Show Debug Information</label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Settings */}
+              <div>
+                <h4 className="font-medium text-white mb-3">Advanced Settings</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Custom CSS</label>
+                    <textarea
+                      value={pluginConfig.customCSS || ''}
+                      onChange={(e) => setPluginConfig({...pluginConfig, customCSS: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={4}
+                      placeholder="/* Custom CSS for this plugin */"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Environment</label>
+                    <select
+                      value={pluginConfig.environment || 'production'}
+                      onChange={(e) => setPluginConfig({...pluginConfig, environment: e.target.value})}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="development">Development</option>
+                      <option value="staging">Staging</option>
+                      <option value="production">Production</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plugin Info */}
+              <div className="bg-slate-900/50 p-4 rounded-lg">
+                <h4 className="font-medium text-white mb-2">Plugin Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-400">Version:</span>
+                    <span className="text-white ml-2">{configuringPlugin.version}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Author:</span>
+                    <span className="text-white ml-2">{configuringPlugin.author}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Category:</span>
+                    <span className="text-white ml-2">{configuringPlugin.category}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Size:</span>
+                    <span className="text-white ml-2">{configuringPlugin.size}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-6 border-t border-slate-700">
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setPluginConfig({})}
+                  className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-colors"
+                >
+                  Reset to Defaults
+                </button>
+                <button
+                  onClick={savePluginConfig}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  Save Configuration
+                </button>
               </div>
             </div>
           </div>
