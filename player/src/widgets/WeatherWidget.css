@@ -1,0 +1,33 @@
+.weather-widget {
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-widget.animated-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.weather-widget h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.2em;
+  z-index: 1;
+  position: relative;
+}
+
+.weather-widget p {
+  margin: 5px 0;
+  font-size: 0.9em;
+  z-index: 1;
+  position: relative;
+}

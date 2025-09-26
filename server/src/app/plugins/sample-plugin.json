@@ -1,0 +1,43 @@
+{
+  "id": "sample-plugin",
+  "name": "Sample Plugin",
+  "version": "1.0.0",
+  "description": "A sample plugin demonstrating widget creation and data source integration for GB-CMS",
+  "author": "GB-CMS Team",
+  "category": "sample",
+  "main": "sample-plugin.js",
+  "api_version": "1.0.0",
+  "min_gb_cms_version": "1.0.0",
+  "dependencies": [],
+  "permissions": [
+    "network",
+    "storage"
+  ],
+  "keywords": [
+    "sample",
+    "counter",
+    "widget",
+    "demo"
+  ],
+  "homepage": "https://gb-cms.com/plugins/sample-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gb-cms/sample-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gb-cms/sample-plugin/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "gb-cms": ">=1.0.0"
+  },
+  "screenshots": [
+    "screenshot1.png",
+    "screenshot2.png"
+  ],
+  "icon": "🔢",
+  "rating": 4.5,
+  "downloads": 1250,
+  "lastUpdated": "2024-01-25",
+  "size": "15.2 KB"
+}

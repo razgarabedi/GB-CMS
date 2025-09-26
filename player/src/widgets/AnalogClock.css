@@ -1,0 +1,44 @@
+.analog-clock {
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.analog-clock .clock-face {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 5px solid #333;
+  border-radius: 50%;
+  margin: 0 auto 10px auto;
+}
+
+.analog-clock .hand {
+  position: absolute;
+  width: 50%;
+  height: 2px;
+  background-color: #333;
+  top: 50%;
+  transform-origin: 100%;
+  transform: rotate(90deg);
+}
+
+.analog-clock.small .clock-face {
+  width: 50px;
+  height: 50px;
+}
+
+.analog-clock.medium .clock-face {
+  width: 75px;
+  height: 75px;
+}
+
+.analog-clock.large .clock-face {
+  width: 100px;
+  height: 100px;
+}
+
+.analog-clock p {
+  margin: 5px 0;
+}

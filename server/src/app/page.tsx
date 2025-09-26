@@ -1,102 +1,177 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import LayoutCanvas from './components/LayoutCanvas';
+import ComponentLibrary from './components/ComponentLibrary';
+import PropertiesPanel from './components/PropertiesPanel';
+import TemplateManager from './components/TemplateManager';
+import PluginManager from './components/PluginManager';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeTab, setActiveTab] = useState('canvas');
+  const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
+  const [layout, setLayout] = useState([
+    { i: 'a', x: 0, y: 0, w: 2, h: 2, component: 'Weather' },
+    { i: 'b', x: 2, y: 0, w: 2, h: 2, component: 'Clock' },
+    { i: 'c', x: 4, y: 0, w: 2, h: 2, component: 'News' }
+  ]);
+  const [widgetProperties, setWidgetProperties] = useState<any>({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const tabs = [
+    { id: 'canvas', name: 'Layout Canvas', icon: '🎨' },
+    { id: 'templates', name: 'Templates', icon: '📋' },
+    { id: 'plugins', name: 'Plugins', icon: '🔌' },
+    { id: 'widgets', name: 'Widgets', icon: '🧩' },
+    { id: 'settings', name: 'Settings', icon: '⚙️' }
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'canvas':
+  return (
+          <div className="flex h-full">
+            <div className="w-64 border-r border-slate-700">
+              <ComponentLibrary 
+                onWidgetAdd={(componentName) => {
+                  const newWidget = {
+                    i: `widget-${Date.now()}`,
+                    x: 0,
+                    y: 0,
+                    w: 2,
+                    h: 2,
+                    component: componentName
+                  };
+                  setLayout([...layout, newWidget]);
+                }}
+              />
+            </div>
+            <div className="flex-1 p-6">
+              <LayoutCanvas 
+                layout={layout}
+                onLayoutChange={setLayout}
+                selectedWidget={selectedWidget}
+                onWidgetSelect={setSelectedWidget}
+              />
+            </div>
+            <div className="w-80 border-l border-slate-700">
+              <PropertiesPanel 
+                selectedWidget={selectedWidget}
+                layout={layout}
+                onLayoutChange={setLayout}
+              />
+            </div>
+          </div>
+        );
+      case 'templates':
+        return (
+          <div className="p-6">
+            <TemplateManager 
+              layout={layout}
+              onLoadTemplate={(template) => {
+                setLayout(template.layout);
+                setSelectedWidget(null);
+              }}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          </div>
+        );
+      case 'plugins':
+        return (
+          <div className="p-6">
+            <PluginManager 
+              onPluginInstall={(plugin) => {
+                console.log('Plugin installed:', plugin);
+              }}
+              onPluginUninstall={(pluginId) => {
+                console.log('Plugin uninstalled:', pluginId);
+              }}
+              onPluginToggle={(pluginId, enabled) => {
+                console.log('Plugin toggled:', pluginId, enabled);
+              }}
+            />
+          </div>
+        );
+      case 'widgets':
+        return (
+          <div className="p-6">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Widget Library</h2>
+              </div>
+              <div className="card-content">
+                <p className="text-slate-400">Manage and configure available widgets for your signage displays.</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="p-6">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">System Settings</h2>
+              </div>
+              <div className="card-content">
+                <p className="text-slate-400">Configure system-wide settings and preferences.</p>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <header className="border-b border-slate-700 bg-slate-800">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-white">GB-CMS</h1>
+            <span className="text-sm text-slate-400">Digital Signage Server</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button className="btn btn-outline">
+              🔄 Refresh
+            </button>
+            <button className="btn btn-primary">
+              💾 Save
+            </button>
+          </div>
         </div>
+      </header>
+
+      {/* Tab Navigation */}
+      <nav className="border-b border-slate-700 bg-slate-800/50">
+        <div className="px-6">
+          <div className="tab-nav">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`tab-button ${
+                  activeTab === tab.id ? 'tab-button-active' : ''
+                }`}
+              >
+                <span className="mr-2">{tab.icon}</span>
+                {tab.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden">
+        {renderTabContent()}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-700 bg-slate-800 px-6 py-3">
+        <div className="flex items-center justify-between text-sm text-slate-400">
+          <span>GB-CMS Digital Signage System v1.0</span>
+          <span>{layout.length} widgets on canvas</span>
+        </div>
       </footer>
     </div>
   );

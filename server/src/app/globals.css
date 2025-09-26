@@ -1,8 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #64748b;
+  --secondary-foreground: #f1f5f9;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  --accent: #475569;
+  --accent-foreground: #f1f5f9;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #3b82f6;
 }
 
 @theme inline {
@@ -12,15 +27,125 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Dark Theme Components */
+.card {
+  @apply bg-slate-800 border border-slate-700 rounded-lg shadow-lg;
+}
+
+.card-header {
+  @apply p-6 pb-4;
+}
+
+.card-title {
+  @apply text-xl font-semibold text-white;
+}
+
+.card-content {
+  @apply p-6 pt-0;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700 px-4 py-2;
+}
+
+.btn-secondary {
+  @apply bg-slate-700 text-white hover:bg-slate-600 px-4 py-2;
+}
+
+.btn-outline {
+  @apply border border-slate-600 bg-transparent hover:bg-slate-800 text-white px-4 py-2;
+}
+
+.input {
+  @apply flex h-10 w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.textarea {
+  @apply flex min-h-[80px] w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.select {
+  @apply flex h-10 w-full items-center justify-between rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.tab-nav {
+  @apply flex space-x-1 rounded-lg bg-slate-800 p-1;
+}
+
+.tab-button {
+  @apply flex-1 rounded-md px-3 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors;
+}
+
+.tab-button-active {
+  @apply bg-slate-700 text-white shadow-sm;
+}
+
+.grid-canvas {
+  @apply min-h-[500px] border-2 border-dashed border-slate-600 rounded-lg bg-slate-900/50 relative;
+}
+
+.grid-item {
+  @apply bg-blue-600 text-white rounded-md shadow-lg flex items-center justify-center font-medium transition-all hover:bg-blue-700;
+}
+
+.grid-item.selected {
+  @apply ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900;
+}
+
+/* Drag and Drop Enhancements */
+.grid-canvas.drag-over {
+  @apply border-blue-500 bg-blue-500/10;
+}
+
+.drag-preview {
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.widget-dragging {
+  @apply opacity-50 transform scale-95;
+}
+
+.drop-zone {
+  @apply border-2 border-dashed border-blue-500 bg-blue-500/5 rounded-lg;
+}
+
+.drop-zone.active {
+  @apply border-blue-400 bg-blue-400/10 animate-pulse;
+}
+
+/* Grid Guidelines Enhancement */
+.grid-guidelines {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.grid-canvas:hover .grid-guidelines,
+.grid-canvas.drag-over .grid-guidelines {
+  opacity: 1;
+}
+
+.grid-guidelines .grid-line-vertical {
+  @apply absolute top-0 bottom-0 border-l border-blue-500/30;
+}
+
+.grid-guidelines .grid-line-horizontal {
+  @apply absolute left-0 right-0 border-t border-blue-500/30;
 }
