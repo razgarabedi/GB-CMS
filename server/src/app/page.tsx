@@ -24,11 +24,7 @@ interface LayoutItem {
 export default function Home() {
   const [activeTab, setActiveTab] = useState('canvas');
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
-  const [layout, setLayout] = useState<LayoutItem[]>([
-    { i: 'a', x: 0, y: 0, w: 2, h: 2, component: 'Weather' },
-    { i: 'b', x: 2, y: 0, w: 2, h: 2, component: 'Clock' },
-    { i: 'c', x: 4, y: 0, w: 2, h: 2, component: 'News' }
-  ]);
+  const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [widgetProperties, setWidgetProperties] = useState<any>({});
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [screens, setScreens] = useState<any[]>([]);
@@ -128,8 +124,8 @@ export default function Home() {
                     i: `widget-${Date.now()}`,
                     x: 0,
                     y: 0,
-                    w: 2,
-                    h: 2,
+                    w: 4,
+                    h: 4,
                     component: componentName
                   };
                   setLayout([...layout, newWidget]);

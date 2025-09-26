@@ -248,7 +248,7 @@ export function useAdvancedDragDrop(
     let dimensions = widgetDimensions;
     if (dragType === 'existing-widget' && !dimensions) {
       const widget = layout.find(item => item.i === itemId);
-      dimensions = widget ? { w: widget.w, h: widget.h } : { w: 2, h: 2 };
+      dimensions = widget ? { w: widget.w, h: widget.h } : { w: 4, h: 4 };
     }
 
     setDragState({
@@ -260,7 +260,7 @@ export function useAdvancedDragDrop(
       ghostPosition: { x: clientX, y: clientY },
       snapPosition: null,
       isValidDrop: false,
-      draggedWidgetDimensions: dimensions || { w: 2, h: 2 }
+      draggedWidgetDimensions: dimensions || { w: 4, h: 4 }
     });
 
     // Set up mouse move listener for smooth tracking

@@ -7,12 +7,8 @@ import './CanvasEditor.css';
 const CanvasEditor: React.FC = () => {
   const [screens, setScreens] = useState(['Screen 1', 'Screen 2']);
   const [selectedScreen, setSelectedScreen] = useState(screens[0]);
-  const [layout, setLayout] = useState([
-    { i: 'a', x: 0, y: 0, w: 6, h: 4, component: 'Weather' },
-    { i: 'b', x: 6, y: 0, w: 6, h: 4, component: 'Clock' },
-    { i: 'c', x: 12, y: 0, w: 6, h: 4, component: 'News' }
-  ]);
-  const [widgets, setWidgets] = useState(['a', 'b', 'c']);
+  const [layout, setLayout] = useState<any[]>([]);
+  const [widgets, setWidgets] = useState<string[]>([]);
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
   const [widgetProperties, setWidgetProperties] = useState<any>({});
   const [templates, setTemplates] = useState<any[]>([]);
@@ -29,7 +25,7 @@ const CanvasEditor: React.FC = () => {
       i: `widget-${Date.now()}`,
       x: 0,
       y: 0,
-      w: 6,
+      w: 4,
       h: 4,
       component: componentName
     };
@@ -58,7 +54,7 @@ const CanvasEditor: React.FC = () => {
         i: `widget-${Date.now()}`,
         x: 0,
         y: 0,
-        w: 6,
+        w: 4,
         h: 4,
         component: componentName
       };
@@ -531,6 +527,7 @@ const CanvasEditor: React.FC = () => {
               cols={32} 
               rowHeight={60} 
               width={1920}
+              maxRows={18}
               onLayoutChange={onLayoutChange}
               isDraggable={true}
               isResizable={true}

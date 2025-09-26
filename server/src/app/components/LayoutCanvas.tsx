@@ -73,7 +73,7 @@ export default function LayoutCanvas({
     
     // Get widget dimensions from layout
     const widget = layout.find(item => item.i === widgetId);
-    const dimensions = widget ? { w: widget.w, h: widget.h } : { w: 2, h: 2 };
+    const dimensions = widget ? { w: widget.w, h: widget.h } : { w: 4, h: 4 };
     
     startDrag(e, widgetId, 'existing-widget', offset, dimensions);
     
@@ -314,7 +314,7 @@ export default function LayoutCanvas({
       
       // Set up drag state with correct dimensions if not already dragging
       if (!dragState.isDragging) {
-        const defaultDimensions = DefaultWidgetDimensions[componentName as keyof typeof DefaultWidgetDimensions] || { w: 2, h: 2 };
+        const defaultDimensions = DefaultWidgetDimensions[componentName as keyof typeof DefaultWidgetDimensions] || { w: 4, h: 4 };
         startDrag(e, componentName, 'new-widget', { x: 0, y: 0 }, defaultDimensions);
       }
     }

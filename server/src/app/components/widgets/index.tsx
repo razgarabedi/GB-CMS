@@ -87,12 +87,12 @@ export const DefaultWidgetProps = {
 
 // Default dimensions for each widget type
 export const DefaultWidgetDimensions = {
-  'Weather': { w: 3, h: 2 },
-  'Clock': { w: 2, h: 2 },
-  'News': { w: 4, h: 3 },
-  'Slideshow': { w: 4, h: 3 },
-  'Web Viewer': { w: 6, h: 4 },
-  'PV Compact': { w: 3, h: 2 },
-  'PV Flow': { w: 4, h: 3 },
-  'Custom': { w: 3, h: 2 }
+  'Weather': { w: 4, h: 4 },
+  'Clock': { w: 4, h: 4 },
+  'News': { w: 4, h: 4 },
+  'Slideshow': { w: 4, h: 4 },
+  'Web Viewer': { w: 4, h: 4 },
+  'PV Compact': { w: 4, h: 4 },
+  'PV Flow': { w: 4, h: 4 },
+  'Custom': { w: 4, h: 4 }
 };
