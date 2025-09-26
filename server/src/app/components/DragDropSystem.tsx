@@ -288,10 +288,29 @@ export function useAdvancedDragDrop(
 
   const updateDragPosition = useCallback((x: number, y: number) => {
     setDragState(prev => {
+      // Only update if position has actually changed (with small threshold to avoid micro-movements)
+      const threshold = 2;
+      const xDiff = Math.abs(prev.currentPosition.x - x);
+      const yDiff = Math.abs(prev.currentPosition.y - y);
+      
+      if (xDiff < threshold && yDiff < threshold) {
+        return prev;
+      }
+      
       const widgetWidth = prev.draggedWidgetDimensions?.w || 2;
       const widgetHeight = prev.draggedWidgetDimensions?.h || 2;
       
       const dropPosition = managerRef.current.findBestDropPosition(x, y, widgetWidth, widgetHeight);
+      
+      // Only update if snap position or validity has changed
+      const snapChanged = !prev.snapPosition || 
+        prev.snapPosition.x !== dropPosition.x || 
+        prev.snapPosition.y !== dropPosition.y;
+      const validityChanged = prev.isValidDrop !== dropPosition.isValid;
+      
+      if (!snapChanged && !validityChanged && xDiff < threshold && yDiff < threshold) {
+        return prev;
+      }
       
       return {
         ...prev,

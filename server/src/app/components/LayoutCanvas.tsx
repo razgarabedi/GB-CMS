@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { WidgetRegistry, DefaultWidgetProps, DefaultWidgetDimensions } from './widgets';
 import { useAdvancedDragDrop } from './DragDropSystem';
 import { 
@@ -39,6 +39,8 @@ export default function LayoutCanvas({
   const [draggedFromLibrary, setDraggedFromLibrary] = useState<string | null>(null);
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [keyboardMovementEnabled, setKeyboardMovementEnabled] = useState(true);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; widgetId: string } | null>(null);
 
   // Use the advanced drag-drop system
   const {
@@ -94,9 +96,207 @@ export default function LayoutCanvas({
     }
   };
 
+  // Keyboard movement handler
+  const moveWidgetWithKeyboard = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
+    if (!selectedWidget || !keyboardMovementEnabled) return;
+
+    const selectedItem = layout.find(item => item.i === selectedWidget);
+    if (!selectedItem) return;
+
+    const step = 1; // Move by 1 grid cell
+    let newX = selectedItem.x;
+    let newY = selectedItem.y;
+
+    switch (direction) {
+      case 'up':
+        newY = Math.max(0, selectedItem.y - step);
+        break;
+      case 'down':
+        newY = selectedItem.y + step;
+        break;
+      case 'left':
+        newX = Math.max(0, selectedItem.x - step);
+        break;
+      case 'right':
+        newX = Math.min(12 - selectedItem.w, selectedItem.x + step);
+        break;
+    }
+
+    // Check for collisions
+    const isCollision = layout.some(item => {
+      if (item.i === selectedWidget) return false;
+      
+      return (
+        newX < item.x + item.w &&
+        newX + selectedItem.w > item.x &&
+        newY < item.y + item.h &&
+        newY + selectedItem.h > item.y
+      );
+    });
+
+    if (isCollision) {
+      // Show collision warning
+      setShowCollisionWarning(true);
+      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = setTimeout(() => {
+        setShowCollisionWarning(false);
+      }, 1500);
+      return;
+    }
+
+    // Update layout
+    const updatedLayout = layout.map(item => {
+      if (item.i === selectedWidget) {
+        return {
+          ...item,
+          x: newX,
+          y: newY
+        };
+      }
+      return item;
+    });
+
+    onLayoutChange(updatedLayout);
+
+    // Add keyboard move animation
+    const widgetElement = document.querySelector(`[data-widget-id="${selectedWidget}"]`);
+    if (widgetElement) {
+      widgetElement.classList.add('widget-keyboard-move');
+      setTimeout(() => {
+        widgetElement.classList.remove('widget-keyboard-move');
+      }, 200);
+    }
+  }, [selectedWidget, layout, onLayoutChange, keyboardMovementEnabled]);
+
+  // Keyboard event handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!selectedWidget) return;
+
+    // Check if we're in an input field or textarea
+    const activeElement = document.activeElement as HTMLElement;
+    if (activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.contentEditable === 'true'
+    )) {
+      return;
+    }
+
+    // Handle arrow keys for movement
+    if (keyboardMovementEnabled && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          moveWidgetWithKeyboard('up');
+          break;
+        case 'ArrowDown':
+          moveWidgetWithKeyboard('down');
+          break;
+        case 'ArrowLeft':
+          moveWidgetWithKeyboard('left');
+          break;
+        case 'ArrowRight':
+          moveWidgetWithKeyboard('right');
+          break;
+      }
+      return;
+    }
+
+    // Handle other keyboard shortcuts
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      
+      // Delete selected widget
+      const updatedLayout = layout.filter(item => item.i !== selectedWidget);
+      onLayoutChange(updatedLayout);
+      
+      // Clear selection
+      onWidgetSelect('');
+      
+      // Show deletion feedback
+      setShowCollisionWarning(true);
+      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = setTimeout(() => {
+        setShowCollisionWarning(false);
+      }, 1000);
+    }
+
+    // Handle Escape key to deselect
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onWidgetSelect('');
+    }
+
+    // Handle Ctrl+D for duplicate
+    if (e.key === 'd' && e.ctrlKey) {
+      e.preventDefault();
+      
+      const selectedItem = layout.find(item => item.i === selectedWidget);
+      if (selectedItem) {
+        const newWidget = {
+          ...selectedItem,
+          i: `widget-${Date.now()}`,
+          x: Math.min(12 - selectedItem.w, selectedItem.x + 1), // Move slightly to the right
+          y: selectedItem.y + 1 // Move slightly down
+        };
+        
+        onLayoutChange([...layout, newWidget]);
+        onWidgetSelect(newWidget.i);
+        
+        // Add entrance animation
+        setTimeout(() => {
+          const widgetElement = document.querySelector(`[data-widget-id="${newWidget.i}"]`);
+          if (widgetElement) {
+            widgetElement.classList.add('widget-entrance-animation');
+            setTimeout(() => {
+              widgetElement.classList.remove('widget-entrance-animation');
+            }, 500);
+          }
+        }, 100);
+      }
+    }
+  }, [selectedWidget, moveWidgetWithKeyboard, keyboardMovementEnabled, layout, onLayoutChange, onWidgetSelect]);
+
+  // Set up keyboard event listeners
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setContextMenu(null);
+    };
+
+    if (contextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [contextMenu]);
+
+  // Context menu handler
+  const handleWidgetRightClick = (e: React.MouseEvent, widgetId: string) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      widgetId
+    });
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(true);
+    
+    // Only update isDragOver state if it's not already true
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
     
     const draggedData = e.dataTransfer.getData('text/plain');
     e.dataTransfer.dropEffect = draggedData.startsWith('new-') ? 'copy' : 'move';
@@ -104,7 +304,11 @@ export default function LayoutCanvas({
     // Check if dragging from library and set up drag state
     if (draggedData.startsWith('new-')) {
       const componentName = draggedData.replace('new-', '');
-      setDraggedFromLibrary(componentName);
+      
+      // Only update draggedFromLibrary if it's different
+      if (draggedFromLibrary !== componentName) {
+        setDraggedFromLibrary(componentName);
+      }
       
       // Set up drag state with correct dimensions if not already dragging
       if (!dragState.isDragging) {
@@ -248,6 +452,7 @@ export default function LayoutCanvas({
         onDragStart={(e) => handleWidgetDragStart(e, item.i)}
         onDragEnd={handleWidgetDragEnd}
         onClick={() => onWidgetSelect(item.i)}
+        onContextMenu={(e) => handleWidgetRightClick(e, item.i)}
         onMouseEnter={(e) => {
           if (!dragState.isDragging) {
             const target = e.currentTarget as HTMLElement;
@@ -294,10 +499,99 @@ export default function LayoutCanvas({
     <div className="h-full">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Layout Canvas</h2>
-        <div className="flex items-center space-x-2 text-sm text-slate-400">
-          <span>12-column grid</span>
-          <span>•</span>
-          <span>{layout.length} widgets</span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-sm text-slate-400">
+            <span>12-column grid</span>
+            <span>•</span>
+            <span>{layout.length} widgets</span>
+            {selectedWidget && (
+              <>
+                <span>•</span>
+                <span className="text-blue-400">Selected</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setKeyboardMovementEnabled(!keyboardMovementEnabled)}
+              className={`
+                px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200
+                ${keyboardMovementEnabled 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }
+              `}
+              title={keyboardMovementEnabled ? 'Disable keyboard movement' : 'Enable keyboard movement'}
+            >
+              ⌨️ {keyboardMovementEnabled ? 'On' : 'Off'}
+            </button>
+            {selectedWidget && (
+              <>
+                <div className="h-6 w-px bg-slate-600"></div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      const updatedLayout = layout.filter(item => item.i !== selectedWidget);
+                      onLayoutChange(updatedLayout);
+                      onWidgetSelect('');
+                      
+                      // Show deletion feedback
+                      setShowCollisionWarning(true);
+                      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+                      animationTimeoutRef.current = setTimeout(() => {
+                        setShowCollisionWarning(false);
+                      }, 1000);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
+                    title="Delete selected widget (Delete key)"
+                  >
+                    🗑️ Delete
+                  </button>
+                  <button
+                    onClick={() => {
+                      const selectedItem = layout.find(item => item.i === selectedWidget);
+                      if (selectedItem) {
+                        const newWidget = {
+                          ...selectedItem,
+                          i: `widget-${Date.now()}`,
+                          x: Math.min(12 - selectedItem.w, selectedItem.x + 1),
+                          y: selectedItem.y + 1
+                        };
+                        
+                        onLayoutChange([...layout, newWidget]);
+                        onWidgetSelect(newWidget.i);
+                        
+                        // Add entrance animation
+                        setTimeout(() => {
+                          const widgetElement = document.querySelector(`[data-widget-id="${newWidget.i}"]`);
+                          if (widgetElement) {
+                            widgetElement.classList.add('widget-entrance-animation');
+                            setTimeout(() => {
+                              widgetElement.classList.remove('widget-entrance-animation');
+                            }, 500);
+                          }
+                        }, 100);
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                    title="Duplicate selected widget (Ctrl+D)"
+                  >
+                    📋 Duplicate
+                  </button>
+                  <button
+                    onClick={() => onWidgetSelect('')}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-600 text-white hover:bg-slate-700 transition-colors duration-200"
+                    title="Deselect widget (Escape key)"
+                  >
+                    ✕ Deselect
+                  </button>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Use arrow keys to move
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
       
@@ -384,8 +678,84 @@ export default function LayoutCanvas({
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg animate-bounce z-50">
             <div className="flex items-center space-x-2">
               <span>⚠️</span>
-              <span className="font-medium">Cannot place widget here - collision detected!</span>
+              <span className="font-medium">Cannot move widget - collision detected!</span>
             </div>
+          </div>
+        )}
+
+        {/* Context Menu */}
+        {contextMenu && (
+          <div
+            className="fixed bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1 min-w-[160px]"
+            style={{
+              left: contextMenu.x,
+              top: contextMenu.y,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                onWidgetSelect(contextMenu.widgetId);
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 transition-colors duration-150 flex items-center space-x-2"
+            >
+              <span>✓</span>
+              <span>Select</span>
+            </button>
+            <button
+              onClick={() => {
+                const selectedItem = layout.find(item => item.i === contextMenu.widgetId);
+                if (selectedItem) {
+                  const newWidget = {
+                    ...selectedItem,
+                    i: `widget-${Date.now()}`,
+                    x: Math.min(12 - selectedItem.w, selectedItem.x + 1),
+                    y: selectedItem.y + 1
+                  };
+                  
+                  onLayoutChange([...layout, newWidget]);
+                  onWidgetSelect(newWidget.i);
+                  
+                  // Add entrance animation
+                  setTimeout(() => {
+                    const widgetElement = document.querySelector(`[data-widget-id="${newWidget.i}"]`);
+                    if (widgetElement) {
+                      widgetElement.classList.add('widget-entrance-animation');
+                      setTimeout(() => {
+                        widgetElement.classList.remove('widget-entrance-animation');
+                      }, 500);
+                    }
+                  }, 100);
+                }
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-white hover:bg-slate-700 transition-colors duration-150 flex items-center space-x-2"
+            >
+              <span>📋</span>
+              <span>Duplicate</span>
+            </button>
+            <div className="h-px bg-slate-600 my-1"></div>
+            <button
+              onClick={() => {
+                const updatedLayout = layout.filter(item => item.i !== contextMenu.widgetId);
+                onLayoutChange(updatedLayout);
+                onWidgetSelect('');
+                
+                // Show deletion feedback
+                setShowCollisionWarning(true);
+                if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+                animationTimeoutRef.current = setTimeout(() => {
+                  setShowCollisionWarning(false);
+                }, 1000);
+                
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 transition-colors duration-150 flex items-center space-x-2"
+            >
+              <span>🗑️</span>
+              <span>Delete</span>
+            </button>
           </div>
         )}
       </div>
