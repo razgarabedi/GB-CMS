@@ -85,3 +85,21 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Accessing the Canvas Editor Page
+
+To access the Canvas Editor page, follow these steps:
+
+1. Ensure that the development server is running. You can start the server by navigating to the `player` directory and running:
+   ```bash
+   npm start
+   ```
+
+2. Open your web browser and go to `http://localhost:3000`.
+
+3. Navigate to the Canvas Editor page by appending `/canvas-editor` to the URL:
+   ```
+   http://localhost:3000/canvas-editor
+   ```
+
+This will take you to the Canvas Editor page where you can manage and design your layouts.
