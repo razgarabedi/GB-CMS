@@ -227,7 +227,7 @@ export default function PreviewSystem({
     // Calculate position and size based on viewport
     const gridWidth = config.width;
     const gridHeight = config.height;
-    const cellWidth = gridWidth / 12;
+    const cellWidth = gridWidth / 32;
     const cellHeight = 60 * config.scale;
 
     return (
@@ -237,9 +237,9 @@ export default function PreviewSystem({
           showGrid ? 'border border-blue-300/30' : ''
         }`}
         style={{
-          left: `${(displayItem.x / 12) * 100}%`,
+          left: `${(displayItem.x / 32) * 100}%`,
           top: `${displayItem.y * cellHeight}px`,
-          width: `${(displayItem.w / 12) * 100}%`,
+          width: `${(displayItem.w / 32) * 100}%`,
           height: `${displayItem.h * cellHeight}px`,
           transform: `scale(${config.scale * (zoomLevel / 100)})`,
           transformOrigin: 'top left',
@@ -474,18 +474,18 @@ export default function PreviewSystem({
               {/* Grid Overlay */}
               {showGrid && (
                 <div className="absolute inset-0 pointer-events-none">
-                  {Array.from({ length: 12 }, (_, i) => (
+                  {Array.from({ length: 33 }, (_, i) => (
                     <div
                       key={i}
                       className="absolute top-0 bottom-0 border-r border-blue-300/20"
-                      style={{ left: `${(i / 12) * 100}%` }}
+                      style={{ left: `${(i / 32) * 100}%` }}
                     />
                   ))}
-                  {Array.from({ length: Math.ceil(config.height / 60) }, (_, i) => (
+                  {Array.from({ length: 19 }, (_, i) => (
                     <div
                       key={i}
                       className="absolute left-0 right-0 border-b border-blue-300/20"
-                      style={{ top: `${i * 60}px` }}
+                      style={{ top: `${(i / 18) * 100}%` }}
                     />
                   ))}
                 </div>

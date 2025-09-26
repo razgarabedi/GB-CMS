@@ -1,0 +1,26 @@
+{
+  "testLayout": [
+    {
+      "i": "full-screen-test",
+      "x": 0,
+      "y": 0,
+      "w": 32,
+      "h": 18,
+      "component": "TestWidget"
+    }
+  ],
+  "expectedDimensions": {
+    "width": 1920,
+    "height": 1080,
+    "gridColumns": 32,
+    "gridRows": 18,
+    "cellWidth": 60,
+    "cellHeight": 60
+  },
+  "calculation": {
+    "totalWidth": "32 columns × 60px = 1920px",
+    "totalHeight": "18 rows × 60px = 1080px",
+    "aspectRatio": "1920/1080 = 16/9 = 1.777...",
+    "verification": "This matches exactly 1920x1080 resolution"
+  }
+}

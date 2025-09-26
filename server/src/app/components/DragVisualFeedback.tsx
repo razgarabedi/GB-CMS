@@ -62,9 +62,9 @@ export function SnapPreview({ dragState, canvasRef }: DragVisualFeedbackProps) {
       const widgetHeight = dragState.draggedWidgetDimensions?.h || 2;
 
       setPreviewStyle({
-        left: `${(dragState.snapPosition.x / 12) * 100}%`,
+        left: `${(dragState.snapPosition.x / 32) * 100}%`,
         top: `${dragState.snapPosition.y * cellHeight}px`,
-        width: `${(widgetWidth / 12) * 100}%`,
+        width: `${(widgetWidth / 32) * 100}%`,
         height: `${widgetHeight * cellHeight}px`,
         opacity: dragState.isValidDrop ? 0.7 : 0.3
       });
@@ -110,10 +110,10 @@ export function DropZoneOverlay({ dragState, dropZones = [], canvasRef }: DragVi
               : 'bg-red-500/10 border border-red-400/30'
           }`}
           style={{
-            left: `${(zone.gridPosition.x / 12) * 100}%`,
-            top: `${zone.gridPosition.y * 60}px`,
-            width: `${(1 / 12) * 100}%`,
-            height: '60px'
+            left: `${(zone.gridPosition.x / 32) * 100}%`,
+            top: `${(zone.gridPosition.y / 18) * 100}%`,
+            width: `${(1 / 32) * 100}%`,
+            height: `${(1 / 18) * 100}%`
           }}
         />
       ))}
@@ -158,10 +158,10 @@ export function DropZoneHighlight({
           : 'bg-gradient-to-br from-red-400/20 to-orange-400/20 border-2 border-red-400/50'
       }`}
       style={{
-        left: `${(position.x / 12) * 100}%`,
-        top: `${position.y * 60}px`,
-        width: `${(position.w / 12) * 100}%`,
-        height: `${position.h * 60}px`,
+        left: `${(position.x / 32) * 100}%`,
+        top: `${(position.y / 18) * 100}%`,
+        width: `${(position.w / 32) * 100}%`,
+        height: `${(position.h / 18) * 100}%`,
         zIndex: 30
       }}
     >
@@ -208,10 +208,10 @@ export function CollisionOverlay({
           key={`collision-${widget.i}`}
           className="absolute pointer-events-none bg-red-500/30 border-2 border-red-500 rounded-lg animate-pulse"
           style={{
-            left: `${(widget.x / 12) * 100}%`,
-            top: `${widget.y * 60}px`,
-            width: `${(widget.w / 12) * 100}%`,
-            height: `${widget.h * 60}px`,
+            left: `${(widget.x / 32) * 100}%`,
+            top: `${(widget.y / 18) * 100}%`,
+            width: `${(widget.w / 32) * 100}%`,
+            height: `${(widget.h / 18) * 100}%`,
             zIndex: 25
           }}
         >

@@ -35,7 +35,7 @@ export interface DragDropConfig {
 }
 
 const defaultConfig: DragDropConfig = {
-  gridColumns: 12,
+  gridColumns: 32,
   cellHeight: 60,
   snapThreshold: 20,
   animationDuration: 200,
@@ -69,7 +69,7 @@ export class AdvancedDragDropManager {
     this.dropZones.clear();
     
     // Generate drop zones for each grid cell
-    for (let y = 0; y < 20; y++) {
+    for (let y = 0; y < 18; y++) {
       for (let x = 0; x < this.config.gridColumns; x++) {
         const zoneId = `${x}-${y}`;
         const zoneBounds = new DOMRect(

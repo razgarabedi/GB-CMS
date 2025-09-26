@@ -165,9 +165,9 @@ export default function KioskPlayer({
         key={item.i}
         className="absolute overflow-hidden rounded-lg"
         style={{
-          left: `${(item.x / 12) * 100}%`,
+          left: `${(item.x / 32) * 100}%`,
           top: `${item.y * 60}px`,
-          width: `${(item.w / 12) * 100}%`,
+          width: `${(item.w / 32) * 100}%`,
           height: `${item.h * 60}px`,
         }}
       >

@@ -8,9 +8,9 @@ const CanvasEditor: React.FC = () => {
   const [screens, setScreens] = useState(['Screen 1', 'Screen 2']);
   const [selectedScreen, setSelectedScreen] = useState(screens[0]);
   const [layout, setLayout] = useState([
-    { i: 'a', x: 0, y: 0, w: 2, h: 2, component: 'Weather' },
-    { i: 'b', x: 2, y: 0, w: 2, h: 2, component: 'Clock' },
-    { i: 'c', x: 4, y: 0, w: 2, h: 2, component: 'News' }
+    { i: 'a', x: 0, y: 0, w: 6, h: 4, component: 'Weather' },
+    { i: 'b', x: 6, y: 0, w: 6, h: 4, component: 'Clock' },
+    { i: 'c', x: 12, y: 0, w: 6, h: 4, component: 'News' }
   ]);
   const [widgets, setWidgets] = useState(['a', 'b', 'c']);
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
@@ -29,8 +29,8 @@ const CanvasEditor: React.FC = () => {
       i: `widget-${Date.now()}`,
       x: 0,
       y: 0,
-      w: 2,
-      h: 2,
+      w: 6,
+      h: 4,
       component: componentName
     };
     
@@ -58,8 +58,8 @@ const CanvasEditor: React.FC = () => {
         i: `widget-${Date.now()}`,
         x: 0,
         y: 0,
-        w: 2,
-        h: 2,
+        w: 6,
+        h: 4,
         component: componentName
       };
       
@@ -528,9 +528,9 @@ const CanvasEditor: React.FC = () => {
             <GridLayout 
               className="layout" 
               layout={layout} 
-              cols={12} 
-              rowHeight={30} 
-              width={800}
+              cols={32} 
+              rowHeight={60} 
+              width={1920}
               onLayoutChange={onLayoutChange}
               isDraggable={true}
               isResizable={true}

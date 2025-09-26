@@ -92,9 +92,9 @@ export default function TemplateManager({ layout, onLoadTemplate }: TemplateMana
   const generateThumbnail = (layout: LayoutItem[]): string => {
     // Generate a simple SVG thumbnail representation
     const svgElements = layout.map(item => {
-      const x = (item.x / 12) * 200;
+      const x = (item.x / 32) * 200;
       const y = item.y * 20;
-      const width = (item.w / 12) * 200;
+      const width = (item.w / 32) * 200;
       const height = item.h * 20;
       
       return `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#3b82f6" rx="2"/>`;

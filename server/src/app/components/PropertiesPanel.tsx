@@ -58,7 +58,7 @@ export default function PropertiesPanel({
 
     const updatedLayout = layout.map(item => {
       if (item.i === selectedWidget) {
-        return { ...item, [property]: Math.max(1, Math.min(property === 'w' ? 12 : 20, value)) };
+        return { ...item, [property]: Math.max(1, Math.min(property === 'w' ? 32 : 18, value)) };
       }
       return item;
     });
@@ -405,7 +405,7 @@ export default function PropertiesPanel({
                       <input
                         type="number"
                         min="1"
-                        max="12"
+                        max="32"
                         value={selectedWidgetData.w}
                         onChange={(e) => updateWidgetDimensions('w', parseInt(e.target.value))}
                         className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -416,7 +416,7 @@ export default function PropertiesPanel({
                       <input
                         type="number"
                         min="1"
-                        max="20"
+                        max="18"
                         value={selectedWidgetData.h}
                         onChange={(e) => updateWidgetDimensions('h', parseInt(e.target.value))}
                         className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"

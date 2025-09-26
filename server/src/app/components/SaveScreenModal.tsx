@@ -91,13 +91,13 @@ export default function SaveScreenModal({
             <div className="text-xs text-slate-400">
               {currentLayout.length} widget{currentLayout.length !== 1 ? 's' : ''}
               {currentLayout.length > 0 && (
-                <div className="mt-2 grid grid-cols-12 gap-1 h-16">
+                <div className="mt-2 grid grid-cols-32 gap-1 h-16">
                   {currentLayout.slice(0, 6).map((item, index) => (
                     <div
                       key={index}
                       className="bg-blue-600/30 rounded-sm"
                       style={{
-                        gridColumn: `span ${Math.min(item.w, 12)}`,
+                        gridColumn: `span ${Math.min(item.w, 32)}`,
                         gridRow: `span ${Math.min(item.h, 3)}`
                       }}
                     />

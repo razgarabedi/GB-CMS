@@ -114,13 +114,13 @@ export default function LayoutCanvas({
         newY = Math.max(0, selectedItem.y - step);
         break;
       case 'down':
-        newY = selectedItem.y + step;
+        newY = Math.min(18 - selectedItem.h, selectedItem.y + step);
         break;
       case 'left':
         newX = Math.max(0, selectedItem.x - step);
         break;
       case 'right':
-        newX = Math.min(12 - selectedItem.w, selectedItem.x + step);
+        newX = Math.min(32 - selectedItem.w, selectedItem.x + step);
         break;
     }
 
@@ -239,8 +239,8 @@ export default function LayoutCanvas({
         const newWidget = {
           ...selectedItem,
           i: `widget-${Date.now()}`,
-          x: Math.min(12 - selectedItem.w, selectedItem.x + 1), // Move slightly to the right
-          y: selectedItem.y + 1 // Move slightly down
+          x: Math.min(32 - selectedItem.w, selectedItem.x + 1), // Move slightly to the right
+          y: Math.min(18 - selectedItem.h, selectedItem.y + 1) // Move slightly down
         };
         
         onLayoutChange([...layout, newWidget]);
@@ -443,10 +443,10 @@ export default function LayoutCanvas({
         `}
         style={{
           position: 'absolute',
-          left: `${(item.x / 12) * 100}%`,
-          top: `${item.y * 60}px`,
-          width: `${(item.w / 12) * 100}%`,
-          height: `${item.h * 60}px`,
+          left: `${(item.x / 32) * 100}%`,
+          top: `${(item.y / 18) * 100}%`,
+          width: `${(item.w / 32) * 100}%`,
+          height: `${(item.h / 18) * 100}%`,
           cursor: isDraggingThis ? 'grabbing' : 'grab',
           zIndex: isSelected ? 10 : isDraggingThis ? 50 : 1
         }}
@@ -514,7 +514,7 @@ export default function LayoutCanvas({
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-sm text-slate-400">
-            <span>12-column grid</span>
+            <span>32-column grid</span>
             <span>•</span>
             <span>{layout.length} widgets</span>
             {selectedWidget && (
@@ -567,8 +567,8 @@ export default function LayoutCanvas({
                         const newWidget = {
                           ...selectedItem,
                           i: `widget-${Date.now()}`,
-                          x: Math.min(12 - selectedItem.w, selectedItem.x + 1),
-                          y: selectedItem.y + 1
+                          x: Math.min(32 - selectedItem.w, selectedItem.x + 1),
+                          y: Math.min(18 - selectedItem.h, selectedItem.y + 1)
                         };
                         
                         onLayoutChange([...layout, newWidget]);
@@ -640,18 +640,18 @@ export default function LayoutCanvas({
         <div className={`grid-guidelines transition-opacity duration-200 ${
           dragState.isDragging || isDragOver ? 'opacity-100' : 'opacity-0 hover:opacity-30'
         }`}>
-          {[...Array(13)].map((_, i) => (
+          {[...Array(33)].map((_, i) => (
             <div
               key={`v-${i}`}
               className="grid-line-vertical bg-blue-400/30 w-px"
-              style={{ left: `${(i / 12) * 100}%` }}
+              style={{ left: `${(i / 32) * 100}%` }}
             />
           ))}
           {[...Array(19)].map((_, i) => (
             <div
               key={`h-${i}`}
               className="grid-line-horizontal bg-blue-400/30 h-px"
-              style={{ top: `${i * 60}px` }}
+              style={{ top: `${(i / 18) * 100}%` }}
             />
           ))}
         </div>
@@ -727,8 +727,8 @@ export default function LayoutCanvas({
                   const newWidget = {
                     ...selectedItem,
                     i: `widget-${Date.now()}`,
-                    x: Math.min(12 - selectedItem.w, selectedItem.x + 1),
-                    y: selectedItem.y + 1
+                    x: Math.min(32 - selectedItem.w, selectedItem.x + 1),
+                    y: Math.min(18 - selectedItem.h, selectedItem.y + 1)
                   };
                   
                   onLayoutChange([...layout, newWidget]);

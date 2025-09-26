@@ -204,13 +204,13 @@ export default function ScreenManager({
             
             {/* Screen Preview */}
             <div className="bg-slate-900 rounded border border-slate-700 p-2 h-24 overflow-hidden">
-              <div className="grid grid-cols-12 gap-1 h-full">
+              <div className="grid grid-cols-32 gap-1 h-full">
                 {screen.layout.slice(0, 6).map((item, index) => (
                   <div
                     key={index}
                     className="bg-blue-600/30 rounded-sm"
                     style={{
-                      gridColumn: `span ${Math.min(item.w, 12)}`,
+                      gridColumn: `span ${Math.min(item.w, 32)}`,
                       gridRow: `span ${Math.min(item.h, 3)}`
                     }}
                   />
