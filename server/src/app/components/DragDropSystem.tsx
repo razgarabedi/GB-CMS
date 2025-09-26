@@ -12,6 +12,7 @@ export interface DragState {
   ghostPosition: { x: number; y: number };
   snapPosition: { x: number; y: number } | null;
   isValidDrop: boolean;
+  draggedWidgetDimensions: { w: number; h: number } | null;
 }
 
 export interface DropZone {
@@ -213,12 +214,13 @@ export function useAdvancedDragDrop(
     currentPosition: { x: 0, y: 0 },
     ghostPosition: { x: 0, y: 0 },
     snapPosition: null,
-    isValidDrop: false
+    isValidDrop: false,
+    draggedWidgetDimensions: null
   });
 
   const managerRef = useRef(new AdvancedDragDropManager(config));
   const canvasRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   // Update occupied cells when layout changes
   useEffect(() => {
@@ -236,10 +238,18 @@ export function useAdvancedDragDrop(
     e: React.DragEvent | React.MouseEvent,
     itemId: string,
     dragType: 'new-widget' | 'existing-widget',
-    initialOffset?: { x: number; y: number }
+    initialOffset?: { x: number; y: number },
+    widgetDimensions?: { w: number; h: number }
   ) => {
     const clientX = 'clientX' in e ? e.clientX : 0;
     const clientY = 'clientY' in e ? e.clientY : 0;
+
+    // Get widget dimensions from layout if it's an existing widget
+    let dimensions = widgetDimensions;
+    if (dragType === 'existing-widget' && !dimensions) {
+      const widget = layout.find(item => item.i === itemId);
+      dimensions = widget ? { w: widget.w, h: widget.h } : { w: 2, h: 2 };
+    }
 
     setDragState({
       isDragging: true,
@@ -249,7 +259,8 @@ export function useAdvancedDragDrop(
       currentPosition: { x: clientX, y: clientY },
       ghostPosition: { x: clientX, y: clientY },
       snapPosition: null,
-      isValidDrop: false
+      isValidDrop: false,
+      draggedWidgetDimensions: dimensions || { w: 2, h: 2 }
     });
 
     // Set up mouse move listener for smooth tracking
@@ -276,28 +287,33 @@ export function useAdvancedDragDrop(
   }, []);
 
   const updateDragPosition = useCallback((x: number, y: number) => {
-    const widgetWidth = 2; // Default widget width
-    const widgetHeight = 2; // Default widget height
-    
-    const dropPosition = managerRef.current.findBestDropPosition(x, y, widgetWidth, widgetHeight);
-    
-    setDragState(prev => ({
-      ...prev,
-      currentPosition: { x, y },
-      ghostPosition: { x, y },
-      snapPosition: dropPosition.isValid ? dropPosition : null,
-      isValidDrop: dropPosition.isValid
-    }));
+    setDragState(prev => {
+      const widgetWidth = prev.draggedWidgetDimensions?.w || 2;
+      const widgetHeight = prev.draggedWidgetDimensions?.h || 2;
+      
+      const dropPosition = managerRef.current.findBestDropPosition(x, y, widgetWidth, widgetHeight);
+      
+      return {
+        ...prev,
+        currentPosition: { x, y },
+        ghostPosition: { x, y },
+        snapPosition: dropPosition.isValid ? dropPosition : null,
+        isValidDrop: dropPosition.isValid
+      };
+    });
   }, []);
 
   const endDrag = useCallback((e: React.DragEvent) => {
     if (!dragState.isDragging) return;
 
+    const widgetWidth = dragState.draggedWidgetDimensions?.w || 2;
+    const widgetHeight = dragState.draggedWidgetDimensions?.h || 2;
+
     const dropPosition = managerRef.current.findBestDropPosition(
       e.clientX,
       e.clientY,
-      2, // Default widget dimensions
-      2
+      widgetWidth,
+      widgetHeight
     );
 
     if (dropPosition.isValid && dragState.draggedItem) {
@@ -307,8 +323,8 @@ export function useAdvancedDragDrop(
           i: `widget-${Date.now()}`,
           x: dropPosition.x,
           y: dropPosition.y,
-          w: 2,
-          h: 2,
+          w: widgetWidth,
+          h: widgetHeight,
           component: dragState.draggedItem
         };
         onLayoutChange([...layout, newWidget]);
@@ -336,7 +352,8 @@ export function useAdvancedDragDrop(
       currentPosition: { x: 0, y: 0 },
       ghostPosition: { x: 0, y: 0 },
       snapPosition: null,
-      isValidDrop: false
+      isValidDrop: false,
+      draggedWidgetDimensions: null
     });
   }, [dragState, layout, onLayoutChange]);
 

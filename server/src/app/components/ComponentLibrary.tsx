@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { widgetIcons } from './icons/WidgetIcons';
+import { DefaultWidgetDimensions } from './widgets';
 
 interface ComponentLibraryProps {
   onWidgetAdd: (componentName: string) => void;

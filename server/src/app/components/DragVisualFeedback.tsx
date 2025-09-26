@@ -6,7 +6,7 @@ import { DragState, DropZone } from './DragDropSystem';
 interface DragVisualFeedbackProps {
   dragState: DragState;
   dropZones?: DropZone[];
-  canvasRef: React.RefObject<HTMLDivElement>;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // Ghost preview component that follows the cursor
@@ -57,15 +57,19 @@ export function SnapPreview({ dragState, canvasRef }: DragVisualFeedbackProps) {
       const cellWidth = canvasBounds.width / 12;
       const cellHeight = 60;
 
+      // Use actual widget dimensions from dragState
+      const widgetWidth = dragState.draggedWidgetDimensions?.w || 2;
+      const widgetHeight = dragState.draggedWidgetDimensions?.h || 2;
+
       setPreviewStyle({
         left: `${(dragState.snapPosition.x / 12) * 100}%`,
         top: `${dragState.snapPosition.y * cellHeight}px`,
-        width: `${(2 / 12) * 100}%`, // Default 2-unit width
-        height: `${2 * cellHeight}px`, // Default 2-unit height
+        width: `${(widgetWidth / 12) * 100}%`,
+        height: `${widgetHeight * cellHeight}px`,
         opacity: dragState.isValidDrop ? 0.7 : 0.3
       });
     }
-  }, [dragState.snapPosition, dragState.isDragging, dragState.isValidDrop, canvasRef]);
+  }, [dragState.snapPosition, dragState.isDragging, dragState.isValidDrop, dragState.draggedWidgetDimensions, canvasRef]);
 
   if (!dragState.isDragging || !dragState.snapPosition) return null;
 
@@ -228,7 +232,7 @@ export function MagneticSnapLines({
 }: { 
   dragState: DragState; 
   layout: any[]; 
-  canvasRef: React.RefObject<HTMLDivElement> 
+  canvasRef: React.RefObject<HTMLDivElement | null> 
 }) {
   const [snapLines, setSnapLines] = useState<{
     vertical: number[];
@@ -251,11 +255,15 @@ export function MagneticSnapLines({
       const canvasBounds = canvasRef.current!.getBoundingClientRect();
       const cellWidth = canvasBounds.width / 12;
 
+      // Get actual widget dimensions
+      const dragWidth = dragState.draggedWidgetDimensions?.w || 2;
+      const dragHeight = dragState.draggedWidgetDimensions?.h || 2;
+
       // Check for vertical alignment
       const widgetLeft = widget.x * cellWidth;
       const widgetRight = (widget.x + widget.w) * cellWidth;
       const dragLeft = dragState.snapPosition!.x * cellWidth;
-      const dragRight = (dragState.snapPosition!.x + 2) * cellWidth; // Assuming 2-unit width
+      const dragRight = (dragState.snapPosition!.x + dragWidth) * cellWidth;
 
       if (Math.abs(widgetLeft - dragLeft) < snapThreshold) {
         vertical.push(widgetLeft);
@@ -268,7 +276,7 @@ export function MagneticSnapLines({
       const widgetTop = widget.y * 60;
       const widgetBottom = (widget.y + widget.h) * 60;
       const dragTop = dragState.snapPosition!.y * 60;
-      const dragBottom = (dragState.snapPosition!.y + 2) * 60; // Assuming 2-unit height
+      const dragBottom = (dragState.snapPosition!.y + dragHeight) * 60;
 
       if (Math.abs(widgetTop - dragTop) < snapThreshold) {
         horizontal.push(widgetTop);

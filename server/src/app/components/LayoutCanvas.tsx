@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { WidgetRegistry, DefaultWidgetProps } from './widgets';
+import { WidgetRegistry, DefaultWidgetProps, DefaultWidgetDimensions } from './widgets';
 import { useAdvancedDragDrop } from './DragDropSystem';
 import { 
   DragGhost, 
@@ -67,7 +67,11 @@ export default function LayoutCanvas({
       y: e.clientY - rect.top
     };
     
-    startDrag(e, widgetId, 'existing-widget', offset);
+    // Get widget dimensions from layout
+    const widget = layout.find(item => item.i === widgetId);
+    const dimensions = widget ? { w: widget.w, h: widget.h } : { w: 2, h: 2 };
+    
+    startDrag(e, widgetId, 'existing-widget', offset, dimensions);
     
     // Add smooth drag animation class
     e.currentTarget.classList.add('dragging-smooth');
@@ -97,20 +101,38 @@ export default function LayoutCanvas({
     const draggedData = e.dataTransfer.getData('text/plain');
     e.dataTransfer.dropEffect = draggedData.startsWith('new-') ? 'copy' : 'move';
     
-    // Update drag position for visual feedback
-    updateDragPosition(e.clientX, e.clientY);
-    
-    // Check if dragging from library
+    // Check if dragging from library and set up drag state
     if (draggedData.startsWith('new-')) {
       const componentName = draggedData.replace('new-', '');
       setDraggedFromLibrary(componentName);
+      
+      // Set up drag state with correct dimensions if not already dragging
+      if (!dragState.isDragging) {
+        const defaultDimensions = DefaultWidgetDimensions[componentName as keyof typeof DefaultWidgetDimensions] || { w: 2, h: 2 };
+        startDrag(e, componentName, 'new-widget', { x: 0, y: 0 }, defaultDimensions);
+      }
     }
+    
+    // Update drag position for visual feedback
+    updateDragPosition(e.clientX, e.clientY);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     // Only set drag over to false if we're leaving the canvas entirely
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
+      setDraggedFromLibrary(null);
+      
+      // Clean up drag state if dragging from library
+      if (dragState.dragType === 'new-widget') {
+        // Create a synthetic drag end event to clean up the drag state
+        const syntheticEvent = {
+          preventDefault: () => {},
+          clientX: 0,
+          clientY: 0
+        } as React.DragEvent;
+        endDrag(syntheticEvent);
+      }
     }
   };
 
@@ -120,7 +142,12 @@ export default function LayoutCanvas({
     setDraggedFromLibrary(null);
     
     const draggedData = e.dataTransfer.getData('text/plain');
-    const dropPosition = manager.findBestDropPosition(e.clientX, e.clientY, 2, 2);
+    
+    // Get widget dimensions from drag state or default to 2x2
+    const widgetWidth = dragState.draggedWidgetDimensions?.w || 2;
+    const widgetHeight = dragState.draggedWidgetDimensions?.h || 2;
+    
+    const dropPosition = manager.findBestDropPosition(e.clientX, e.clientY, widgetWidth, widgetHeight);
     
     if (!dropPosition.isValid) {
       // Show collision warning with animation
@@ -139,8 +166,8 @@ export default function LayoutCanvas({
         i: `widget-${Date.now()}`,
         x: dropPosition.x,
         y: dropPosition.y,
-        w: 2,
-        h: 2,
+        w: widgetWidth,
+        h: widgetHeight,
         component: componentName
       };
       
@@ -167,7 +194,10 @@ export default function LayoutCanvas({
           return {
             ...item,
             x: dropPosition.x,
-            y: dropPosition.y
+            y: dropPosition.y,
+            // Keep existing dimensions, only update position
+            w: item.w,
+            h: item.h
           };
         }
         return item;
@@ -318,7 +348,7 @@ export default function LayoutCanvas({
         {/* Advanced Visual Feedback Components */}
         <DragGhost dragState={dragState} canvasRef={canvasRef} dropZones={[]} />
         <SnapPreview dragState={dragState} canvasRef={canvasRef} dropZones={[]} />
-        <MagneticSnapLines dragState={dragState} layout={layout} canvasRef={canvasRef} />
+        <MagneticSnapLines dragState={dragState} layout={layout} canvasRef={canvasRef as React.RefObject<HTMLDivElement | null>} />
         <DragCursor dragState={dragState} />
         
         {/* Drop zone highlight for new widgets */}
@@ -329,8 +359,8 @@ export default function LayoutCanvas({
             position={{
               x: dragState.snapPosition.x,
               y: dragState.snapPosition.y,
-              w: 2,
-              h: 2
+              w: dragState.draggedWidgetDimensions?.w || 2,
+              h: dragState.draggedWidgetDimensions?.h || 2
             }}
           />
         )}
@@ -343,8 +373,8 @@ export default function LayoutCanvas({
             proposedPosition={dragState.snapPosition ? {
               x: dragState.snapPosition.x,
               y: dragState.snapPosition.y,
-              w: 2,
-              h: 2
+              w: dragState.draggedWidgetDimensions?.w || 2,
+              h: dragState.draggedWidgetDimensions?.h || 2
             } : null}
           />
         )}
