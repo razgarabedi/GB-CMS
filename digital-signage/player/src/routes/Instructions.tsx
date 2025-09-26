@@ -6,7 +6,8 @@ export default function Instructions() {
 
       <h2>Quick links</h2>
       <ul>
-        <li><a href="/admin" style={{ color: '#4ade80', fontWeight: 'bold' }}>🚀 New Advanced Admin Interface</a></li>
+        <li><a href="http://localhost:3000/admin-advanced" style={{ color: '#4ade80', fontWeight: 'bold' }}>🚀 Advanced Admin Interface (Server)</a></li>
+        <li><a href="http://localhost:3000/admin" style={{ color: '#60a5fa' }}>📊 Basic Admin Interface (Server)</a></li>
         <li><a href="/preview">Preview Mode</a></li>
         <li><a href="/editor">Layout Editor</a></li>
         <li><a href="#win">Windows kiosk</a></li>

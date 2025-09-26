@@ -165,13 +165,15 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
   const renderIcon = (icon: UIIcon) => {
     switch (icon.type) {
       case 'material':
-        return <span className="material-icons text-2xl">{icon.name}</span>;
+        return <span className="material-icons text-sm">{icon.name}</span>;
       case 'fontawesome':
-        return <i className={`fa fa-${icon.name} text-xl`}></i>;
+        return <i className={`fa fa-${icon.name} text-xs`}></i>;
       case 'svg':
-        return <div dangerouslySetInnerHTML={{ __html: icon.data || '' }} />;
+        return <div className="w-4 h-4" dangerouslySetInnerHTML={{ __html: icon.data || '' }} />;
+      case 'custom':
+        return <span className="text-sm">{icon.data}</span>;
       default:
-        return <div className="w-6 h-6 bg-gray-400 rounded"></div>;
+        return <div className="w-4 h-4 bg-gray-400 rounded"></div>;
     }
   };
 
@@ -182,7 +184,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
     return (
       <div
         key={item.id}
-        className={`p-3 border border-gray-600 rounded-lg cursor-move transition-all duration-200 ${
+        className={`p-2 border border-gray-600 rounded cursor-move transition-all duration-200 ${
           isDisabled 
             ? 'opacity-50 cursor-not-allowed bg-gray-800' 
             : 'hover:border-blue-400 hover:bg-gray-800 bg-gray-900'
@@ -191,24 +193,24 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
         onDragStart={(e) => !isDisabled && handleDragStart(e, item)}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex items-start space-x-3">
+        <div className="flex items-start space-x-2">
           <div className="flex-shrink-0 text-blue-400">
             {renderIcon(item.icon)}
           </div>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-white truncate">
+              <h4 className="text-xs font-medium text-white truncate">
                 {item.name}
               </h4>
               {item.isPlugin && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                   Plugin
                 </span>
               )}
             </div>
             
-            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+            <p className="text-xs text-gray-400 mt-1 line-clamp-1">
               {item.description}
             </p>
             
@@ -274,10 +276,10 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
   };
 
   return (
-    <div className={`bg-gray-800 border-r border-gray-700 flex flex-col h-full ${className}`}>
+    <div className={`bg-gray-800 border border-gray-700 rounded-lg flex flex-col h-full ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-semibold text-white mb-4">Component Library</h2>
+      <div className="p-2 border-b border-gray-700">
+        <h2 className="text-sm font-semibold text-white mb-2">Component Library</h2>
         
         {/* Search */}
         <div className="relative mb-3">
@@ -286,20 +288,20 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
             placeholder="Search components..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full px-3 py-2 pl-10 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400"
+            className="w-full px-2 py-1 pl-8 bg-gray-900 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 text-sm"
           />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+            <svg className="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-1 mb-2">
           <button
             onClick={() => handleCategoryChange('all')}
-            className={`px-3 py-1 text-xs rounded-full transition-colors ${
+            className={`px-2 py-1 text-xs rounded transition-colors ${
               selectedCategory === 'all'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -311,7 +313,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
             <button
               key={category}
               onClick={() => handleCategoryChange(category)}
-              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+              className={`px-2 py-1 text-xs rounded transition-colors ${
                 selectedCategory === category
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -327,7 +329,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
           <select
             value={sortBy}
             onChange={(e) => handleSortChange(e.target.value as typeof sortBy)}
-            className="px-2 py-1 text-xs bg-gray-900 border border-gray-600 rounded text-white"
+            className="px-1 py-1 text-xs bg-gray-900 border border-gray-600 rounded text-white"
           >
             <option value="name">Name</option>
             <option value="category">Category</option>
@@ -337,7 +339,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
           
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600"
+            className="px-1 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600"
           >
             Filters
           </button>
@@ -346,8 +348,8 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="p-4 border-b border-gray-700 bg-gray-900">
-          <h3 className="text-sm font-medium text-white mb-3">Filters</h3>
+        <div className="p-2 border-b border-gray-700 bg-gray-900">
+          <h3 className="text-xs font-medium text-white mb-2">Filters</h3>
           
           {/* Status Filter */}
           <div className="mb-3">
@@ -424,7 +426,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
       )}
 
       {/* Components List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-2">
         {Object.keys(groupedComponents).length === 0 ? (
           <div className="text-center text-gray-400 py-8">
             <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,6 +436,9 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
             <p className="text-xs text-gray-500 mt-1">
               Try adjusting your search or filters
             </p>
+            <div className="text-xs text-gray-600 mt-2">
+              Debug: {library.items.length} total items, {filteredComponents.length} filtered
+            </div>
           </div>
         ) : (
           <div>
@@ -445,7 +450,7 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700 bg-gray-900">
+      <div className="p-2 border-t border-gray-700 bg-gray-900">
         <div className="text-xs text-gray-400 text-center">
           {filteredComponents.length} of {library.items.length} components
         </div>

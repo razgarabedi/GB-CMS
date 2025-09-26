@@ -19,12 +19,11 @@ import type {
 } from '../types/UITypes';
 
 // Import all the enhanced components
-import EnhancedLayoutCanvas from './EnhancedLayoutCanvas';
-import ComponentLibraryComponent from './ComponentLibrary';
-import PropertiesPanelComponent from './PropertiesPanel';
-import TemplateManagerComponent from './TemplateManager';
-import PluginManagerUIComponent from './PluginManagerUI';
-import PreviewSystemComponent from './PreviewSystem';
+import { ComponentLibrary } from './ComponentLibrary';
+import { PropertiesPanel } from './PropertiesPanel';
+import { TemplateManager } from './TemplateManager';
+import { PluginManagerUI } from './PluginManagerUI';
+import { PreviewSystem } from './PreviewSystem';
 
 interface EnhancedAdminInterfaceProps {
   adminInterface: AdminInterface;
@@ -45,6 +44,8 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(adminInterface.isFullscreen);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   // Handle tab change
   const handleTabChange = useCallback((tab: AdminTab) => {
@@ -160,19 +161,19 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
   // Render header
   const renderHeader = () => {
     return (
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+      <header className="bg-gray-800 border-b border-gray-700 px-4 py-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-white">Digital Signage Admin</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-lg font-bold text-white">Digital Signage Admin</h1>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-400">Screen:</span>
+              <span className="text-xs text-gray-400">Screen:</span>
               <select
                 value={adminInterface.currentScreen || ''}
                 onChange={(e) => onInterfaceChange({
                   ...adminInterface,
                   currentScreen: e.target.value
                 })}
-                className="px-3 py-1 bg-gray-900 border border-gray-600 rounded text-white text-sm"
+                className="px-2 py-1 bg-gray-900 border border-gray-600 rounded text-white text-xs"
               >
                 <option value="">Select Screen</option>
                 <option value="screen1">Screen 1</option>
@@ -201,21 +202,21 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
             {/* Actions */}
             <button
               onClick={handleLoad}
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
             >
               Load
             </button>
             <button
               onClick={handleSave}
-              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             >
               Save
             </button>
             <button
               onClick={handleFullscreenToggle}
-              className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
             >
-              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              {isFullscreen ? 'Exit' : 'Fullscreen'}
             </button>
           </div>
         </div>
@@ -237,20 +238,20 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
 
     return (
       <nav className="bg-gray-800 border-b border-gray-700">
-        <div className="flex items-center justify-between px-6 py-2">
-          <div className="flex space-x-1">
+        <div className="flex items-center justify-between px-4 py-1">
+          <div className="flex space-x-0.5 overflow-x-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center space-x-1 px-2 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap ${
                   currentTab === tab.id
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-400 hover:text-white hover:bg-gray-700'
                 }`}
               >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span className="text-xs">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -290,42 +291,85 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
       case 'design':
         return (
           <div className="flex h-full">
-            <div className="w-80 border-r border-gray-700">
-                      <ComponentLibraryComponent
-                library={adminInterface.componentLibrary}
-                onLibraryChange={(library: ComponentLibraryType) => onInterfaceChange({
-                  ...adminInterface,
-                  componentLibrary: library
-                })}
-                onDragStart={() => {}}
-                onDragEnd={() => {}}
-              />
-            </div>
-            <div className="flex-1 flex">
-              <div className="flex-1">
-                <EnhancedLayoutCanvas
-                  canvas={adminInterface.layoutCanvas}
-                  onCanvasChange={(canvas) => onInterfaceChange({
+            {/* Left Sidebar - Component Library */}
+            {showLeftSidebar && (
+              <div className="w-64 lg:w-80 border-r border-gray-700">
+                <div className="flex items-center justify-between p-2 border-b border-gray-700">
+                  <h3 className="text-sm font-medium text-white">Components</h3>
+                  <button
+                    onClick={() => setShowLeftSidebar(false)}
+                    className="text-gray-400 hover:text-white text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ComponentLibrary
+                  library={adminInterface.componentLibrary}
+                  onLibraryChange={(library: ComponentLibraryType) => onInterfaceChange({
                     ...adminInterface,
-                    layoutCanvas: canvas,
-                    isDirty: true
+                    componentLibrary: library
                   })}
-                  onComponentSelect={(componentId) => onInterfaceChange({
-                    ...adminInterface,
-                    propertiesPanel: {
-                      ...adminInterface.propertiesPanel,
-                      selectedComponent: componentId
-                    }
-                  })}
-                  onComponentMove={() => {}}
-                  onComponentResize={() => {}}
-                  onComponentDelete={() => {}}
-                  onComponentDuplicate={() => {}}
-                  onDrop={() => {}}
+                  onDragStart={() => {}}
+                  onDragEnd={() => {}}
                 />
               </div>
-              <div className="w-80 border-l border-gray-700">
-                        <PropertiesPanelComponent
+            )}
+            
+            {/* Main Canvas Area */}
+            <div className="flex-1 flex flex-col">
+              {/* Canvas Toolbar */}
+              <div className="flex items-center justify-between p-2 border-b border-gray-700">
+                <div className="flex items-center space-x-2">
+                  {!showLeftSidebar && (
+                    <button
+                      onClick={() => setShowLeftSidebar(true)}
+                      className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                    >
+                      Components
+                    </button>
+                  )}
+                  <span className="text-xs text-gray-400">Canvas</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {!showRightSidebar && (
+                    <button
+                      onClick={() => setShowRightSidebar(true)}
+                      className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                    >
+                      Properties
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+                      {/* Canvas */}
+                      <div className="flex-1 bg-gray-800 border border-gray-600 rounded-lg m-2">
+                        <div className="p-4">
+                          <h3 className="text-lg font-semibold text-white mb-4">Layout Canvas</h3>
+                          <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 min-h-96 flex items-center justify-center">
+                            <div className="text-center text-gray-400">
+                              <div className="text-4xl mb-4">🎨</div>
+                              <p className="text-lg mb-2">Drag components here to build your layout</p>
+                              <p className="text-sm">Use the Components panel to add widgets</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+            </div>
+            
+            {/* Right Sidebar - Properties Panel */}
+            {showRightSidebar && (
+              <div className="w-64 lg:w-80 border-l border-gray-700">
+                <div className="flex items-center justify-between p-2 border-b border-gray-700">
+                  <h3 className="text-sm font-medium text-white">Properties</h3>
+                  <button
+                    onClick={() => setShowRightSidebar(false)}
+                    className="text-gray-400 hover:text-white text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <PropertiesPanel
                   panel={adminInterface.propertiesPanel}
                   onPanelChange={(panel: PropertiesPanelType) => onInterfaceChange({
                     ...adminInterface,
@@ -335,75 +379,95 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
                   onValidation={() => {}}
                 />
               </div>
-            </div>
+            )}
           </div>
         );
         
-      case 'components':
-        return (
-          <div className="h-full">
-                      <ComponentLibraryComponent
-              library={adminInterface.componentLibrary}
-              onLibraryChange={(library: ComponentLibraryType) => onInterfaceChange({
-                ...adminInterface,
-                componentLibrary: library
-              })}
-              onDragStart={() => {}}
-              onDragEnd={() => {}}
-            />
-          </div>
-        );
+              case 'components':
+                return (
+                  <div className="h-full p-2">
+                    <div className="max-w-6xl mx-auto">
+                      <h2 className="text-lg font-bold text-white mb-3">Component Library</h2>
+                      <div className="bg-gray-800 border border-gray-700 rounded-lg">
+                        <ComponentLibrary
+                          library={adminInterface.componentLibrary}
+                          onLibraryChange={(library: ComponentLibraryType) => onInterfaceChange({
+                            ...adminInterface,
+                            componentLibrary: library
+                          })}
+                          onDragStart={() => {}}
+                          onDragEnd={() => {}}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
         
       case 'templates':
         return (
-          <div className="h-full">
-                    <TemplateManagerComponent
-              manager={adminInterface.templateManager}
-              onManagerChange={(manager: TemplateManagerType) => onInterfaceChange({
-                ...adminInterface,
-                templateManager: manager
-              })}
-              onTemplateSelect={() => {}}
-              onTemplateCreate={() => {}}
-              onTemplateSave={() => {}}
-              onTemplateDelete={() => {}}
-              onTemplateExport={() => {}}
-              onTemplateImport={() => {}}
-              onTemplateLoad={() => {}}
-            />
+          <div className="h-full p-2">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-lg font-bold text-white mb-3">Template Manager</h2>
+              <div className="bg-gray-800 border border-gray-700 rounded-lg">
+                <TemplateManager
+                  manager={adminInterface.templateManager}
+                  onManagerChange={(manager: TemplateManagerType) => onInterfaceChange({
+                    ...adminInterface,
+                    templateManager: manager
+                  })}
+                  onTemplateSelect={() => {}}
+                  onTemplateCreate={() => {}}
+                  onTemplateSave={() => {}}
+                  onTemplateDelete={() => {}}
+                  onTemplateExport={() => {}}
+                  onTemplateImport={() => {}}
+                  onTemplateLoad={() => {}}
+                />
+              </div>
+            </div>
           </div>
         );
         
       case 'plugins':
         return (
-          <div className="h-full">
-                    <PluginManagerUIComponent
-              manager={adminInterface.pluginManager}
-              onManagerChange={(manager: PluginManagerUIType) => onInterfaceChange({
-                ...adminInterface,
-                pluginManager: manager
-              })}
-              onPluginInstall={() => {}}
-              onPluginUninstall={() => {}}
-              onPluginEnable={() => {}}
-              onPluginDisable={() => {}}
-              onPluginUpdate={() => {}}
-              onPluginConfigure={() => {}}
-            />
+          <div className="h-full p-6">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-2xl font-bold text-white mb-6">Plugin Manager</h2>
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <PluginManagerUI
+                  manager={adminInterface.pluginManager}
+                  onManagerChange={(manager: PluginManagerUIType) => onInterfaceChange({
+                    ...adminInterface,
+                    pluginManager: manager
+                  })}
+                  onPluginInstall={() => {}}
+                  onPluginUninstall={() => {}}
+                  onPluginEnable={() => {}}
+                  onPluginDisable={() => {}}
+                  onPluginUpdate={() => {}}
+                  onPluginConfigure={() => {}}
+                />
+              </div>
+            </div>
           </div>
         );
         
       case 'preview':
         return (
-          <div className="h-full">
-                    <PreviewSystemComponent
-              system={adminInterface.previewSystem}
-              onSystemChange={(system: PreviewSystemType) => onInterfaceChange({
-                ...adminInterface,
-                previewSystem: system
-              })}
-              onConfigChange={() => {}}
-            />
+          <div className="h-full p-6">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-2xl font-bold text-white mb-6">Preview System</h2>
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <PreviewSystem
+                  system={adminInterface.previewSystem}
+                  onSystemChange={(system: PreviewSystemType) => onInterfaceChange({
+                    ...adminInterface,
+                    previewSystem: system
+                  })}
+                  onConfigChange={() => {}}
+                />
+              </div>
+            </div>
           </div>
         );
         
@@ -522,9 +586,35 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
         
       default:
         return (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-400">
-              <p className="text-lg">Select a tab to get started</p>
+          <div className="h-full p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-12 text-center">
+                <div className="text-4xl mb-6">🎯</div>
+                <h2 className="text-2xl font-bold text-white mb-4">Welcome to Digital Signage Admin</h2>
+                <p className="text-lg text-gray-300 mb-6">Select a tab from the navigation above to get started</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <div className="text-xl mb-2">🎨</div>
+                    <div className="font-semibold text-white">Design</div>
+                    <div className="text-gray-400">Create layouts</div>
+                  </div>
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <div className="text-xl mb-2">🧩</div>
+                    <div className="font-semibold text-white">Components</div>
+                    <div className="text-gray-400">Manage widgets</div>
+                  </div>
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <div className="text-xl mb-2">📋</div>
+                    <div className="font-semibold text-white">Templates</div>
+                    <div className="text-gray-400">Save layouts</div>
+                  </div>
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <div className="text-xl mb-2">🔌</div>
+                    <div className="font-semibold text-white">Plugins</div>
+                    <div className="text-gray-400">Add features</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -592,7 +682,7 @@ export const EnhancedAdminInterface: React.FC<EnhancedAdminInterfaceProps> = ({
   };
 
   return (
-    <div className={`bg-gray-900 flex flex-col h-full ${className}`}>
+    <div className={`bg-gray-900 text-white flex flex-col h-full ${className}`}>
       {renderHeader()}
       {renderNavigation()}
       <main className="flex-1 overflow-hidden">

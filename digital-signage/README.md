@@ -2,7 +2,22 @@ Digital Signage Monorepo
 
 Monorepo containing:
 - `server/`: Node 18+, Express, simple JSON file DB, optional weather proxy, WebSocket, and admin UI
-- `player/`: React (Vite) SPA that runs fullscreen
+- `player/`: React (Vite) SPA that runs fullscreen with **Advanced Admin Interface**
+
+## 🚀 New Advanced Admin Interface
+
+The player now includes a comprehensive, backend-connected admin interface with:
+- **Component Library Management** - Add, edit, and manage display components
+- **Template System** - Create and manage layout templates
+- **Plugin Architecture** - Install and manage plugins
+- **Layout Engine** - Drag-and-drop layout editor
+- **Configuration Management** - Screen-specific settings
+- **Real-time Analytics** - System health and usage monitoring
+
+### Quick Access
+- **Admin Interface**: `http://localhost:5173/admin`
+- **API Documentation**: See `docs/api-reference.md`
+- **Complete Backend Integration**: See `docs/backend-integration.md`
 
 Requirements
 - Node 18+
@@ -13,6 +28,40 @@ Environment Variables
 - `API_KEY` – required for write/admin endpoints (header `X-Api-Key`)
 - `OPENWEATHER_API_KEY` – optional, for weather proxy in the server
 - `VITE_SERVER_URL` – used by the player to reach the server (e.g., `http://localhost:3000` or `http://server:3000` in compose)
+- `VITE_API_KEY` – API key for frontend admin interface (same as `API_KEY`)
+
+## Backend API Endpoints
+
+The server now includes comprehensive admin APIs:
+
+### Component Management
+- `GET /api/admin/components` - List all components
+- `POST /api/admin/components` - Create/update component
+- `DELETE /api/admin/components/:id` - Delete component
+
+### Template Management  
+- `GET /api/admin/templates` - List all templates
+- `POST /api/admin/templates` - Create/update template
+- `DELETE /api/admin/templates/:id` - Delete template
+
+### Plugin Management
+- `GET /api/admin/plugins` - List all plugins
+- `POST /api/admin/plugins/:id/install` - Install plugin
+- `POST /api/admin/plugins/:id/uninstall` - Uninstall plugin
+
+### Layout Management
+- `GET /api/admin/layouts` - List all layouts
+- `POST /api/admin/layouts` - Save layout
+- `DELETE /api/admin/layouts/:id` - Delete layout
+
+### Configuration Management
+- `GET /api/admin/configs` - List all configurations
+- `GET /api/admin/configs/:screenId` - Get screen configuration
+- `POST /api/admin/configs/:screenId` - Save screen configuration
+
+### Analytics & Monitoring
+- `GET /api/admin/analytics` - System analytics
+- `GET /api/admin/health` - System health status
 
 Quick Start (Local without Docker)
 

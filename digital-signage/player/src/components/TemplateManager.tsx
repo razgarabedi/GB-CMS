@@ -613,6 +613,9 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
             <p className="text-sm text-gray-500 mb-4">
               Try adjusting your search or filters
             </p>
+            <div className="text-xs text-gray-600 mb-4">
+              Debug: {manager.templates.length} total templates, {filteredTemplates.length} filtered
+            </div>
             <button
               onClick={() => setShowCreateDialog(true)}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"

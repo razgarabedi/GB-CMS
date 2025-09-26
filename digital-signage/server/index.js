@@ -564,9 +564,46 @@ app.post('/api/push/broadcast/refresh', requireApiKey, (req, res) => {
   res.json({ ok: true });
 });
 
+// ============================================================================
+// ADVANCED ADMIN API ROUTES
+// ============================================================================
+
+console.log('🔗 Loading admin API routes...');
+
+// Import and use admin routes
+const adminRoutes = require('./routes/admin');
+console.log('✅ Admin routes loaded successfully');
+
+app.use('/', adminRoutes);
+console.log('✅ Admin routes mounted on root path');
+
+// Serve the basic admin interface
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin/index.html'));
+});
+
+// Serve the basic admin interface assets
+app.use('/admin', express.static(path.join(__dirname, 'public/admin')));
+
+// Serve the advanced admin interface
+app.get('/admin-advanced', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/admin-advanced/index.html'));
+});
+
+// Serve the advanced admin interface assets
+app.use('/admin-advanced', express.static(path.join(__dirname, 'public/admin-advanced')));
+
+// ============================================================================
+// SERVER STARTUP
+// ============================================================================
+
 server.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Server listening on port ${PORT}`);
+  // eslint-disable-next-line no-console
+  console.log(`Basic Admin Interface: http://localhost:${PORT}/admin`);
+  // eslint-disable-next-line no-console
+  console.log(`Advanced Admin Interface: http://localhost:${PORT}/admin-advanced`);
 });
 
 
