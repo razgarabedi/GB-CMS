@@ -355,8 +355,8 @@ export default function PropertiesPanel({
   };
 
   return (
-    <div className="h-full bg-slate-800/50 p-4 overflow-y-auto">
-      <h3 className="text-lg font-semibold text-white mb-4">Properties</h3>
+    <div className="h-full bg-slate-800/50 p-2 sm:p-4 overflow-y-auto">
+      <h3 className="text-base sm:text-lg font-semibold text-white mb-4">Properties</h3>
       
       {selectedWidget && selectedWidgetData ? (
         <div className="space-y-6">
@@ -368,27 +368,27 @@ export default function PropertiesPanel({
                 <span>{selectedWidgetData.component} Widget</span>
               </h4>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Width</label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Width</label>
                   <input
                     type="number"
                     min="1"
                     max="12"
                     value={selectedWidgetData.w}
                     onChange={(e) => updateWidgetDimensions('w', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Height</label>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Height</label>
                   <input
                     type="number"
                     min="1"
                     max="20"
                     value={selectedWidgetData.h}
                     onChange={(e) => updateWidgetDimensions('h', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>

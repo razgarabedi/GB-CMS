@@ -6,6 +6,7 @@ import ComponentLibrary from './components/ComponentLibrary';
 import PropertiesPanel from './components/PropertiesPanel';
 import TemplateManager from './components/TemplateManager';
 import PluginManager from './components/PluginManager';
+import PreviewSystem from './components/PreviewSystem';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('canvas');
@@ -19,6 +20,7 @@ export default function Home() {
 
   const tabs = [
     { id: 'canvas', name: 'Layout Canvas', icon: '🎨' },
+    { id: 'preview', name: 'Live Preview', icon: '📺' },
     { id: 'templates', name: 'Templates', icon: '📋' },
     { id: 'plugins', name: 'Plugins', icon: '🔌' },
     { id: 'widgets', name: 'Widgets', icon: '🧩' },
@@ -28,9 +30,9 @@ export default function Home() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'canvas':
-  return (
-          <div className="flex h-full">
-            <div className="w-64 border-r border-slate-700">
+        return (
+          <div className="flex flex-col lg:flex-row h-full">
+            <div className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-slate-700 lg:h-full overflow-y-auto">
               <ComponentLibrary 
                 onWidgetAdd={(componentName) => {
                   const newWidget = {
@@ -45,7 +47,7 @@ export default function Home() {
                 }}
               />
             </div>
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-3 lg:p-6 min-h-0">
               <LayoutCanvas 
                 layout={layout}
                 onLayoutChange={setLayout}
@@ -53,13 +55,23 @@ export default function Home() {
                 onWidgetSelect={setSelectedWidget}
               />
             </div>
-            <div className="w-80 border-l border-slate-700">
+            <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-700 lg:h-full overflow-y-auto">
               <PropertiesPanel 
                 selectedWidget={selectedWidget}
                 layout={layout}
                 onLayoutChange={setLayout}
               />
             </div>
+          </div>
+        );
+      case 'preview':
+        return (
+          <div className="h-full">
+            <PreviewSystem 
+              layout={layout}
+              selectedWidget={selectedWidget}
+              onWidgetSelect={setSelectedWidget}
+            />
           </div>
         );
       case 'templates':
@@ -125,17 +137,19 @@ export default function Home() {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <header className="border-b border-slate-700 bg-slate-800">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-white">GB-CMS</h1>
-            <span className="text-sm text-slate-400">Digital Signage Server</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 space-y-2 sm:space-y-0">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">GB-CMS</h1>
+            <span className="text-xs sm:text-sm text-slate-400 hidden sm:inline">Digital Signage Server</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <button className="btn btn-outline">
-              🔄 Refresh
+          <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
+            <button className="btn btn-outline flex-1 sm:flex-none">
+              <span className="hidden sm:inline">🔄 Refresh</span>
+              <span className="sm:hidden">🔄</span>
             </button>
-            <button className="btn btn-primary">
-              💾 Save
+            <button className="btn btn-primary flex-1 sm:flex-none">
+              <span className="hidden sm:inline">💾 Save</span>
+              <span className="sm:hidden">💾</span>
             </button>
           </div>
         </div>

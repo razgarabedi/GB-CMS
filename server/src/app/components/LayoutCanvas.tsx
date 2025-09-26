@@ -1,7 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WidgetRegistry, DefaultWidgetProps } from './widgets';
+import { useAdvancedDragDrop } from './DragDropSystem';
+import { 
+  DragGhost, 
+  SnapPreview, 
+  DropZoneHighlight, 
+  CollisionOverlay, 
+  MagneticSnapLines,
+  DragCursor 
+} from './DragVisualFeedback';
 
 interface LayoutItem {
   i: string;
@@ -26,26 +35,76 @@ export default function LayoutCanvas({
   selectedWidget,
   onWidgetSelect
 }: LayoutCanvasProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragWidget, setDragWidget] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [draggedFromLibrary, setDraggedFromLibrary] = useState<string | null>(null);
+  const [showCollisionWarning, setShowCollisionWarning] = useState(false);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, widgetId: string) => {
-    setIsDragging(true);
-    setDragWidget(widgetId);
+  // Use the advanced drag-drop system
+  const {
+    dragState,
+    canvasRef,
+    startDrag,
+    endDrag,
+    updateDragPosition,
+    manager
+  } = useAdvancedDragDrop(layout, onLayoutChange, {
+    enableCollisionDetection: true,
+    enableSmartSnapping: true,
+    showDropZones: true,
+    showGhostPreview: true,
+    animationDuration: 250
+  });
+
+  const handleWidgetDragStart = (e: React.DragEvent, widgetId: string) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', widgetId);
+    
+    // Calculate drag offset for smooth dragging
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offset = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+    
+    startDrag(e, widgetId, 'existing-widget', offset);
+    
+    // Add smooth drag animation class
+    e.currentTarget.classList.add('dragging-smooth');
   };
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    setDragWidget(null);
+  const handleWidgetDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('dragging-smooth');
+    endDrag(e);
+    
+    // Smooth animation back to position if drag was cancelled
+    if (!dragState.isValidDrop) {
+      const target = e.currentTarget as HTMLElement;
+      target.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)';
+      target.style.transform = 'scale(1)';
+      
+      setTimeout(() => {
+        target.style.transition = '';
+        target.style.transform = '';
+      }, 300);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
-    e.dataTransfer.dropEffect = e.dataTransfer.getData('text/plain').startsWith('new-') ? 'copy' : 'move';
+    
+    const draggedData = e.dataTransfer.getData('text/plain');
+    e.dataTransfer.dropEffect = draggedData.startsWith('new-') ? 'copy' : 'move';
+    
+    // Update drag position for visual feedback
+    updateDragPosition(e.clientX, e.clientY);
+    
+    // Check if dragging from library
+    if (draggedData.startsWith('new-')) {
+      const componentName = draggedData.replace('new-', '');
+      setDraggedFromLibrary(componentName);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -58,54 +117,78 @@ export default function LayoutCanvas({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Calculate grid position
-    const gridX = Math.floor((x / rect.width) * 12);
-    const gridY = Math.floor(y / 60);
+    setDraggedFromLibrary(null);
     
     const draggedData = e.dataTransfer.getData('text/plain');
+    const dropPosition = manager.findBestDropPosition(e.clientX, e.clientY, 2, 2);
     
+    if (!dropPosition.isValid) {
+      // Show collision warning with animation
+      setShowCollisionWarning(true);
+      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = setTimeout(() => {
+        setShowCollisionWarning(false);
+      }, 2000);
+      return;
+    }
+
     if (draggedData.startsWith('new-')) {
-      // New component from library
+      // New component from library with smooth entrance animation
       const componentName = draggedData.replace('new-', '');
       const newWidget = {
         i: `widget-${Date.now()}`,
-        x: Math.max(0, Math.min(gridX, 10)), // Ensure within bounds
-        y: Math.max(0, gridY),
+        x: dropPosition.x,
+        y: dropPosition.y,
         w: 2,
         h: 2,
         component: componentName
       };
+      
       onLayoutChange([...layout, newWidget]);
       
-      // Auto-select the new widget
+      // Auto-select with animation delay
       setTimeout(() => {
         onWidgetSelect(newWidget.i);
+        
+        // Add entrance animation
+        const widgetElement = document.querySelector(`[data-widget-id="${newWidget.i}"]`);
+        if (widgetElement) {
+          widgetElement.classList.add('widget-entrance-animation');
+          setTimeout(() => {
+            widgetElement.classList.remove('widget-entrance-animation');
+          }, 500);
+        }
       }, 100);
       
     } else {
-      // Existing widget being moved
+      // Existing widget being moved with smooth transition
       const updatedLayout = layout.map(item => {
         if (item.i === draggedData) {
           return {
             ...item,
-            x: Math.max(0, Math.min(gridX, 12 - item.w)),
-            y: Math.max(0, gridY)
+            x: dropPosition.x,
+            y: dropPosition.y
           };
         }
         return item;
       });
+      
       onLayoutChange(updatedLayout);
+      
+      // Add move animation
+      const widgetElement = document.querySelector(`[data-widget-id="${draggedData}"]`);
+      if (widgetElement) {
+        widgetElement.classList.add('widget-move-animation');
+        setTimeout(() => {
+          widgetElement.classList.remove('widget-move-animation');
+        }, 300);
+      }
     }
   };
 
   const renderWidget = (item: LayoutItem) => {
     const isSelected = selectedWidget === item.i;
-    const isDraggingThis = dragWidget === item.i;
+    const isDraggingThis = dragState.draggedItem === item.i && dragState.isDragging;
     
     // Get the widget component and props
     const WidgetComponent = WidgetRegistry[item.component as keyof typeof WidgetRegistry];
@@ -115,28 +198,64 @@ export default function LayoutCanvas({
     return (
       <div
         key={item.i}
-        className={`grid-item ${isSelected ? 'selected' : ''} ${isDraggingThis ? 'widget-dragging' : ''}`}
+        data-widget-id={item.i}
+        className={`
+          grid-item group relative transition-all duration-200 ease-out
+          ${isSelected ? 'selected ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900' : ''}
+          ${isDraggingThis ? 'widget-dragging opacity-50 scale-95 z-50' : 'hover:scale-[1.02] hover:shadow-lg'}
+          ${!isDraggingThis && dragState.isDragging ? 'hover:shadow-blue-500/20' : ''}
+        `}
         style={{
           position: 'absolute',
           left: `${(item.x / 12) * 100}%`,
           top: `${item.y * 60}px`,
           width: `${(item.w / 12) * 100}%`,
           height: `${item.h * 60}px`,
-          cursor: 'pointer'
+          cursor: isDraggingThis ? 'grabbing' : 'grab',
+          zIndex: isSelected ? 10 : isDraggingThis ? 50 : 1
         }}
         draggable
-        onDragStart={(e) => handleDragStart(e, item.i)}
-        onDragEnd={handleDragEnd}
+        onDragStart={(e) => handleWidgetDragStart(e, item.i)}
+        onDragEnd={handleWidgetDragEnd}
         onClick={() => onWidgetSelect(item.i)}
+        onMouseEnter={(e) => {
+          if (!dragState.isDragging) {
+            const target = e.currentTarget as HTMLElement;
+            target.style.transform = 'scale(1.02)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!dragState.isDragging) {
+            const target = e.currentTarget as HTMLElement;
+            target.style.transform = '';
+          }
+        }}
       >
-        {WidgetComponent ? (
-          <WidgetComponent {...(widgetProps as any)} />
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center p-2 bg-slate-700 text-white rounded">
-            <div className="text-lg font-bold mb-1">{item.component}</div>
-            <div className="text-xs opacity-75">Widget not found</div>
+        {/* Drag handle indicator */}
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="bg-slate-700/80 text-slate-300 px-1.5 py-0.5 rounded text-xs font-medium backdrop-blur-sm">
+            ⋮⋮
+          </div>
+        </div>
+
+        {/* Selection indicator */}
+        {isSelected && (
+          <div className="absolute -top-2 -left-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
+            Selected
           </div>
         )}
+
+        {/* Widget content */}
+        <div className="h-full w-full overflow-hidden rounded-lg">
+          {WidgetComponent ? (
+            <WidgetComponent {...(widgetProps as any)} />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center p-2 bg-slate-700 text-white rounded-lg">
+              <div className="text-lg font-bold mb-1">{item.component}</div>
+              <div className="text-xs opacity-75">Widget not found</div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -153,7 +272,12 @@ export default function LayoutCanvas({
       </div>
       
       <div 
-        className={`grid-canvas relative ${isDragOver ? 'drag-over' : ''}`}
+        ref={canvasRef}
+        className={`
+          grid-canvas relative transition-all duration-300 ease-out
+          ${isDragOver ? 'drag-over bg-blue-500/5 border-blue-400/50' : ''}
+          ${dragState.isDragging ? 'cursor-crosshair' : ''}
+        `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -171,23 +295,69 @@ export default function LayoutCanvas({
           layout.map(renderWidget)
         )}
         
-        {/* Enhanced Grid Guidelines */}
-        <div className="grid-guidelines">
+        {/* Enhanced Grid Guidelines with improved visibility */}
+        <div className={`grid-guidelines transition-opacity duration-200 ${
+          dragState.isDragging || isDragOver ? 'opacity-100' : 'opacity-0 hover:opacity-30'
+        }`}>
           {[...Array(13)].map((_, i) => (
             <div
               key={`v-${i}`}
-              className="grid-line-vertical"
+              className="grid-line-vertical bg-blue-400/30 w-px"
               style={{ left: `${(i / 12) * 100}%` }}
             />
           ))}
           {[...Array(11)].map((_, i) => (
             <div
               key={`h-${i}`}
-              className="grid-line-horizontal"
+              className="grid-line-horizontal bg-blue-400/30 h-px"
               style={{ top: `${i * 60}px` }}
             />
           ))}
         </div>
+
+        {/* Advanced Visual Feedback Components */}
+        <DragGhost dragState={dragState} canvasRef={canvasRef} dropZones={[]} />
+        <SnapPreview dragState={dragState} canvasRef={canvasRef} dropZones={[]} />
+        <MagneticSnapLines dragState={dragState} layout={layout} canvasRef={canvasRef} />
+        <DragCursor dragState={dragState} />
+        
+        {/* Drop zone highlight for new widgets */}
+        {draggedFromLibrary && dragState.snapPosition && (
+          <DropZoneHighlight
+            isActive={true}
+            isValid={dragState.isValidDrop}
+            position={{
+              x: dragState.snapPosition.x,
+              y: dragState.snapPosition.y,
+              w: 2,
+              h: 2
+            }}
+          />
+        )}
+
+        {/* Collision detection overlay */}
+        {dragState.isDragging && dragState.snapPosition && (
+          <CollisionOverlay
+            layout={layout}
+            draggedWidget={dragState.draggedItem}
+            proposedPosition={dragState.snapPosition ? {
+              x: dragState.snapPosition.x,
+              y: dragState.snapPosition.y,
+              w: 2,
+              h: 2
+            } : null}
+          />
+        )}
+
+        {/* Collision warning notification */}
+        {showCollisionWarning && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg animate-bounce z-50">
+            <div className="flex items-center space-x-2">
+              <span>⚠️</span>
+              <span className="font-medium">Cannot place widget here - collision detected!</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
