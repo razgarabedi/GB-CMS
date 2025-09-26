@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LayoutCanvas from './components/LayoutCanvas';
 import ComponentLibrary from './components/ComponentLibrary';
 import PropertiesPanel from './components/PropertiesPanel';
@@ -8,6 +8,8 @@ import TemplateManager from './components/TemplateManager';
 import PluginManager from './components/PluginManager';
 import PreviewSystem from './components/PreviewSystem';
 import HelpManager from './components/HelpManager';
+import ScreenManager from './components/ScreenManager';
+import SaveScreenModal from './components/SaveScreenModal';
 
 interface LayoutItem {
   i: string;
@@ -28,10 +30,83 @@ export default function Home() {
     { i: 'c', x: 4, y: 0, w: 2, h: 2, component: 'News' }
   ]);
   const [widgetProperties, setWidgetProperties] = useState<any>({});
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [screens, setScreens] = useState<any[]>([]);
+  const [editingScreen, setEditingScreen] = useState<any>(null);
+
+  // Load screens from localStorage on component mount
+  useEffect(() => {
+    const savedScreens = localStorage.getItem('gb-cms-screens');
+    if (savedScreens) {
+      try {
+        setScreens(JSON.parse(savedScreens));
+      } catch (error) {
+        console.error('Error loading screens:', error);
+      }
+    }
+  }, []);
+
+  // Save screens to localStorage whenever screens change
+  useEffect(() => {
+    localStorage.setItem('gb-cms-screens', JSON.stringify(screens));
+  }, [screens]);
+
+  const handleSaveScreen = (screenName: string, screenDescription: string) => {
+    const now = new Date().toISOString();
+    
+    if (editingScreen) {
+      // Update existing screen
+      const updatedScreen = {
+        ...editingScreen,
+        name: screenName,
+        description: screenDescription || undefined,
+        layout: [...layout],
+        updatedAt: now
+      };
+
+      setScreens(prev => prev.map(screen => 
+        screen.id === editingScreen.id ? updatedScreen : screen
+      ));
+      setEditingScreen(null);
+    } else {
+      // Create new screen
+      const newScreen = {
+        id: `screen-${Date.now()}`,
+        name: screenName,
+        description: screenDescription || undefined,
+        layout: [...layout],
+        createdAt: now,
+        updatedAt: now,
+        isActive: false
+      };
+
+      setScreens(prev => [...prev, newScreen]);
+    }
+
+    setShowSaveModal(false);
+  };
+
+  const handleLoadScreen = (screen: any) => {
+    setLayout(screen.layout);
+    setSelectedWidget(null);
+    setEditingScreen(screen);
+    setActiveTab('canvas'); // Switch to canvas tab for editing
+  };
+
+  const handleDeleteScreen = (screenId: string) => {
+    setScreens(prev => prev.filter(screen => screen.id !== screenId));
+  };
+
+  const handleNewScreen = () => {
+    setEditingScreen(null);
+    setLayout([]);
+    setSelectedWidget(null);
+  };
 
   const tabs = [
     { id: 'canvas', name: 'Layout Canvas', icon: '🎨' },
     { id: 'preview', name: 'Live Preview', icon: '📺' },
+    { id: 'screens', name: 'Screens', icon: '🖥️' },
     { id: 'templates', name: 'Templates', icon: '📋' },
     { id: 'plugins', name: 'Plugins', icon: '🔌' },
     { id: 'widgets', name: 'Widgets', icon: '🧩' },
@@ -62,7 +137,7 @@ export default function Home() {
               />
             </div>
             <div 
-              className="flex-1 p-3 lg:p-6 min-h-0"
+              className="flex-1 p-3 lg:p-6 min-h-0 flex items-center justify-center"
               data-tour="layout-canvas"
             >
               <LayoutCanvas
@@ -70,6 +145,7 @@ export default function Home() {
                 onLayoutChange={setLayout}
                 selectedWidget={selectedWidget}
                 onWidgetSelect={setSelectedWidget}
+                editingScreen={editingScreen}
               />
             </div>
             <div 
@@ -91,6 +167,29 @@ export default function Home() {
               layout={layout}
               selectedWidget={selectedWidget}
               onWidgetSelect={setSelectedWidget}
+            />
+          </div>
+        );
+      case 'screens':
+        return (
+          <div className="h-full overflow-y-auto">
+            <ScreenManager
+              currentLayout={layout}
+              screens={screens}
+              onLoadScreen={handleLoadScreen}
+              onSaveScreen={(screen) => {
+                setScreens(prev => {
+                  const existingIndex = prev.findIndex(s => s.id === screen.id);
+                  if (existingIndex >= 0) {
+                    // Update existing screen
+                    return prev.map(s => s.id === screen.id ? screen : s);
+                  } else {
+                    // Add new screen
+                    return [...prev, screen];
+                  }
+                });
+              }}
+              onDeleteScreen={handleDeleteScreen}
             />
           </div>
         );
@@ -164,13 +263,66 @@ export default function Home() {
               <span className="text-xs sm:text-sm text-slate-400 hidden sm:inline">Digital Signage Server</span>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto justify-end">
+              <div className="relative group">
+                <button 
+                  onClick={() => window.open('/kiosk', '_blank')}
+                  className="btn btn-outline flex-1 sm:flex-none"
+                  title="Play current layout in kiosk mode"
+                >
+                  <span className="hidden sm:inline">▶️ Play</span>
+                  <span className="sm:hidden">▶️</span>
+                </button>
+                {/* Kiosk mode dropdown */}
+                <div className="absolute right-0 top-10 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[200px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  <button
+                    onClick={() => window.open('/kiosk', '_blank')}
+                    className="w-full px-3 py-2 text-left text-sm text-white hover:bg-slate-700 transition-colors duration-150 flex items-center space-x-2"
+                  >
+                    <span>📺</span>
+                    <span>Kiosk Mode</span>
+                  </button>
+                  <button
+                    onClick={() => window.open('/kiosk/rotate', '_blank')}
+                    className="w-full px-3 py-2 text-left text-sm text-white hover:bg-slate-700 transition-colors duration-150 flex items-center space-x-2"
+                  >
+                    <span>🔄</span>
+                    <span>Auto Rotate All</span>
+                  </button>
+                  <div className="h-px bg-slate-600 my-1"></div>
+                  <div className="px-3 py-1 text-xs text-slate-400">
+                    Kiosk URLs:
+                  </div>
+                  <div className="px-3 py-1 text-xs text-slate-500">
+                    /kiosk - All screens<br/>
+                    /kiosk?screen=ID - Specific screen<br/>
+                    /kiosk/screen/name - By name<br/>
+                    /kiosk/rotate - Auto rotate
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={handleNewScreen}
+                className="btn btn-outline flex-1 sm:flex-none"
+                title="Start a new screen"
+              >
+                <span className="hidden sm:inline">🆕 New</span>
+                <span className="sm:hidden">🆕</span>
+              </button>
               <button className="btn btn-outline flex-1 sm:flex-none">
                 <span className="hidden sm:inline">🔄 Refresh</span>
                 <span className="sm:hidden">🔄</span>
               </button>
-              <button className="btn btn-primary flex-1 sm:flex-none">
-                <span className="hidden sm:inline">💾 Save</span>
-                <span className="sm:hidden">💾</span>
+              <button 
+                onClick={() => setShowSaveModal(true)}
+                className="btn btn-primary flex-1 sm:flex-none"
+                title={editingScreen ? `Update screen: ${editingScreen.name}` : "Save current layout as screen"}
+              >
+                <span className="hidden sm:inline">
+                  💾 {editingScreen ? `Update ${editingScreen.name}` : 'Save'}
+                </span>
+                <span className="sm:hidden">
+                  💾 {editingScreen ? 'Update' : 'Save'}
+                </span>
               </button>
             </div>
           </div>
@@ -211,6 +363,15 @@ export default function Home() {
           <span>{layout.length} widgets on canvas</span>
         </div>
       </footer>
+
+      {/* Save Screen Modal */}
+      <SaveScreenModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveScreen}
+        currentLayout={layout}
+        editingScreen={editingScreen}
+      />
       </div>
     </HelpManager>
   );

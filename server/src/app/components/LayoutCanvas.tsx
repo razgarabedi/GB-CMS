@@ -27,13 +27,15 @@ interface LayoutCanvasProps {
   onLayoutChange: (layout: LayoutItem[]) => void;
   selectedWidget: string | null;
   onWidgetSelect: (widgetId: string) => void;
+  editingScreen?: any;
 }
 
 export default function LayoutCanvas({
   layout,
   onLayoutChange,
   selectedWidget,
-  onWidgetSelect
+  onWidgetSelect,
+  editingScreen
 }: LayoutCanvasProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggedFromLibrary, setDraggedFromLibrary] = useState<string | null>(null);
@@ -496,9 +498,20 @@ export default function LayoutCanvas({
   };
 
   return (
-    <div className="h-full">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">Layout Canvas</h2>
+    <div className="canvas-container h-full">
+      <div className="canvas-wrapper">
+        <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <h2 className="text-xl font-semibold text-white">Layout Canvas</h2>
+          {editingScreen && (
+            <div className="flex items-center space-x-2 px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+              <span className="text-blue-400 text-sm">✏️</span>
+              <span className="text-blue-300 text-sm font-medium">
+                Editing: {editingScreen.name}
+              </span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-sm text-slate-400">
             <span>12-column grid</span>
@@ -605,7 +618,11 @@ export default function LayoutCanvas({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        style={{ minHeight: '600px' }}
+        style={{ 
+          width: '100%',
+          height: '100%',
+          aspectRatio: '16/9'
+        }}
       >
         {layout.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center text-slate-500">
@@ -630,7 +647,7 @@ export default function LayoutCanvas({
               style={{ left: `${(i / 12) * 100}%` }}
             />
           ))}
-          {[...Array(11)].map((_, i) => (
+          {[...Array(19)].map((_, i) => (
             <div
               key={`h-${i}`}
               className="grid-line-horizontal bg-blue-400/30 h-px"
@@ -758,6 +775,7 @@ export default function LayoutCanvas({
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

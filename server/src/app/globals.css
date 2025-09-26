@@ -95,7 +95,38 @@ body {
 }
 
 .grid-canvas {
-  @apply min-h-[500px] border-2 border-dashed border-slate-600 rounded-lg bg-slate-900/50 relative;
+  @apply border-2 border-dashed border-slate-600 rounded-lg bg-slate-900/50 relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16/9;
+  object-fit: contain;
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16/9;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-wrapper .grid-canvas {
+  flex: 1;
+  min-height: 0;
 }
 
 .grid-item {
@@ -161,7 +192,11 @@ body {
   }
   
   .grid-canvas {
-    @apply min-h-[400px];
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 16/9;
   }
   
   .card-content {
@@ -181,6 +216,14 @@ body {
   .card-title {
     @apply text-lg;
   }
+  
+  .grid-canvas {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 16/9;
+  }
 }
 
 @media (max-width: 640px) {
@@ -192,8 +235,16 @@ body {
     @apply mr-0 mb-1;
   }
   
+  .canvas-container {
+    padding: 0.5rem;
+  }
+  
+  .canvas-wrapper {
+    min-height: 200px;
+  }
+  
   .grid-canvas {
-    @apply min-h-[300px];
+    min-height: 200px;
   }
   
   .btn {
