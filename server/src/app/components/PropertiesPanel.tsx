@@ -81,28 +81,97 @@ export default function PropertiesPanel({
                 value={widgetProps.location || ''}
                 onChange={(e) => updateWidgetProperty('location', e.target.value)}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter location"
+                placeholder="Enter city name (e.g., New York, London)"
               />
+              <p className="text-xs text-slate-400 mt-1">Or use coordinates below for precise location</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="showClock"
-                checked={widgetProps.showClock || false}
-                onChange={(e) => updateWidgetProperty('showClock', e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="showClock" className="text-sm text-slate-300">Show Clock</label>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={widgetProps.latitude || ''}
+                  onChange={(e) => updateWidgetProperty('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="40.7128"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={widgetProps.longitude || ''}
+                  onChange={(e) => updateWidgetProperty('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="-74.0060"
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="showAnimatedBg"
-                checked={widgetProps.showAnimatedBg || false}
-                onChange={(e) => updateWidgetProperty('showAnimatedBg', e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="showAnimatedBg" className="text-sm text-slate-300">Animated Background</label>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Refresh Interval (minutes)</label>
+              <select
+                value={widgetProps.refreshInterval ? widgetProps.refreshInterval / 60000 : 5}
+                onChange={(e) => updateWidgetProperty('refreshInterval', parseInt(e.target.value) * 60000)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={1}>1 minute</option>
+                <option value={5}>5 minutes</option>
+                <option value={10}>10 minutes</option>
+                <option value={15}>15 minutes</option>
+                <option value={30}>30 minutes</option>
+                <option value={60}>1 hour</option>
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="showClock"
+                  checked={widgetProps.showClock || false}
+                  onChange={(e) => updateWidgetProperty('showClock', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="showClock" className="text-sm text-slate-300">Show Clock</label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="showAnimatedBg"
+                  checked={widgetProps.showAnimatedBg || false}
+                  onChange={(e) => updateWidgetProperty('showAnimatedBg', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="showAnimatedBg" className="text-sm text-slate-300">Animated Background</label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="showDetails"
+                  checked={widgetProps.showDetails || false}
+                  onChange={(e) => updateWidgetProperty('showDetails', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="showDetails" className="text-sm text-slate-300">Show Details (humidity, wind, etc.)</label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Theme</label>
+              <select
+                value={widgetProps.theme || 'dark'}
+                onChange={(e) => updateWidgetProperty('theme', e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
             </div>
           </div>
         );

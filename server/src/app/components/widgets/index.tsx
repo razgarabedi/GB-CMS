@@ -34,9 +34,13 @@ export const WidgetRegistry = {
 export const DefaultWidgetProps = {
   'Weather': {
     location: 'New York',
+    latitude: undefined,
+    longitude: undefined,
     showClock: true,
     showAnimatedBg: false,
-    theme: 'dark'
+    theme: 'dark',
+    refreshInterval: 300000,
+    showDetails: true
   },
   'Clock': {
     timezone: 'UTC',
