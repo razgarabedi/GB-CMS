@@ -44,7 +44,8 @@ export default function WeatherWidget({
 
   // Initialize coordinates based on props
   useEffect(() => {
-    if (isInitialized) return;
+    // Reset initialization state when location changes
+    setIsInitialized(false);
 
     if (latitude && longitude) {
       // Use provided coordinates
@@ -68,7 +69,7 @@ export default function WeatherWidget({
       });
       setIsInitialized(true);
     }
-  }, [location, latitude, longitude, geocodeLocationName, isInitialized]);
+  }, [location, latitude, longitude, geocodeLocationName]);
 
   // Determine weather config - only when coordinates are available
   const weatherConfig: WeatherConfig = useMemo(() => {

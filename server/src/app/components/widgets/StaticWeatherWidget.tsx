@@ -4,6 +4,50 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCurrentTime } from '../../hooks/useHydration';
 import { useWeather, useGeocoding, WeatherConfig } from '../../hooks/useWeather';
 import { StaticWidgetProps, StaticWidgetSize } from '../../types/staticWidgets';
+import WeatherIcon from '../WeatherIcon';
+
+// Weather data icon component with fallback
+const WeatherDataIcon: React.FC<{
+  iconName: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}> = ({ iconName, size = 'md', className = '' }) => {
+  const sizeClasses = {
+    sm: 'w-3 h-3',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8'
+  };
+
+  const getEmojiFallback = (iconName: string): string => {
+    switch (iconName) {
+      case 'humidity':
+        return '💧';
+      case 'wind-speed':
+        return '💨';
+      case 'pressure':
+        return '📊';
+      case 'uv':
+        return '☀️';
+      default:
+        return '❓';
+    }
+  };
+
+  return (
+    <img 
+      src={`/weather-icons/${iconName}.png`}
+      alt={iconName}
+      className={`${sizeClasses[size]} ${className}`}
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        const parent = target.parentElement;
+        if (parent) {
+          parent.innerHTML = `<span class="${sizeClasses[size]} ${className}">${getEmojiFallback(iconName)}</span>`;
+        }
+      }}
+    />
+  );
+};
 
 // Weather background images mapping (same as in useWeather.ts)
 const WEATHER_BACKGROUNDS: Record<number, string> = {
@@ -142,7 +186,7 @@ const CompactWeatherLayout: React.FC<{
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            <span className="text-lg">{weather ? getWeatherEmoji(weather.conditionCode) : '🌤️'}</span>
+            <WeatherIcon conditionCode={weather?.conditionCode || 0} size="md" className="text-white" />
             <div>
               <h3 className="font-medium text-white text-sm">{displayLocation}</h3>
               <p className="text-xs text-slate-300">
@@ -183,8 +227,12 @@ const CompactWeatherLayout: React.FC<{
             <div className="text-2xl font-light text-white mb-1">
               {weather.temperature}°
             </div>
-            <div className="text-xs text-slate-300">
-              💧 {weather.humidity}% | 💨 {weather.windSpeed} km/h
+            <div className="text-xs text-slate-300 flex items-center justify-center space-x-2">
+              <WeatherDataIcon iconName="humidity" size="sm" />
+              <span>{weather.humidity}%</span>
+              <span>|</span>
+              <WeatherDataIcon iconName="wind-speed" size="sm" />
+              <span>{weather.windSpeed} km/h</span>
             </div>
           </div>
         ) : (
@@ -288,9 +336,7 @@ const MediumWeatherLayout: React.FC<{
           {/* Current Weather */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1">
-              <span className="text-sm">
-                {weather ? getWeatherEmoji(weather.conditionCode) : '🌤️'}
-              </span>
+              <WeatherIcon conditionCode={weather?.conditionCode || 0} size="sm" className="text-white" />
               <div className="text-sm font-light text-white">
                 {weather ? weather.temperature : '--'}°
               </div>
@@ -312,7 +358,7 @@ const MediumWeatherLayout: React.FC<{
             <div>H {weather ? weather.high || weather.temperature : '--'}°</div>
             <div>L {weather ? weather.low || weather.temperature : '--'}°</div>
             <div className="flex items-center space-x-1">
-              <span>💧</span>
+              <WeatherDataIcon iconName="humidity" size="sm" />
               <span>{weather ? weather.humidity : '--'}%</span>
             </div>
           </div>
@@ -353,11 +399,13 @@ const MediumWeatherLayout: React.FC<{
               <div className="relative z-10 h-full flex flex-col items-center justify-center text-white p-1">
                 <div className="text-xs font-medium mb-0.5">{day.dayName}</div>
                 <div className="text-lg mb-0.5">{day.temperature}°</div>
-                <div className="text-sm mb-0.5">{getWeatherEmoji(day.conditionCode)}</div>
+                <div className="mb-0.5">
+                  <WeatherIcon conditionCode={day.conditionCode} size="sm" className="text-white" />
+                </div>
                 <div className="text-xs text-center">
                   <div>H {day.high}° • L {day.low}°</div>
                   <div className="flex items-center justify-center space-x-1 mt-0.5">
-                    <span>💧</span>
+                    <WeatherDataIcon iconName="humidity" size="sm" />
                     <span>{day.precipitation}%</span>
                   </div>
                 </div>
@@ -374,11 +422,13 @@ const MediumWeatherLayout: React.FC<{
             >
               <div className="text-xs font-medium mb-0.5">--</div>
               <div className="text-lg mb-0.5">--°</div>
-              <div className="text-sm mb-0.5">🌤️</div>
+              <div className="mb-0.5">
+                <WeatherIcon conditionCode={0} size="sm" className="text-white" />
+              </div>
               <div className="text-xs text-center">
                 <div>H --° • L --°</div>
                 <div className="flex items-center justify-center space-x-1 mt-0.5">
-                  <span>💧</span>
+                  <WeatherDataIcon iconName="humidity" size="sm" />
                   <span>--%</span>
                 </div>
               </div>
@@ -452,7 +502,7 @@ const LargeWeatherLayout: React.FC<{
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <span className="text-4xl">{weather ? getWeatherEmoji(weather.conditionCode) : '🌤️'}</span>
+          <WeatherIcon conditionCode={weather?.conditionCode || 0} size="xl" className="text-white" />
           <div>
             <h3 className="font-bold text-white text-xl">{displayLocation}</h3>
             <p className="text-base text-slate-300">
@@ -502,17 +552,17 @@ const LargeWeatherLayout: React.FC<{
             </div>
             <div className="grid grid-cols-3 gap-6 text-base text-slate-300 mb-4">
               <div className="bg-slate-700/30 rounded-lg p-3">
-                <div className="text-2xl mb-1">💧</div>
+                <WeatherDataIcon iconName="humidity" size="md" className="mb-1" />
                 <div className="font-semibold">{weather.humidity}%</div>
                 <div className="text-sm">Humidity</div>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-3">
-                <div className="text-2xl mb-1">💨</div>
+                <WeatherDataIcon iconName="wind-speed" size="md" className="mb-1" />
                 <div className="font-semibold">{weather.windSpeed} km/h</div>
                 <div className="text-sm">Wind Speed</div>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-3">
-                <div className="text-2xl mb-1">📊</div>
+                <WeatherDataIcon iconName="pressure" size="md" className="mb-1" />
                 <div className="font-semibold">{weather.pressure} hPa</div>
                 <div className="text-sm">Pressure</div>
               </div>
@@ -600,7 +650,7 @@ const XLargeWeatherLayout: React.FC<{
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-6">
-          <span className="text-5xl">{weather ? getWeatherEmoji(weather.conditionCode) : '🌤️'}</span>
+          <WeatherIcon conditionCode={weather?.conditionCode || 0} size="xl" className="text-white" />
           <div>
             <h3 className="font-bold text-white text-2xl">{displayLocation}</h3>
             <p className="text-lg text-slate-300">
@@ -651,22 +701,22 @@ const XLargeWeatherLayout: React.FC<{
             </div>
             <div className="grid grid-cols-4 gap-6 text-lg text-slate-300 mb-6">
               <div className="bg-slate-700/30 rounded-xl p-4">
-                <div className="text-3xl mb-2">💧</div>
+                <WeatherDataIcon iconName="humidity" size="lg" className="mb-2" />
                 <div className="font-bold text-xl">{weather.humidity}%</div>
                 <div className="text-sm">Humidity</div>
               </div>
               <div className="bg-slate-700/30 rounded-xl p-4">
-                <div className="text-3xl mb-2">💨</div>
+                <WeatherDataIcon iconName="wind-speed" size="lg" className="mb-2" />
                 <div className="font-bold text-xl">{weather.windSpeed} km/h</div>
                 <div className="text-sm">Wind Speed</div>
               </div>
               <div className="bg-slate-700/30 rounded-xl p-4">
-                <div className="text-3xl mb-2">📊</div>
+                <WeatherDataIcon iconName="pressure" size="lg" className="mb-2" />
                 <div className="font-bold text-xl">{weather.pressure} hPa</div>
                 <div className="text-sm">Pressure</div>
               </div>
               <div className="bg-slate-700/30 rounded-xl p-4">
-                <div className="text-3xl mb-2">☀️</div>
+                <WeatherDataIcon iconName="uv" size="lg" className="mb-2" />
                 <div className="font-bold text-xl">{weather.uvIndex}</div>
                 <div className="text-sm">UV Index</div>
               </div>
@@ -722,8 +772,9 @@ export default function StaticWeatherWidget({
 
   // Initialize coordinates based on props
   useEffect(() => {
-    if (isInitialized) return;
-
+    // Reset initialization state when location changes
+    setIsInitialized(false);
+    
     if (latitude && longitude) {
       setCoordinates({
         latitude,
@@ -743,7 +794,7 @@ export default function StaticWeatherWidget({
       });
       setIsInitialized(true);
     }
-  }, [location, latitude, longitude, geocodeLocationName, isInitialized]);
+  }, [location, latitude, longitude, geocodeLocationName]);
 
   // Determine weather config
   const weatherConfig: WeatherConfig = useMemo(() => {

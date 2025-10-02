@@ -1,0 +1,11 @@
+# This file ensures the weather-icons directory is tracked by git
+# Replace this file with your actual PNG icon files:
+# - sunny.png
+# - partly-cloudy.png  
+# - rainy.png
+# - thunder.png
+# - snowy.png
+# - wind-speed.png
+# - humidity.png
+# - pressure.png
+# - uv.png
