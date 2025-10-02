@@ -240,6 +240,40 @@ export default function PropertiesPanel({
         return (
           <div className="space-y-4">
             <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">News Source</label>
+              <select
+                value={widgetProps.newsSource || 'tagesschau'}
+                onChange={(e) => updateWidgetProperty('newsSource', e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <optgroup label="Europe">
+                  <option value="tagesschau">Tagesschau (Germany)</option>
+                  <option value="bbc">BBC News (UK)</option>
+                </optgroup>
+                <optgroup label="America">
+                  <option value="cnn">CNN (USA)</option>
+                  <option value="associated-press">Associated Press (USA)</option>
+                </optgroup>
+                <optgroup label="Global">
+                  <option value="newsapi">NewsAPI (Global)</option>
+                  <option value="reuters">Reuters (Global)</option>
+                </optgroup>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">API Key</label>
+              <input
+                type="password"
+                placeholder="Enter your NewsAPI key (optional for Tagesschau)"
+                value={widgetProps.apiKey || ''}
+                onChange={(e) => updateWidgetProperty('apiKey', e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Get your free API key from <a href="https://newsapi.org" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">newsapi.org</a>
+              </p>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
               <select
                 value={widgetProps.category || 'general'}
@@ -251,6 +285,8 @@ export default function PropertiesPanel({
                 <option value="business">Business</option>
                 <option value="sports">Sports</option>
                 <option value="science">Science</option>
+                <option value="health">Health</option>
+                <option value="entertainment">Entertainment</option>
               </select>
             </div>
             <div>
@@ -263,6 +299,45 @@ export default function PropertiesPanel({
                 onChange={(e) => updateWidgetProperty('limit', parseInt(e.target.value))}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Refresh Interval (minutes)</label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={(widgetProps.refreshInterval || 300000) / 60000}
+                onChange={(e) => updateWidgetProperty('refreshInterval', parseInt(e.target.value) * 60000)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Article Display Duration (seconds)</label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={widgetProps.cyclingInterval || 5}
+                onChange={(e) => updateWidgetProperty('cyclingInterval', parseInt(e.target.value))}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                How long each news article is displayed before switching to the next one
+              </p>
+            </div>
+            <div>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={widgetProps.showHeader !== false}
+                  onChange={(e) => updateWidgetProperty('showHeader', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm font-medium text-slate-300">Show Header</span>
+              </label>
+              <p className="text-xs text-slate-400 mt-1">
+                Display the header with news source and article counter
+              </p>
             </div>
           </div>
         );

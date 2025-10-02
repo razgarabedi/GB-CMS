@@ -99,17 +99,6 @@ export default function WeatherWidget({
   const isLoading = (!isInitialized && geocodingLoading) || (isInitialized && weatherLoading);
   const hasError = weatherError || locationError || geocodingError;
 
-  // Debug logging (remove in production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('WeatherWidget Debug:', {
-      isInitialized,
-      coordinates,
-      weatherLoading,
-      geocodingLoading,
-      weather,
-      error: hasError
-    });
-  }
 
   return (
     <div className={`weather-widget ${theme} ${showAnimatedBg ? 'animated-bg' : ''} h-full w-full relative overflow-hidden rounded-lg`}>

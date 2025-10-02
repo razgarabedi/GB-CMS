@@ -369,12 +369,6 @@ const MediumWeatherLayout: React.FC<{
       <div className="h-31 flex gap-1.5 p-1 z-15">
         {forecast && forecast.length > 0 ? (
           forecast.map((day, index) => {
-            console.log(`Forecast day ${index + 1}:`, {
-              dayName: day.dayName,
-              conditionCode: day.conditionCode,
-              condition: day.condition,
-              backgroundImage: day.backgroundImage
-            });
             
             return (
             <div
@@ -387,7 +381,6 @@ const MediumWeatherLayout: React.FC<{
                 backgroundRepeat: 'no-repeat'
               }}
               onError={(e) => {
-                console.log(`Background image failed to load for day ${index + 1}:`, day.backgroundImage);
                 // Fallback to a default background
                 e.currentTarget.style.backgroundImage = 'url(https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop)';
               }}

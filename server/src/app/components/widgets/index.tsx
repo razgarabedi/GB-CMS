@@ -55,7 +55,11 @@ export const DefaultWidgetProps = {
     category: 'general',
     limit: 5,
     theme: 'dark',
-    refreshInterval: 300000
+    refreshInterval: 300000,
+    newsSource: 'tagesschau',
+    apiKey: '',
+    showHeader: true,
+    cyclingInterval: 5
   },
   'Slideshow': {
     images: [

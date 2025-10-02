@@ -205,7 +205,6 @@ export function useWeather(config: WeatherConfig) {
           const weatherCode = daily.weathercode[i];
           const backgroundImage = WEATHER_BACKGROUNDS[weatherCode] || WEATHER_BACKGROUNDS[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop';
           
-          console.log(`Day ${i + 1}: Weather code ${weatherCode}, Condition: ${WEATHER_CONDITIONS[weatherCode]}, Background: ${backgroundImage}`);
           
           forecastData.push({
             date: daily.time[i],
