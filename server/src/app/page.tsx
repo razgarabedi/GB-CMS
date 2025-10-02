@@ -10,6 +10,7 @@ import PreviewSystem from './components/PreviewSystem';
 import HelpManager from './components/HelpManager';
 import ScreenManager from './components/ScreenManager';
 import SaveScreenModal from './components/SaveScreenModal';
+import { StaticWidgetSize, STATIC_WIDGET_DIMENSIONS } from './types/staticWidgets';
 
 interface LayoutItem {
   i: string;
@@ -119,14 +120,22 @@ export default function Home() {
               data-tour="component-library"
             >
               <ComponentLibrary 
-                onWidgetAdd={(componentName) => {
+                onWidgetAdd={(componentName, size?: StaticWidgetSize) => {
+                  let dimensions = { w: 4, h: 4 };
+                  
+                  // If it's a static widget with a size, use the predefined dimensions
+                  if (size && componentName === 'Static Weather') {
+                    dimensions = STATIC_WIDGET_DIMENSIONS[size];
+                  }
+                  
                   const newWidget = {
                     i: `widget-${Date.now()}`,
                     x: 0,
                     y: 0,
-                    w: 4,
-                    h: 4,
-                    component: componentName
+                    w: dimensions.w,
+                    h: dimensions.h,
+                    component: componentName,
+                    props: size ? { size } : {}
                   };
                   setLayout([...layout, newWidget]);
                 }}

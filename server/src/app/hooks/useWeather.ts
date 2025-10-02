@@ -16,6 +16,19 @@ export interface WeatherData {
   lastUpdated: Date;
 }
 
+export interface ForecastDay {
+  date: string;
+  dayName: string;
+  temperature: number;
+  condition: string;
+  conditionCode: number;
+  high: number;
+  low: number;
+  humidity: number;
+  precipitation: number;
+  backgroundImage: string;
+}
+
 export interface WeatherError {
   message: string;
   code?: string;
@@ -92,11 +105,44 @@ const WEATHER_EMOJIS: Record<number, string> = {
   99: '⛈️'
 };
 
+// Background images for different weather conditions
+const WEATHER_BACKGROUNDS: Record<number, string> = {
+  0: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Clear sky
+  1: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Mainly clear
+  2: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Partly cloudy
+  3: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Overcast
+  45: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Fog
+  48: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Rime fog
+  51: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Light drizzle
+  53: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Moderate drizzle
+  55: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Dense drizzle
+  56: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Freezing drizzle
+  57: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Dense freezing drizzle
+  61: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Slight rain
+  63: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Moderate rain
+  65: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Heavy rain
+  66: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Freezing rain
+  67: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Heavy freezing rain
+  71: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Snow
+  73: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Moderate snow
+  75: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Heavy snow
+  77: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Snow grains
+  80: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Rain showers
+  81: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Moderate rain showers
+  82: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop', // Violent rain showers
+  85: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Snow showers
+  86: 'https://images.unsplash.com/photo-1551524164-6cf4e4a2a4b8?w=800&h=600&fit=crop', // Heavy snow showers
+  95: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Thunderstorm
+  96: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop', // Thunderstorm with hail
+  99: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop'  // Violent thunderstorm
+};
+
 /**
  * Custom hook for fetching weather data from Open-Meteo API
  */
 export function useWeather(config: WeatherConfig) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<WeatherError | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
@@ -107,8 +153,8 @@ export function useWeather(config: WeatherConfig) {
       setLoading(true);
       setError(null);
 
-      // Open-Meteo API endpoint for current weather
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.latitude}&longitude=${config.longitude}&current_weather=true&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,winddirection_10m,surface_pressure,visibility,uv_index&timezone=auto`;
+      // Open-Meteo API endpoint for current weather and forecast
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.latitude}&longitude=${config.longitude}&current_weather=true&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,winddirection_10m,surface_pressure,visibility,uv_index&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_mean&timezone=auto&forecast_days=4`;
 
       const response = await fetch(url);
       
@@ -146,7 +192,38 @@ export function useWeather(config: WeatherConfig) {
         lastUpdated: new Date()
       };
 
+      // Process forecast data (next 3 days)
+      const daily = data.daily;
+      const forecastData: ForecastDay[] = [];
+      
+      for (let i = 1; i <= 3; i++) { // Skip today (index 0), get next 3 days
+        if (daily.time[i]) {
+          const date = new Date(daily.time[i]);
+          const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+          const dayName = dayNames[date.getDay()];
+          
+          const weatherCode = daily.weathercode[i];
+          const backgroundImage = WEATHER_BACKGROUNDS[weatherCode] || WEATHER_BACKGROUNDS[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop';
+          
+          console.log(`Day ${i + 1}: Weather code ${weatherCode}, Condition: ${WEATHER_CONDITIONS[weatherCode]}, Background: ${backgroundImage}`);
+          
+          forecastData.push({
+            date: daily.time[i],
+            dayName: dayName,
+            temperature: Math.round((daily.temperature_2m_max[i] + daily.temperature_2m_min[i]) / 2),
+            condition: WEATHER_CONDITIONS[weatherCode] || 'Unknown',
+            conditionCode: weatherCode,
+            high: Math.round(daily.temperature_2m_max[i]),
+            low: Math.round(daily.temperature_2m_min[i]),
+            humidity: Math.round(daily.precipitation_probability_mean[i] || 0),
+            precipitation: Math.round(daily.precipitation_probability_mean[i] || 0),
+            backgroundImage: backgroundImage
+          });
+        }
+      }
+
       setWeather(weatherData);
+      setForecast(forecastData);
       setLastFetch(new Date());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch weather data';
@@ -180,6 +257,7 @@ export function useWeather(config: WeatherConfig) {
 
   return {
     weather,
+    forecast,
     loading,
     error,
     lastFetch,

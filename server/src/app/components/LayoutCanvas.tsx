@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WidgetRegistry, DefaultWidgetProps, DefaultWidgetDimensions } from './widgets';
 import { useAdvancedDragDrop } from './DragDropSystem';
+import { isStaticWidget } from '../utils/staticWidgetUtils';
 import { 
   DragGhost, 
   SnapPreview, 
@@ -425,6 +426,7 @@ export default function LayoutCanvas({
   const renderWidget = (item: LayoutItem) => {
     const isSelected = selectedWidget === item.i;
     const isDraggingThis = dragState.draggedItem === item.i && dragState.isDragging;
+    const isStatic = isStaticWidget(item.component || '');
     
     // Get the widget component and props
     const WidgetComponent = WidgetRegistry[item.component as keyof typeof WidgetRegistry];
@@ -493,6 +495,30 @@ export default function LayoutCanvas({
             </div>
           )}
         </div>
+
+        {/* Resize handles - only for non-static widgets */}
+        {!isStatic && isSelected && (
+          <>
+            {/* Corner resize handles */}
+            <div className="absolute -top-1 -left-1 w-3 h-3 bg-blue-500 rounded-full cursor-nw-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full cursor-ne-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-blue-500 rounded-full cursor-sw-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            
+            {/* Edge resize handles */}
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-blue-500 rounded-full cursor-n-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-blue-500 rounded-full cursor-s-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -left-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full cursor-w-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full cursor-e-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          </>
+        )}
+
+        {/* Static widget indicator */}
+        {isStatic && isSelected && (
+          <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-medium shadow-lg">
+            Static
+          </div>
+        )}
       </div>
     );
   };

@@ -6,6 +6,7 @@ import WebViewerWidget from './WebViewerWidget';
 import PVCompactWidget from './PVCompactWidget';
 import PVFlowWidget from './PVFlowWidget';
 import CustomWidget from './CustomWidget';
+import StaticWeatherWidget from './StaticWeatherWidget';
 
 export {
   WeatherWidget,
@@ -15,7 +16,8 @@ export {
   WebViewerWidget,
   PVCompactWidget,
   PVFlowWidget,
-  CustomWidget
+  CustomWidget,
+  StaticWeatherWidget
 };
 
 // Widget registry for dynamic rendering
@@ -28,6 +30,7 @@ export const WidgetRegistry = {
   'PV Compact': PVCompactWidget,
   'PV Flow': PVFlowWidget,
   'Custom': CustomWidget,
+  'Static Weather': StaticWeatherWidget,
 };
 
 // Default properties for each widget type
@@ -86,6 +89,17 @@ export const DefaultWidgetProps = {
     backgroundColor: '#1e293b',
     textColor: '#ffffff',
     showBorder: true
+  },
+  'Static Weather': {
+    location: 'New York',
+    latitude: undefined,
+    longitude: undefined,
+    showClock: true,
+    showAnimatedBg: false,
+    theme: 'dark',
+    refreshInterval: 300000,
+    showDetails: true,
+    size: 'compact'
   }
 };
 
@@ -98,5 +112,6 @@ export const DefaultWidgetDimensions = {
   'Web Viewer': { w: 4, h: 4 },
   'PV Compact': { w: 4, h: 4 },
   'PV Flow': { w: 4, h: 4 },
-  'Custom': { w: 4, h: 4 }
+  'Custom': { w: 4, h: 4 },
+  'Static Weather': { w: 4, h: 4 } // Default to compact size
 };

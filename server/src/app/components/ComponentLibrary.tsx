@@ -3,9 +3,11 @@
 import { useRef, useEffect, useState } from 'react';
 import { widgetIcons } from './icons/WidgetIcons';
 import { DefaultWidgetDimensions } from './widgets';
+import StaticWidgetSizeModal from './StaticWidgetSizeModal';
+import { StaticWidgetSize } from '../types/staticWidgets';
 
 interface ComponentLibraryProps {
-  onWidgetAdd: (componentName: string) => void;
+  onWidgetAdd: (componentName: string, size?: StaticWidgetSize) => void;
 }
 
 export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps) {
@@ -14,6 +16,8 @@ export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [showSizeModal, setShowSizeModal] = useState(false);
+  const [selectedStaticWidget, setSelectedStaticWidget] = useState<string | null>(null);
   
   const widgetCategories = [
     {
@@ -27,6 +31,15 @@ export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps)
           color: 'bg-blue-600',
           tags: ['weather', 'location', 'animated'],
           size: 'medium'
+        },
+        { 
+          name: 'Static Weather', 
+          icon: 'weather', 
+          description: 'Weather widget with predefined sizes and optimized layouts', 
+          color: 'bg-blue-500',
+          tags: ['weather', 'static', 'predefined-sizes'],
+          size: 'compact',
+          isStatic: true
         },
         { 
           name: 'Clock', 
@@ -365,6 +378,28 @@ export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps)
     };
   }, []);
 
+  const handleWidgetClick = (widget: any) => {
+    if (widget.isStatic) {
+      setSelectedStaticWidget(widget.name);
+      setShowSizeModal(true);
+    } else {
+      onWidgetAdd(widget.name);
+    }
+  };
+
+  const handleSizeSelect = (size: StaticWidgetSize) => {
+    if (selectedStaticWidget) {
+      onWidgetAdd(selectedStaticWidget, size);
+    }
+    setShowSizeModal(false);
+    setSelectedStaticWidget(null);
+  };
+
+  const handleCloseModal = () => {
+    setShowSizeModal(false);
+    setSelectedStaticWidget(null);
+  };
+
   return (
     <div className="h-full bg-slate-800/50 p-2 sm:p-4 overflow-y-auto">
       {/* Header */}
@@ -464,7 +499,7 @@ export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps)
                   draggable
                   onDragStart={(e) => handleDragStart(e, widget.name, widget)}
                   onDragEnd={handleDragEnd}
-                  onClick={() => onWidgetAdd(widget.name)}
+                  onClick={() => handleWidgetClick(widget)}
                   title={`Drag to canvas or click to add ${widget.name}`}
                 >
                   <div className="p-3">
@@ -564,6 +599,15 @@ export default function ComponentLibrary({ onWidgetAdd }: ComponentLibraryProps)
           </div>
         </div>
       </div>
+
+      {/* Static Widget Size Selection Modal */}
+      <StaticWidgetSizeModal
+        isOpen={showSizeModal}
+        onClose={handleCloseModal}
+        widgetId="static-weather"
+        widgetName={selectedStaticWidget || ''}
+        onSizeSelect={handleSizeSelect}
+      />
     </div>
   );
 }

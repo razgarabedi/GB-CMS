@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 import { DefaultWidgetProps } from './widgets';
 import VisualPropertyEditor from './VisualPropertyEditor';
+import StaticWidgetSizeSelector from './StaticWidgetSizeSelector';
+import { getStaticWidgetConfig, getAvailableSizes } from './widgets/staticWidgetRegistry';
+import { StaticWidgetSize, STATIC_WIDGET_DIMENSIONS } from '../types/staticWidgets';
+
+const sizeLabels: Record<StaticWidgetSize, string> = {
+  compact: 'Compact (4×4)',
+  medium: 'Medium (6×4)',
+  large: 'Large (8×7)',
+  xlarge: 'X-Large (9×7)'
+};
 
 interface LayoutItem {
   i: string;
@@ -412,6 +422,153 @@ export default function PropertiesPanel({
                 onChange={(e) => updateWidgetProperty('textColor', e.target.value)}
                 className="w-full h-10 bg-slate-700 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+          </div>
+        );
+
+      case 'Static Weather':
+        const staticWidgetConfig = getStaticWidgetConfig('static-weather');
+        const availableSizes = staticWidgetConfig ? getAvailableSizes('static-weather') : [];
+        const currentSize = widgetProps.size || 'compact';
+        const isWidgetPlaced = selectedWidgetData && selectedWidgetData.x >= 0 && selectedWidgetData.y >= 0;
+
+        return (
+          <div className="space-y-6">
+            {/* Size Selection - only show if widget is not placed yet */}
+            {!isWidgetPlaced && (
+              <StaticWidgetSizeSelector
+                widgetId="static-weather"
+                currentSize={currentSize}
+                availableSizes={availableSizes}
+                onSizeChange={(size: StaticWidgetSize) => {
+                  const dimensions = STATIC_WIDGET_DIMENSIONS[size];
+                  updateWidgetProperty('size', size);
+                  // Update dimensions when size changes
+                  const updatedLayout = layout.map(item => {
+                    if (item.i === selectedWidget) {
+                      return { ...item, w: dimensions.w, h: dimensions.h };
+                    }
+                    return item;
+                  });
+                  onLayoutChange(updatedLayout);
+                }}
+                disabled={false}
+              />
+            )}
+
+            {/* Show warning if widget is already placed */}
+            {isWidgetPlaced && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="text-yellow-400">⚠️</div>
+                  <div className="text-sm text-yellow-300">
+                    Widget size cannot be changed after placement. Current size: {sizeLabels[currentSize]}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Weather Properties */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Location</label>
+                <input
+                  type="text"
+                  value={widgetProps.location || ''}
+                  onChange={(e) => updateWidgetProperty('location', e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter city name (e.g., New York, London)"
+                />
+                <p className="text-xs text-slate-400 mt-1">Or use coordinates below for precise location</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Latitude</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={widgetProps.latitude || ''}
+                    onChange={(e) => updateWidgetProperty('latitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="40.7128"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Longitude</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={widgetProps.longitude || ''}
+                    onChange={(e) => updateWidgetProperty('longitude', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="-74.0060"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Refresh Interval (minutes)</label>
+                <select
+                  value={widgetProps.refreshInterval ? widgetProps.refreshInterval / 60000 : 5}
+                  onChange={(e) => updateWidgetProperty('refreshInterval', parseInt(e.target.value) * 60000)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={1}>1 minute</option>
+                  <option value={5}>5 minutes</option>
+                  <option value={10}>10 minutes</option>
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>1 hour</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showClock"
+                    checked={widgetProps.showClock || false}
+                    onChange={(e) => updateWidgetProperty('showClock', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="showClock" className="text-sm text-slate-300">Show Clock</label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showAnimatedBg"
+                    checked={widgetProps.showAnimatedBg || false}
+                    onChange={(e) => updateWidgetProperty('showAnimatedBg', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="showAnimatedBg" className="text-sm text-slate-300">Animated Background</label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="showDetails"
+                    checked={widgetProps.showDetails || false}
+                    onChange={(e) => updateWidgetProperty('showDetails', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="showDetails" className="text-sm text-slate-300">Show Details (humidity, wind, etc.)</label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Theme</label>
+                <select
+                  value={widgetProps.theme || 'dark'}
+                  onChange={(e) => updateWidgetProperty('theme', e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </div>
             </div>
           </div>
         );
