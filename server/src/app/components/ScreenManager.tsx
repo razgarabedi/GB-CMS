@@ -49,9 +49,12 @@ export default function ScreenManager({
 
     onSaveScreen(newScreen);
     setShowSaveModal(false);
-    setEditingScreen(null);
-    setScreenName('');
-    setScreenDescription('');
+    // Keep the editing screen selected if we were updating an existing screen
+    if (!editingScreen) {
+      setEditingScreen(null);
+      setScreenName('');
+      setScreenDescription('');
+    }
   };
 
   const handleLoadScreen = (screen: Screen) => {

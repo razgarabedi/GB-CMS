@@ -431,6 +431,63 @@ export default function NewsWidget({
     }
   };
 
+  // Get responsive text styles based on widget dimensions
+  const getResponsiveStyles = () => {
+    const area = width * height;
+    
+    if (area >= 800000) { // Large widgets (e.g., 1000x800)
+      return {
+        headerPadding: 'p-4',
+        contentPadding: 'p-6',
+        titleSize: 'text-lg',
+        summarySize: 'text-sm',
+        categorySize: 'text-sm',
+        iconSize: 'w-8 h-8',
+        iconTextSize: 'text-sm',
+        progressSize: 'w-3 h-3',
+        progressSpacing: 'space-x-2'
+      };
+    } else if (area >= 400000) { // Medium widgets (e.g., 800x500)
+      return {
+        headerPadding: 'p-3',
+        contentPadding: 'p-4',
+        titleSize: 'text-base',
+        summarySize: 'text-sm',
+        categorySize: 'text-xs',
+        iconSize: 'w-6 h-6',
+        iconTextSize: 'text-xs',
+        progressSize: 'w-2.5 h-2.5',
+        progressSpacing: 'space-x-1.5'
+      };
+    } else if (area >= 200000) { // Medium-small widgets (e.g., 600x400)
+      return {
+        headerPadding: 'p-3',
+        contentPadding: 'p-4',
+        titleSize: 'text-sm',
+        summarySize: 'text-xs',
+        categorySize: 'text-xs',
+        iconSize: 'w-5 h-5',
+        iconTextSize: 'text-xs',
+        progressSize: 'w-2 h-2',
+        progressSpacing: 'space-x-1'
+      };
+    } else { // Small widgets (e.g., 400x300)
+      return {
+        headerPadding: 'p-2',
+        contentPadding: 'p-3',
+        titleSize: 'text-xs',
+        summarySize: 'text-xs',
+        categorySize: 'text-xs',
+        iconSize: 'w-4 h-4',
+        iconTextSize: 'text-xs',
+        progressSize: 'w-1.5 h-1.5',
+        progressSpacing: 'space-x-1'
+      };
+    }
+  };
+
+  const styles = getResponsiveStyles();
+
   return (
     <div 
       className="news-widget h-full w-full rounded-lg overflow-hidden relative"
@@ -463,46 +520,46 @@ export default function NewsWidget({
       <div className="h-full flex flex-col relative z-10">
         {/* Header - conditionally rendered */}
         {showHeader && (
-          <div className="p-3 bg-black/25 backdrop-blur-sm border-b border-white/20">
+          <div className={`${styles.headerPadding} bg-black/25 backdrop-blur-sm border-b border-white/20`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">N</span>
+                <div className={`${styles.iconSize} bg-blue-600 rounded flex items-center justify-center`}>
+                  <span className={`text-white ${styles.iconTextSize} font-bold`}>N</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-white text-sm">Latest News</span>
+                  <span className={`font-medium text-white ${styles.titleSize}`}>Latest News</span>
                   {currentNews.source && (
-                    <span className="text-xs text-slate-200">{currentNews.source}</span>
+                    <span className={`${styles.categorySize} text-slate-200`}>{currentNews.source}</span>
                   )}
                 </div>
               </div>
-              <div className="text-xs text-slate-200">
+              <div className={`${styles.categorySize} text-slate-200`}>
                 {currentIndex + 1} of {news.length}
               </div>
             </div>
-            <div className="text-xs text-slate-300">
+            <div className={`${styles.categorySize} text-slate-300`}>
               {currentNews.time}
             </div>
           </div>
         )}
 
         {/* Content */}
-        <div className="flex-1 p-4 flex flex-col justify-center">
+        <div className={`flex-1 ${styles.contentPadding} flex flex-col justify-center`}>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-slate-600 rounded flex items-center justify-center">
-                <span className="text-xs text-white font-medium">{getCategoryIcon(currentNews.category)}</span>
+              <div className={`${styles.iconSize} bg-slate-600 rounded flex items-center justify-center`}>
+                <span className={`${styles.iconTextSize} text-white font-medium`}>{getCategoryIcon(currentNews.category)}</span>
               </div>
-              <span className="text-xs text-slate-200 uppercase tracking-wide bg-black/25 px-2 py-1 rounded">
+              <span className={`${styles.categorySize} text-slate-200 uppercase tracking-wide bg-black/25 px-2 py-1 rounded`}>
                 {currentNews.category}
               </span>
             </div>
             
-            <h3 className="text-white font-medium text-sm leading-tight line-clamp-2 bg-black/25 p-2 rounded">
+            <h3 className={`text-white font-medium ${styles.titleSize} leading-tight line-clamp-2 bg-black/25 p-2 rounded`}>
               {currentNews.title}
             </h3>
             
-            <p className="text-slate-100 text-xs leading-relaxed line-clamp-3 bg-black/25 p-2 rounded">
+            <p className={`text-slate-100 ${styles.summarySize} leading-relaxed line-clamp-3 bg-black/25 p-2 rounded`}>
               {currentNews.summary}
             </p>
           </div>
@@ -510,11 +567,11 @@ export default function NewsWidget({
 
         {/* Progress indicators */}
         {news.length > 1 && (
-          <div className="flex space-x-1 p-3 justify-center">
+          <div className={`flex ${styles.progressSpacing} ${styles.headerPadding} justify-center`}>
             {news.map((_, index) => (
               <div
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                className={`${styles.progressSize} rounded-full transition-colors ${
                   index === currentIndex ? 'bg-blue-400' : 'bg-white bg-opacity-50'
                 }`}
               />

@@ -64,7 +64,7 @@ export default function Home() {
       setScreens(prev => prev.map(screen => 
         screen.id === editingScreen.id ? updatedScreen : screen
       ));
-      setEditingScreen(null);
+      setEditingScreen(updatedScreen);
     } else {
       // Create new screen
       const newScreen = {

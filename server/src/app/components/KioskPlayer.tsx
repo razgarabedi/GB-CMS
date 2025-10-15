@@ -166,9 +166,9 @@ export default function KioskPlayer({
         className="absolute overflow-hidden rounded-lg"
         style={{
           left: `${(item.x / 32) * 100}%`,
-          top: `${item.y * 60}px`,
+          top: `${(item.y / 18) * 100}%`,
           width: `${(item.w / 32) * 100}%`,
-          height: `${item.h * 60}px`,
+          height: `${(item.h / 18) * 100}%`,
         }}
       >
         {WidgetComponent ? (
@@ -278,8 +278,12 @@ export default function KioskPlayer({
 
       {/* Screen Content */}
       <div 
-        className={`relative w-full h-full ${!kioskMode ? 'pt-16' : ''}`}
-        style={{ minHeight: kioskMode ? '100vh' : '600px' }}
+        className={`relative w-full ${!kioskMode ? 'pt-16' : ''}`}
+        style={{ 
+          minHeight: kioskMode ? '100vh' : '600px',
+          height: kioskMode ? '100vh' : '100%',
+          aspectRatio: '16/9'
+        }}
       >
         {currentScreen.layout.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center">
