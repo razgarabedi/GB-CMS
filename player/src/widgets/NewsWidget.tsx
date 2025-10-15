@@ -10,6 +10,8 @@ interface NewsWidgetProps {
   apiKey?: string;
   showHeader?: boolean;
   cyclingInterval?: number;
+  width?: number;
+  height?: number;
 }
 
 interface NewsItem {
@@ -90,7 +92,9 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
   newsSource = 'tagesschau',
   apiKey = '',
   showHeader = true,
-  cyclingInterval = 5
+  cyclingInterval = 5,
+  width = 400,
+  height = 300
 }) => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -105,6 +109,133 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  // Helper function to determine optimal image size based on widget dimensions
+  const getOptimalImageSize = (widgetWidth: number, widgetHeight: number): string => {
+    const area = widgetWidth * widgetHeight;
+    
+    // Determine optimal image variant based on widget size
+    if (area >= 800000) { // Large widgets (e.g., 1000x800)
+      return '16x9-1920'; // High resolution for large displays
+    } else if (area >= 400000) { // Medium widgets (e.g., 800x500)
+      return '16x9-1280';
+    } else if (area >= 200000) { // Medium-small widgets (e.g., 600x400)
+      return '16x9-840';
+    } else if (area >= 100000) { // Small widgets (e.g., 400x300)
+      return '16x9-640';
+    } else { // Very small widgets
+      return '16x9-480';
+    }
+  };
+
+  // Normalize Tagesschau/relative URLs to absolute HTTPS
+  const normalizeTagesschauUrl = (url?: string): string => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('//')) return `https:${url}`;
+    if (url.startsWith('/')) return `https://www.tagesschau.de${url}`;
+    return url;
+  };
+
+  // Extract URL from image variant entry which may be a string or object
+  const getUrlFromVariantEntry = (entry: any): string => {
+    if (!entry) return '';
+    if (typeof entry === 'string') return entry;
+    return entry.url || entry.src || '';
+  };
+
+  // Choose best variant by scanning available keys and picking closest to target width
+  const chooseBestVariant = (variants: any, targetWidth: number): string => {
+    if (!variants || typeof variants !== 'object') return '';
+    const candidates: { key: string; width: number; url: string }[] = [];
+    for (const key of Object.keys(variants)) {
+      const match = key.match(/-(\d+)$/);
+      const width = match ? parseInt(match[1], 10) : NaN;
+      const url = getUrlFromVariantEntry(variants[key]);
+      if (!isNaN(width) && url) {
+        candidates.push({ key, width, url });
+      }
+    }
+    if (candidates.length === 0) return '';
+    candidates.sort((a, b) => a.width - b.width);
+    const atLeast = candidates.find(c => c.width >= targetWidth);
+    return (atLeast ? atLeast.url : candidates[candidates.length - 1].url) || '';
+  };
+
+  // Helper function to extract image URL with improved logic
+  const extractImageUrl = (item: any, widgetWidth: number, widgetHeight: number): string => {
+    let imageUrl = '';
+    const optimalSize = getOptimalImageSize(widgetWidth, widgetHeight);
+    const targetWidth = parseInt(optimalSize.split('-')[1] || '840', 10);
+    
+    // Try multiple image sources in order of preference
+    if (item.teaserImage) {
+      // Try different image variant structures with optimal size first
+      if (item.teaserImage.imageVariants) {
+        const variants = item.teaserImage.imageVariants;
+        
+        // Try optimal size first, then fallback to other sizes
+        const directOptimal = getUrlFromVariantEntry(variants[optimalSize]);
+        imageUrl = directOptimal ||
+                  chooseBestVariant(variants, targetWidth) ||
+                  getUrlFromVariantEntry(variants['16x9-840']) ||
+                  getUrlFromVariantEntry(variants['4x3-840']) ||
+                  getUrlFromVariantEntry(variants['1x1-840']) ||
+                  getUrlFromVariantEntry(variants['16x9-640']) ||
+                  getUrlFromVariantEntry(variants['4x3-640']) ||
+                  getUrlFromVariantEntry(variants['16x9-480']) ||
+                  getUrlFromVariantEntry(variants['4x3-480']) ||
+                  getUrlFromVariantEntry(variants['1x1-480']) ||
+                  '';
+      }
+      
+      // Try direct properties if variants didn't work
+      if (!imageUrl) {
+        imageUrl = item.teaserImage.src || 
+                  item.teaserImage.url || 
+                  item.teaserImage.imageUrl ||
+                  '';
+      }
+    }
+    
+    // Try other possible image properties
+    if (!imageUrl) {
+      imageUrl = item.image?.url || 
+                item.image?.src ||
+                item.imageUrl ||
+                item.backgroundImage ||
+                item.media?.image?.url ||
+                item.media?.image?.src ||
+                '';
+    }
+    
+    // If still no image, try to extract from content or other fields
+    if (!imageUrl && item.content && typeof item.content === 'string') {
+      // Try to extract image URL from content HTML
+      const imgMatch = item.content.match(/<img[^>]+src="([^"]+)"/i);
+      if (imgMatch) {
+        imageUrl = imgMatch[1];
+      }
+    }
+    
+    // If still no image, provide a fallback based on category
+    if (!imageUrl) {
+      const fallbackImages = {
+        'Politik': 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800&h=600&fit=crop',
+        'Wirtschaft': 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&h=600&fit=crop',
+        'Sport': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop',
+        'Kultur': 'https://images.unsplash.com/photo-1481277542470-605612bd2d61?w=800&h=600&fit=crop',
+        'Wissenschaft': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&h=600&fit=crop',
+        'default': 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&h=600&fit=crop'
+      };
+      
+      const category = item.topline || item.category || 'default';
+      imageUrl = fallbackImages[category] || fallbackImages.default;
+    }
+    
+    // Normalize to absolute URL (player may not use proxy)
+    return normalizeTagesschauUrl(imageUrl);
   };
 
   // Fetch news from different sources
@@ -124,37 +255,12 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
         const data = await response.json();
         
         newsData = data.news?.slice(0, limit).map((item: any, index: number) => {
-          // Try multiple image sources in order of preference
-          let imageUrl = '';
+          // Use the improved image extraction function
+          const imageUrl = extractImageUrl(item, width, height);
           
-          // Check if teaserImage exists
-          if (item.teaserImage) {
-            // Try different image variant structures
-            if (item.teaserImage.imageVariants) {
-              imageUrl = item.teaserImage.imageVariants['16x9-840']?.url || 
-                        item.teaserImage.imageVariants['4x3-840']?.url ||
-                        item.teaserImage.imageVariants['1x1-840']?.url ||
-                        item.teaserImage.imageVariants['16x9-640']?.url ||
-                        item.teaserImage.imageVariants['4x3-640']?.url ||
-                        '';
-            }
-            
-            // Try direct properties
-            if (!imageUrl) {
-              imageUrl = item.teaserImage.src || 
-                        item.teaserImage.url || 
-                        item.teaserImage.imageUrl ||
-                        '';
-            }
-          }
-          
-          // Try other possible image properties
+          // Only log if there's an issue with image extraction
           if (!imageUrl) {
-            imageUrl = item.image?.url || 
-                      item.image?.src ||
-                      item.imageUrl ||
-                      item.backgroundImage ||
-                      '';
+            console.warn(`Tagesschau item ${index} has no image:`, item.title);
           }
           
           return {
@@ -183,7 +289,7 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
         if (data.status === 'ok') {
           newsData = data.articles?.map((article: any, index: number) => {
             const imageUrl = article.urlToImage || '';
-            console.log('NewsAPI image URL:', imageUrl); // Debug log
+            // NewsAPI image URL available
             
             return {
               id: `${selectedSource.id}-${index}`,
@@ -249,13 +355,11 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
 
   // Handle image loading errors
   const handleImageError = () => {
-    console.log('Image failed to load:', currentNews.imageUrl);
     setImageError(true);
   };
 
   // Handle image loading success
   const handleImageLoad = () => {
-    console.log('Image loaded successfully:', currentNews.imageUrl);
     setImageError(false);
   };
 
@@ -297,25 +401,41 @@ const NewsWidget: React.FC<NewsWidgetProps> = ({
 
   const currentNews = news[currentIndex];
   
-  // Get background image with fallback
+  // Get background image with fallback and responsive sizing
   const getBackgroundImage = () => {
     if (currentNews.imageUrl && !imageError) {
-      return `url(${currentNews.imageUrl})`;
+      return `url("${currentNews.imageUrl}")`;
     }
     
     // Fallback to gradient if no image
-    return `linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4)`;
+    return `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`;
+  };
+
+  // Get responsive background size based on widget dimensions
+  const getBackgroundSize = () => {
+    const area = width * height;
+    
+    // Use different background sizing strategies based on widget size
+    if (area >= 800000) {
+      return 'cover'; // Large widgets - cover the entire area
+    } else if (area >= 200000) {
+      return 'cover'; // Medium widgets - cover with good quality
+    } else {
+      return 'cover'; // Small widgets - cover to fill space
+    }
   };
 
   return (
     <div 
       className="news-widget h-full w-full rounded-lg overflow-hidden relative"
       style={{
-        background: getBackgroundImage(),
-        backgroundSize: 'cover',
+        backgroundImage: getBackgroundImage(),
+        backgroundSize: getBackgroundSize(),
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        minHeight: '200px'
+        minHeight: '200px',
+        width: `${width}px`,
+        height: `${height}px`
       }}
     >
       {/* Background overlay for better text readability */}
