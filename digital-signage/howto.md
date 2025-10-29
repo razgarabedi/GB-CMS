@@ -15,6 +15,9 @@ sudo apt update
 # Nginx + firewall
 sudo apt install -y nginx
 sudo ufw allow 'Nginx Full'
+sudo ufw allow 3000/tcp
+sudo ufw allow 'ssh'
+sudo ufw reload
 
 # Node + PM2 (NodeSource)
 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
